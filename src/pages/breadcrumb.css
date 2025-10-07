@@ -1,0 +1,44 @@
+/* Breadcrumb container */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  background: transparent;
+  padding: 0;
+  margin: 20px 0;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+}
+
+/* Breadcrumb items */
+.breadcrumb-item {
+  color: #aaa;                 /* inactive color */
+  text-decoration: none;
+  padding: 0 5px;              /* small horizontal spacing */
+  display: flex;
+  align-items: center;
+}
+
+/* Separator */
+.breadcrumb-item + .breadcrumb-item::before {
+  content: ">";                /* arrow separator */
+  color: #555;
+  margin: 0 5px;               /* space around separator */
+  font-weight: 500;
+}
+
+/* Hover for clickable items */
+.breadcrumb-item:hover {
+  color: #ffcc00;
+  cursor: pointer;
+}
+
+/* Active/current item */
+.breadcrumb-item.active {
+  color: #ffcc00;              /* gold for current */
+  font-weight: 600;
+  cursor: default;             /* not clickable */
+}
+
+/* Optional breadcrumb title above */
+

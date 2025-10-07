@@ -1,0 +1,189 @@
+html {
+    background-color: black;
+}
+
+
+::-webkit-scrollbar-thumb {
+   color: #ffcc00;
+ background-color: #ffcc00;
+ border-radius: 20px;
+ 
+}
+
+::-webkit-scrollbar-track {
+   color: #ffcc00;
+ background-color: black;
+}
+
+::-webkit-scrollbar {
+    color: #ffcc00;
+    background-color: #ffcc00;
+    width: 10px;
+}
+
+
+
+/* Default for large screens */
+.carousel-item img {
+  height: 100vh; /* taller for desktop */
+  object-fit: cover;
+  object-position: center;
+}
+
+/* For tablets */
+@media (max-width: 992px) {
+  .carousel-item img {
+    height: 60vh;
+  }
+}
+
+/* For small screens (phones) */
+@media (max-width: 576px) {
+  .carousel-item img {
+    height: 40vh;
+  }
+}
+
+
+
+#MainContainerDiv {
+  background-color: black;
+}
+
+/* Wrapper styling */
+.stacked-cards-wrapper {
+    width: 100%;
+    background-color: #000;
+    opacity: 0.95;
+    padding: 30px;
+    
+    color: #fff;
+}
+
+
+
+/* Card layout */
+.stacked-card {
+    background-color: #111 !important;
+    color: #fff !important;
+    margin-bottom: 20px;
+  
+    
+    padding: 80px;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between;
+    align-items: center;
+    opacity: 1;
+}
+
+/* Text section */
+.stacked-card-text {
+    flex: 1;
+    text-align: center;
+    padding-right: 20px;
+}
+
+.stacked-card-text h2 {
+    color: #ffcc00;
+    margin-bottom: 15px;
+    font-size: 3.4rem;
+}
+
+.stacked-card-text p {
+    font-size: 1.3rem;
+    line-height: 1.6;
+}
+
+/* Button */
+.stacked-card-button {
+    margin-top: 10px !important;
+    font-weight: bold !important;
+    color: #ffcc00 !important;
+    padding: 6px 12px !important;
+    font-size: 1.4rem !important;
+}
+.stacked-card-button:hover {
+    margin-top: 10px !important;
+    font-weight: bold !important;
+    color: black !important;
+    
+}
+
+/* Image section */
+.stacked-card-image {
+    width: 100%;
+    max-width: 450px;
+    height: 350px;
+    border-radius: 8px;
+    object-fit: cover;
+    margin-top: 15px;
+    
+    
+    
+}
+
+.stacked-card-image:after {
+    opacity: 1 !important;
+}
+
+/* ✅ Responsive adjustments for mobile */
+@media (max-width: 768px) {
+    .stacked-card {
+        flex-direction: column !important;
+        text-align: center !important;
+        padding: 20px;
+    }
+
+    .stacked-card-text {
+        padding-right: 0;
+        margin-bottom: 15px;
+    }
+
+    .stacked-card-image {
+        width: 100%;       /* fill container */
+        height: 200px !important;     /* keep a fixed height for cover effect */
+        max-width: 350px;
+        object-fit: cover; /* crop to fit */
+        margin-top: 15px;
+        
+        
+    
+    }
+
+    .stacked-card-text h2 {
+        font-size: 1.4rem;
+    }
+
+    .stacked-card-text p {
+        font-size: 1rem;
+    }
+
+    .stacked-card-button {
+    font-size: 1rem !important;
+}
+}
+
+
+.cardGallery-wrapper {
+    position: sticky !important;
+    
+    background-color: black !important;
+    color: #fff !important;
+    margin-bottom: 20px;
+   
+    padding: 20px;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cardGallery-image {
+    width: 100%;
+    max-width: 300px;
+    height: 200px;
+    border-radius: 8px;
+    object-fit: cover;
+    margin-top: 15px;
+}
