@@ -1,8 +1,8 @@
 import './Product.css';
 import Product from './Product.jsx';
 import { useEffect, useState } from 'react';
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import { getDatabase, ref, onValue } from "firebase/database";
+import { initializeApp } from "firebase/app";
 
 // Firebase config
 const firebaseConfig = {
