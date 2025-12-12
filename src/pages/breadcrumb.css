@@ -5,9 +5,14 @@
   list-style: none;
   background: transparent;
   padding: 0;
-  margin: 20px 0;
+  margin: 1px 40px 1px 40px;
   font-family: 'Poppins', sans-serif;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
+  
+}
+
+h1 {
+   margin: 40px 40px;
 }
 
 /* Breadcrumb items */

@@ -19,7 +19,7 @@ function ProductCarousel({ items }) {
             {items.map((item, index) => (
                 <CarouselItem key={index} interval={4000}>
                 <img
-                    className="d-block w-100 h-50"
+                    className="d-block w-100 h-100"
                     src={`https://raw.githubusercontent.com/JacksonUptain/nolans-knives-image-database/refs/heads/main/images/${item}`}
                     alt={item}
                 />

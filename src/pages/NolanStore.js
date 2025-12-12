@@ -45,10 +45,10 @@ function NolanStore() {
   
   return (
     <div className="store-container">
-      <h1 className="store-title">Nolan’s Knives</h1>
+      <h1 className="store-title">Nolan’s Store</h1>
       <div className="products-grid">
         {products.map((product, index) => (
-          <Product key={product.id} product={product} index={index} />
+          <Product key={product.id} product={product} index={index} expanded={false}/>
         ))}
       </div>
     </div>

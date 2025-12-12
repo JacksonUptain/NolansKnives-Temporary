@@ -34,7 +34,7 @@ body {
 /* ---------- Product Image / Carousel ---------- */
 /* Carousel wrapper */
 .product-carousel {
-  width: 100%;           /* Fill available space */
+  width: 100% !important;           /* Fill available space */
   max-width: 500px;      /* Don’t go too wide */
   margin: 0 auto 20px;   /* Center it & add spacing */
   overflow: hidden;      /* Prevent overflow stretching */
@@ -44,7 +44,7 @@ body {
 
 /* Carousel images */
 .product-carousel img {
-  width: 100%;          /* Scale to container */
+  width: 100% !important;          /* Scale to container */
   height: auto;         /* Keep aspect ratio */
   border-radius: 12px;
   object-fit: cover;    /* Prevent weird stretching */
@@ -115,7 +115,7 @@ body {
 }
 
 .store-title {
-  font-size: 2.9rem;
+  font-size: 3.3rem;
   color: #ffcc00;
   text-align: center;
   margin-top: 20px;

@@ -19,7 +19,7 @@ function StackedCards({ items }) {
                             top: `${(index + 1) * 40}px`,
                             border: '3px solid',
                             borderRadius: '12px',
-                            borderColor: `hsl(45, 100%, ${40 + index * 12}%)` 
+                            borderColor: `hsl(45, 100%, ${40 + index * 7}%)` 
                         }}
                 >
                     <div className="stacked-card-text">

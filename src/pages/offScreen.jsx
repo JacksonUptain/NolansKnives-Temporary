@@ -1,29 +1,42 @@
-'use client'
+'use client';
 
-import { useState } from 'react';
-import Button from 'react-bootstrap/Button';
+import { useState, useEffect } from 'react';
+import Product from './Product';
 import Offcanvas from 'react-bootstrap/Offcanvas';
+import './offScreen.css';
 
-function OffScreen({buttonText, leftOrFullscreen, type}) {
-  const [show, setShow] = useState(false);
+function OffScreen({ product, onHide }) {
+  const [show, setShow] = useState(true);
 
-  const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
+  const handleClose = () => {
+    setShow(false);
+    if (onHide) onHide();
+    window.location.reload();
+  };
+
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === 'Escape') handleClose();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, []);
 
   return (
-    <>
-      <Button variant="outline-light" className="stacked-card-button" onClick={handleShow}>
-        {buttonText}
-      </Button>
-
-      <Offcanvas show={show} onHide={handleClose}>
-        <Offcanvas.Header closeButton>
-        </Offcanvas.Header>
-        <Offcanvas.Body>
-        HI
-        </Offcanvas.Body>
-      </Offcanvas>
-    </>
+    <Offcanvas
+      show={show}
+      onHide={handleClose}
+      placement="start"
+      backdrop={false}
+      scroll={false}
+      className="offscreen-full"
+      style={{ transform: 'translateX(0)' }} // force full visible area
+    >
+      <Offcanvas.Header closeButton >
+        <Offcanvas.Title>{product?.name}</Offcanvas.Title>
+      </Offcanvas.Header>
+      <Offcanvas.Body><Product product={product} expanded={"Y"}/></Offcanvas.Body>
+    </Offcanvas>
   );
 }
 
