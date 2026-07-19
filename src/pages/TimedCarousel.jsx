@@ -1,9 +1,17 @@
-import { Carousel, CarouselItem, CarouselCaption, Image } from 'react-bootstrap';
+import { Carousel, CarouselItem, CarouselCaption } from 'react-bootstrap';
 import "./main.css"
 function TimedCarousel({ items }) {
     if (!items || items.length === 0) {
         return null; // Render nothing if there are no items
     }
+    window.addEventListener("scroll", () => {
+        const indicator = document.getElementById("indicator");
+        if(window.scrollY > 50 && indicator){
+            indicator.style.opacity = "0";
+            indicator.style.pointerEvents = "none";
+            
+        }
+    });
 
     return (
         <Carousel
@@ -11,20 +19,26 @@ function TimedCarousel({ items }) {
                 backgroundColor: "black",
                 position: "sticky",
                 top: "0px",
-                width: "100%"
+                height: "100vh",
             }}
-            >
+        >
             {items.map((item, index) => (
                 <CarouselItem key={index} interval={item.interval}>
                 <img
                     className="d-block w-100"
-                    src={`https://raw.githubusercontent.com/JacksonUptain/nolans-knives-image-database/refs/heads/main/${item.src}`}
+                    src={item.src}
                     alt={item.name}
                 />
                 <CarouselCaption>
                     <h3>{item.name}</h3>
-                    <p>{item.caption}</p>
+                    
                 </CarouselCaption>
+                <div className="scroll-indicator" id="indicator">
+                    <div className="mouse">
+                        <div className="wheel"></div>
+                    </div>
+                    <p>SCROLL</p>
+                </div>
                 </CarouselItem>
             ))}
         </Carousel>

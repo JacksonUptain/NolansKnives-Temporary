@@ -1,37 +1,69 @@
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "./main.css"
-
+import { useEffect, useState } from "react";
+import { ref, onValue } from "firebase/database";
+import { db } from './firebase';
 
 import TimedCarousel from "./TimedCarousel"
 import StackedCards from "./StackedCards"
 import AutoScrollToTop from './autoScrollToTop';
+import { MobileOnly, NonMobileOnly } from "./MobileOnly";
 
 
-const items = [{name: "QUALITY", interval: 4500, src: "/images/knife2.jpg", caption: " "}, 
-  {name: "DURABILITY", interval: 3000, src: "/images/knife4.jpg", caption: " "}, 
-  {name: "ARTISTRY", interval: 3000, src: "/images/knife7.jpg", caption: " "}];
+const items = [{name: "QUALITY", interval: 4500, src: "https://raw.githubusercontent.com/nolansknives/website-database/refs/heads/main/images/knife2.jpg", caption: " "}, 
+  {name: "DURABILITY", interval: 3000, src: "https://raw.githubusercontent.com/nolansknives/website-database/refs/heads/main/images/knife4.jpg", caption: " "}, 
+  {name: "ARTISTRY", interval: 3000, src: "https://raw.githubusercontent.com/nolansknives/website-database/refs/heads/main/images/knife7.jpg", caption: " "}];
 
-const cards = [
-  {title: "Nolan's Knives", text: "Each knife is forged with precision and passion, whether it’s built for everyday use, outdoor adventure, or display as a one-of-a-kind piece", hrefText: "Go to Store", href: "/Store", src: "/images/knife6.jpg"},
-  {title: "Nolan's Brand", text: "With a focus on traditional techniques blended with modern innovation, Nolan’s Knives delivers tools that are not only sharp and reliable, but also showcase unique designs and materials", hrefText: "View Previous Works", href:"/Gallery", src: "/images/knife5.jpg"},
-  {title: "Nolan's Goal", text: "Every blade is made to be trusted in the hand and admired for a lifetime", hrefText: "Learn More", href:"/Goal", src: "/images/knife2.jpg"},
-  {title: "Nolan's Channel", text: `"I am a 16 year old self taught blacksmith, who loves the art of blade smithing and strives to always learn more and make better knives"`, hrefText: "Learn More", href: "https://www.youtube.com/@NolansKnives", src: "/images/YouTubeLogo.png"},
-  {title: "Nolan's Instagram", text: "Follow Nolan's Knives on Instagram!", hrefText: "Learn More", href: "https://www.instagram.com/nolansknives/", src: "/images/nolans_logo.jpg"},
-  {title: "Nolan's Gallery", text: "Coming Soon", hrefText: "Learn More", href: "/Gallery", src: "/images/knife8.jpg"},
-  
-]
 
 
 
 export default function Home() {
   
-  return (
+  const [cards, setCards] = useState([]);
+  
+    useEffect(() => {
+    
+      const productsRef = ref(db, 'Home');
+      const unsubscribe = onValue(productsRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          const productArray = Object.entries(data).map(([id, value]) => ({
+            id,
+            ...value
+          }));
+          setCards(productArray);
+        } else {
+          setCards([]);
+        }
+      });
+  
+      return () => unsubscribe();
+    }, []);
+
+
+    // call any function that uses them
+    return (
+    <>
+    <h1 style={{display: 'none'}}>Home | Nolan's Knives</h1>
     <div id="MainContainerDiv">
-      <AutoScrollToTop />
-      <TimedCarousel items={items} />
-      <StackedCards items={cards}/>
+      <head><title>Home | Nolan's Knives</title><meta name="description" content="Handmade custom knives crafted with precision and durability. Shop Nolans Knives." /></head>
+      <h1 id="main-title">Nolan's Knives</h1>
+      <MobileOnly>
+        <p>Mobile content</p>
+      </MobileOnly>
+      <NonMobileOnly>
+        <AutoScrollToTop />
+        <TimedCarousel items={items} />
+        <StackedCards items={cards}/>
+      </NonMobileOnly>
+      
     </div>
+    </>
   );
+ 
+
+
+  
 }
 

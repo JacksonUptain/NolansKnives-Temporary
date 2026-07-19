@@ -6,6 +6,10 @@ body {
   color: #fff;
 }
 
+button {
+  color: white !important;
+ 
+}
 
 
 
@@ -15,16 +19,37 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: radial-gradient(circle at top left, #111 0%, #000 80%);
+  background: linear-gradient(180deg,#070707,#202021, #2C2E2F) !important;
   border: 2px solid #ffcc00;
   border-radius: 18px;
-  max-width: 650px;
+  max-width: 1000px;
   margin: 50px auto;
   padding: 30px 25px 40px;
   box-shadow: 0 0 25px rgba(255, 204, 0, 0.15);
   text-align: center;
   transition: all 0.25s ease-in-out;
+
 }
+
+@media (max-width:2100px) {
+  .product-card {
+    max-width: 800px;
+  }
+}
+
+@media (max-width:1725px) {
+  .product-card {
+    max-width: 650px;
+  }
+}
+
+
+@media (max-width:1450px) {
+  .product-card {
+    max-width: 95%;
+  }
+}
+
 
 .product-card:hover {
   transform: scale(1.02);
@@ -34,6 +59,7 @@ body {
 /* ---------- Product Image / Carousel ---------- */
 /* Carousel wrapper */
 .product-carousel {
+  height: fit-content;
   width: 100% !important;           /* Fill available space */
   max-width: 500px;      /* Don’t go too wide */
   margin: 0 auto 20px;   /* Center it & add spacing */
@@ -45,16 +71,17 @@ body {
 /* Carousel images */
 .product-carousel img {
   width: 100% !important;          /* Scale to container */
-  height: auto;         /* Keep aspect ratio */
+  height: fit-content;         /* Keep aspect ratio */
   border-radius: 12px;
   object-fit: cover;    /* Prevent weird stretching */
 }
 
 
+
 /* ---------- Product Info ---------- */
 .product-info {
   width: 100%;
-  max-width: 550px;
+  
   margin: 0 auto;
 }
 
@@ -66,7 +93,7 @@ body {
 }
 
 .product-description {
-  font-size: 1.1rem;
+  font-size: 1.5rem !important;
   color: #ddd;
   line-height: 1.7;
   margin: 0 auto 20px;
@@ -92,7 +119,19 @@ body {
   margin-top: 15px;
   width: 90%;
   max-width: 400px;
-  align-self: center;
+  
+  
+  justify-content: center !important;
+  justify-self: center !important;
+  align-items: center !important;
+  align-self: center !important;
+}
+
+.paypal-button {
+  justify-content: center !important;
+  justify-self: center !important;
+  align-items: center !important;
+  align-self: center !important;
 }
 
 /* ---------- Error Message ---------- */
@@ -130,6 +169,11 @@ body {
   gap: 40px;
 }
 
+
+#productImage {
+  max-width: 100%;
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 768px) {
   .product-card {
@@ -144,5 +188,8 @@ body {
 
   .price-badge {
     font-size: 1rem;
+  }
+  .carousel {
+    height: fit-content !important;
   }
 }

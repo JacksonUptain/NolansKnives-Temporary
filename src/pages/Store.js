@@ -5,9 +5,9 @@ export default function Store() {
   var currentPage = {name: "Store", href: "/Store"}
   return(
     <>
-      <br></br>
+      <br />
       <BreadCrumbComp currentPage={currentPage} />
-      <NolanStore></NolanStore>
+      <NolanStore />
     
     </>
   

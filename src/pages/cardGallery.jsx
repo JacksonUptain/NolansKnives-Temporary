@@ -25,7 +25,7 @@ function CardGallery({ items }) {
                     </div>
                     {item.src && (
                         <Image
-                            src={`https://raw.githubusercontent.com/JacksonUptain/nolans-knives-image-database/refs/heads/main/${item.src}`}
+                            src={item.src}
                             alt={item.title}
                             className="cardGallery-image"
                         />

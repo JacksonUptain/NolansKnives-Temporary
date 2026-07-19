@@ -1,15 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <script>
+      const redirect = sessionStorage.redirect;
+      delete sessionStorage.redirect;
+      if (redirect) {
+        window.history.replaceState(null, null, redirect);
+      }
+    </script>
     <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <!-- Primary Meta -->
+
+    
+
+    <!-- Open Graph (Facebook, iMessage, Discord, etc.) -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://nolansknives.com/">
+    <meta property="og:title" content="Nolan's Knives">
+    <meta property="og:description" content="Custom handmade knives crafted with precision and quality.">
+    <meta property="og:image" content="https://raw.githubusercontent.com/nolansknives/website-database/refs/heads/main/images/knife2.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://nolansknives.com/">
+    <meta property="twitter:title" content="Nolan's Knives">
+    <meta property="twitter:description" content="Custom handmade knives crafted with precision and quality.">
+    <meta property="twitter:image" content="https://raw.githubusercontent.com/nolansknives/website-database/refs/heads/main/images/knife2.jpg">
+        <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/nolansknives/website-database/refs/heads/main/images/knife2.jpg" />
     <!--
       manifest.json provides metadata used when your web app is installed on a
       user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
@@ -24,11 +44,16 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
-    <title>Nolan's Knives</title>
+   
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap" rel="stylesheet">
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"> </div>
+   
     <!--
       This HTML file is a template.
       If you open it directly in the browser, you will see an empty page.
@@ -39,7 +64,7 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
-    
+        
       <script src="https://www.paypal.com/sdk/js?client-id=AV_98LpiACx0U3-yS3c1SPR6WZ-UZ-HnSP7lI54-x259v1l6F7x7vorKydQLQvUrtnwRFAmHGT-VUfc6" crossorigin="anonymous"></script>
          
   </body>

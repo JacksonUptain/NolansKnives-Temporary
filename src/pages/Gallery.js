@@ -1,26 +1,41 @@
 import { useEffect, useState } from "react";
 import GalleryCard from "./GalleryCard";
 import BreadCrumbComp from "./BreadCrumbComp";
+import { ref, onValue } from "firebase/database";
+import { db } from './firebase';
+
+
 
 export default function Gallery() {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    fetch("https://raw.githubusercontent.com/nolansknives/gallery-database/refs/heads/main/nolansgallery.json")
-      .then(response => response.json())
-      .then(data => {
-        console.log("Parsed JSON:", data);
-        setProducts(data); // <-- update state
-      })
-      .catch(error => {
-        console.error("Error loading JSON:", error);
-      });
-  }, []); // empty array so this runs once on load
+  
+    const productsRef = ref(db, 'Gallery');
+    const unsubscribe = onValue(productsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const productArray = Object.entries(data).map(([id, value]) => ({
+          id,
+          ...value
+        }));
+        setProducts(productArray);
+      } else {
+        setProducts([]);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  if (products.length === 0) return <p>Loading gallery...</p>;
 
   const currentPage = { name: "Gallery", href: "/Gallery" };
 
+
   return (
     <>
+      <head><title>Gallery | Nolan's Knives</title><meta name="description" content="View Previous Works. Nolan's Gallery. Hand-crafted forged custom knives. Made in Huntsville, Alabama." /></head>
       <br />
       <BreadCrumbComp currentPage={currentPage} />
       <div className="gallery-grid">

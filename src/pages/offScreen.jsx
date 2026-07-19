@@ -33,7 +33,7 @@ function OffScreen({ product, onHide }) {
       style={{ transform: 'translateX(0)' }} // force full visible area
     >
       <Offcanvas.Header closeButton >
-        <Offcanvas.Title>{product?.name}</Offcanvas.Title>
+        <Offcanvas.Title>Nolan's Store</Offcanvas.Title>
       </Offcanvas.Header>
       <Offcanvas.Body><Product product={product} expanded={"Y"}/></Offcanvas.Body>
     </Offcanvas>

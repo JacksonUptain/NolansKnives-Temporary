@@ -5,10 +5,18 @@
   list-style: none;
   background: transparent;
   padding: 0;
-  margin: 1px 40px 1px 40px;
-  font-family: 'Poppins', sans-serif;
-  font-size: 1.05rem;
+  margin: 1px 40px -20px 40px;
+  font-family: "Oswald", sans-serif;
+  font-size: 1.3rem;
   
+}
+
+@media (max-width: 800px) {
+  .breadcrumb {
+    width: 100%;
+    margin: auto;
+    justify-content: center;
+  }
 }
 
 h1 {

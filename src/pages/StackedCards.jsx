@@ -5,7 +5,10 @@ import "./main.css";
 
 
 function StackedCards({ items }) {
-    if (!items || items.length === 0) return null;
+    
+    if (!items || items.length === 0) {
+    return <div className="stacked-cards-wrapper"></div>;
+}
 
     return (
    
@@ -29,7 +32,7 @@ function StackedCards({ items }) {
                     </div>
                     {item.src && (
                         <Image
-                            src={`https://raw.githubusercontent.com/JacksonUptain/nolans-knives-image-database/refs/heads/main/${item.src}`}
+                            src={item.src}
                             alt={item.title}
                             className="stacked-card-image"
                             style={{opacity: "1 !important"}}

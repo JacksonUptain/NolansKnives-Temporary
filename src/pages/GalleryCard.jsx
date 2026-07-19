@@ -14,7 +14,7 @@ export default function GalleryCard({ product }) {
         {images.length <= 1 ? (
           <img
             className="d-block w-100 h-50"
-            src={`https://raw.githubusercontent.com/JacksonUptain/nolans-knives-image-database/refs/heads/main/images/${images[0]}`}
+            src={images[0]}
             alt={product.description}
           />
         ) : (
@@ -22,9 +22,9 @@ export default function GalleryCard({ product }) {
         )}
       </div>
 
-      <h3 className="product-title">{product.name || "Unnamed"}</h3>
+      <h2 className="product-title">{product.name}</h2>
       <p className="product-description">{product.description}</p>
-      <span className="product-price">${product.price}</span>
+      <span className="product-price">{product.createdDate}</span>
     </div>
   );
 }

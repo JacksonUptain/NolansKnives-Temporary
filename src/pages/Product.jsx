@@ -8,7 +8,12 @@ function Product({ product, expanded }) {
   const [error, setError] = useState(null);
   const [showExpanded, setShowExpanded] = useState(false);
   const paypalRef = useRef();
-  
+  var productDescription;
+  if (expanded === "Y") {
+    productDescription = product.description;
+  } else {
+    productDescription = product.description.substring(0, 150) + "...";
+  }
 
   useEffect(() => {
     if (!paypalRef.current || !window.paypal) return;
@@ -16,12 +21,12 @@ function Product({ product, expanded }) {
     paypalRef.current.innerHTML = "";
 
     const button = window.paypal.Buttons({
-      style: { layout: 'vertical', color: 'gold', shape: 'pill', label: 'pay' },
+      style: { layout: 'vertical', color: 'gold', shape: 'pill', label: 'pay', height: 30},
       createOrder: (data, actions) => {
         return actions.order.create({
           purchase_units: [
             {
-              description: product.description,
+              description: `${product.name}: ${productDescription}`,
               custom_id: product.custom_id,
               amount: { currency_code: 'USD', value: product.price },
             },
@@ -38,24 +43,27 @@ function Product({ product, expanded }) {
         console.error(err);
       },
     });
-
+    
+    
+    
     button.render(paypalRef.current);
-
+    
     return () => {
       try {
         button.close();
       } catch {}
     };
   }, [product]);
-
+  
   // ---- Helper to render shared content ----
   const renderContent = () => (
-    <div className="product-card" onDoubleClick={() => {if(expanded !== "Y") setShowExpanded(true)}}>
+    
+    <div className="product-card" onClick={() => {if(expanded !== "Y") setShowExpanded(true)}}>
       {error && <div className="error-message">Uh oh, an error occurred! {error.message}</div>}
-
+      
       <div className="product-info">
         <h2 className="product-title">{product.name}</h2>
-        <p className="product-description">{product.description}</p>
+        <p className="product-description">{productDescription}</p>
         <span className="price-badge">
           {product.sold ? `Sold - $${product.price} USD` : `$${product.price} USD`}
         </span>
@@ -63,15 +71,17 @@ function Product({ product, expanded }) {
 
       {product.src.length <= 1 ? (
         <img
-          alt={product.description}
-          src={`https://raw.githubusercontent.com/JacksonUptain/nolans-knives-image-database/refs/heads/main/images/${product.src}`}
+        
+          alt={productDescription}
+          src={product.src[0]}
+          id="productImage"
         />
       ) : (
         <div onClick={() => {if(expanded !== "Y") setShowExpanded(true)}}><ProductCarousel items={product.src}  /></div>
         
       )}
 
-      {!product.sold && <div className="paypal-button-container" ref={paypalRef}></div>}
+      {!product.sold && <div className="paypal-button-container" ref={paypalRef} style={{width: "100vw !important"}}></div>}
     </div>
   );
 
@@ -80,7 +90,7 @@ function Product({ product, expanded }) {
     return (
       <div className="product-card">
         <h2>Congrats! You just bought "{product.name}"</h2>
-        <p>{product.description}</p>
+        <p>{productDescription}</p>
         <span className="price-badge">Sold - ${product.price} USD</span>
         <ProductCarousel items={product.src} />
       </div>
@@ -89,6 +99,7 @@ function Product({ product, expanded }) {
 
   // ---- Expanded fullscreen via OffScreen ----
   if ( showExpanded ) {
+    
     return (
       <OffScreen buttonText="" product={product} onHide={() => setShowExpanded(false)}>
         {renderContent()}

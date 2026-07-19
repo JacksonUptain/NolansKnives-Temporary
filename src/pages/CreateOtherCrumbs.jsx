@@ -20,6 +20,7 @@ function CreateOtherCrumbs({ currentPage }) {
         >
           {page.name}
         </Breadcrumb.Item>
+        
       ))}
     </>
   );
