@@ -1827,7 +1827,7 @@ async function getUserByEmailOrNull(email) {
   }
 }
 
-exports.inviteAdminUser = onCall({ invoker: "public" }, async (request) => {
+exports.inviteAdminUser = onCall({ invoker: "public", cors: true }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "User must be signed in.");
 
   const adminUid = request.auth.uid;
