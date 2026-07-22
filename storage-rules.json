@@ -1,0 +1,25 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow authenticated users to read all files
+    match /{allPaths=**} {
+      allow read: if request.auth != null;
+    }
+
+    // Allow authenticated users to upload
+    match /products/{productId}/{fileName} {
+      // Authenticated users can upload
+      allow write: if request.auth != null &&
+                      request.auth.token.email_verified == true;
+
+      // Staff and admins can delete
+      allow delete: if request.auth.token.role in ['admin', 'business'];
+    }
+
+    // Deny everything else by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

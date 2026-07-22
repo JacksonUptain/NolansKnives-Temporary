@@ -1,17 +1,31 @@
+import React, { useEffect } from 'react';
 import { Carousel, CarouselItem, CarouselCaption } from 'react-bootstrap';
-import "./main.css"
+import "./main.css";
+
 function TimedCarousel({ items }) {
-    if (!items || items.length === 0) {
-        return null; // Render nothing if there are no items
-    }
-    window.addEventListener("scroll", () => {
-        const indicator = document.getElementById("indicator");
-        if(window.scrollY > 50 && indicator){
-            indicator.style.opacity = "0";
-            indicator.style.pointerEvents = "none";
-            
-        }
-    });
+    const hasItems = Boolean(items && items.length > 0);
+
+    useEffect(() => {
+        if (!hasItems) return;
+        const handleScroll = () => {
+            const indicator = document.getElementById("indicator");
+            if (indicator) {
+                if (window.scrollY > 50) {
+                    indicator.style.opacity = "0";
+                    indicator.style.pointerEvents = "none";
+                } else {
+                    indicator.style.opacity = "1";
+                    indicator.style.pointerEvents = "auto";
+                }
+            }
+        };
+
+        handleScroll();
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, [hasItems]);
+
+    if (!hasItems) return null;
 
     return (
         <Carousel
@@ -24,26 +38,24 @@ function TimedCarousel({ items }) {
         >
             {items.map((item, index) => (
                 <CarouselItem key={index} interval={item.interval}>
-                <img
-                    className="d-block w-100"
-                    src={item.src}
-                    alt={item.name}
-                />
-                <CarouselCaption>
-                    <h3>{item.name}</h3>
-                    
-                </CarouselCaption>
-                <div className="scroll-indicator" id="indicator">
-                    <div className="mouse">
-                        <div className="wheel"></div>
+                    <img
+                        className="d-block w-100"
+                        src={item.src}
+                        alt={item.name}
+                        style={{ height: '100vh', objectFit: 'cover' }}
+                    />
+                    <CarouselCaption>
+                        <h3>{item.name}</h3>
+                    </CarouselCaption>
+                    <div className="scroll-indicator" id="indicator">
+                        <div className="mouse">
+                            <div className="wheel"></div>
+                        </div>
+                        <p>SCROLL</p>
                     </div>
-                    <p>SCROLL</p>
-                </div>
                 </CarouselItem>
             ))}
         </Carousel>
-
-
     );
 }
 

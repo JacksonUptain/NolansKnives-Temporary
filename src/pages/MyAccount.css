@@ -1,0 +1,291 @@
+.my-account-page {
+  min-height: 70vh;
+  background: #0a0a0a;
+  color: #f4f4f4;
+  padding: 2rem 1rem;
+}
+
+.my-account-container {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.account-header {
+  margin-bottom: 2rem;
+}
+
+.account-header h1 {
+  color: #ffcc00;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  font-size: 2rem;
+}
+
+.header-subtitle {
+  color: #999;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.alert {
+  padding: 0.875rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+}
+
+.alert-error {
+  background: rgba(204, 0, 0, 0.15);
+  border: 1px solid #cc0000;
+  color: #ff7f7f;
+}
+
+.alert-success {
+  background: rgba(76, 175, 80, 0.15);
+  border: 1px solid #4caf50;
+  color: #90ee90;
+}
+
+.account-layout {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.account-main {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.info-card {
+  background: #1a1a1a;
+  border: 1px solid #2b2b2b;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.info-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.card-header {
+  padding: 1.25rem;
+  border-bottom: 1px solid #2b2b2b;
+  background: #0f0f0f;
+}
+
+.card-header h2 {
+  color: #ffcc00;
+  font-size: 1.1rem;
+  margin: 0;
+  font-weight: 700;
+}
+
+.card-content {
+  padding: 1.25rem;
+}
+
+.info-detail {
+  margin-bottom: 1.25rem;
+}
+
+.info-detail:last-child {
+  margin-bottom: 0;
+}
+
+.info-detail label {
+  display: block;
+  color: #999;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  text-transform: capitalize;
+}
+
+.info-value {
+  color: #f4f4f4;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.info-hint {
+  display: block;
+  color: #666;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  color: #999;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.75rem;
+  background: #0f0f0f;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #f4f4f4;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #ffcc00;
+  box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.1);
+}
+
+.action-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.action-link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #0f0f0f;
+  border: 1px solid #252525;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.action-link:hover {
+  background: #1a1a1a;
+  border-color: #3b3b3b;
+}
+
+.action-icon {
+  font-size: 1.5rem;
+}
+
+.action-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.action-text strong {
+  color: #f4f4f4;
+  font-weight: 600;
+}
+
+.action-desc {
+  color: #999;
+  font-size: 0.85rem;
+}
+
+.danger-zone {
+  border-top: 2px solid rgba(204, 0, 0, 0.3);
+}
+
+.danger-zone .card-header {
+  background: rgba(204, 0, 0, 0.08);
+  border-bottom-color: rgba(204, 0, 0, 0.2);
+}
+
+.danger-zone .card-header h2 {
+  color: #ff7f7f;
+}
+
+.danger-text {
+  color: #999;
+  margin: 0 0 1rem 0;
+  font-size: 0.95rem;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  border: none;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  text-transform: none;
+  display: inline-block;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: #ffcc00;
+  color: #1a1a1a;
+  width: 100%;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #ffd700;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 204, 0, 0.3);
+}
+
+.btn-outline {
+  background: transparent;
+  color: #f4f4f4;
+  border: 1px solid #2b2b2b;
+  width: 100%;
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: #1a1a1a;
+  border-color: #3b3b3b;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: #1a1a1a;
+  border: 1px solid #2b2b2b;
+  border-radius: 12px;
+}
+
+.empty-state h2 {
+  color: #ffcc00;
+  margin-bottom: 1rem;
+}
+
+.empty-state p {
+  color: #999;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .my-account-page {
+    padding: 1rem;
+  }
+
+  .my-account-container {
+    max-width: 100%;
+  }
+
+  .account-header h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .btn {
+    width: 100%;
+  }
+}

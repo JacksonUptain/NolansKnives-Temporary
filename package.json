@@ -11,6 +11,7 @@
     "bootstrap": "^5.3.8",
     "craco": "^0.0.3",
     "firebase": "^12.3.0",
+    "lucide-react": "^1.25.0",
     "next": "^15.5.4",
     "react": "^19.2.0",
     "react-bootstrap": "^2.10.10",
@@ -26,7 +27,6 @@
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build"
-    
   },
   "eslintConfig": {
     "extends": [
@@ -47,7 +47,11 @@
     ]
   },
   "devDependencies": {
+    "axe-core": "^4.12.1",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
     "gh-pages": "^6.3.0",
+    "jest-axe": "^10.0.0",
+    "puppeteer": "^25.3.0",
     "react-app-rewired": "^2.2.1"
   }
 }

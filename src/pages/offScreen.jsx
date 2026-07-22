@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Product from './Product';
 import Offcanvas from 'react-bootstrap/Offcanvas';
 import './offScreen.css';
@@ -8,11 +8,11 @@ import './offScreen.css';
 function OffScreen({ product, onHide }) {
   const [show, setShow] = useState(true);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setShow(false);
     if (onHide) onHide();
     window.location.reload();
-  };
+  }, [onHide]);
 
   useEffect(() => {
     const handleKey = (e) => {
@@ -20,7 +20,7 @@ function OffScreen({ product, onHide }) {
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, []);
+  }, [handleClose]);
 
   return (
     <Offcanvas

@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 let allPages = [
   { name: "Home", href: "/Home" },
   { name: "Gallery", href: "/Gallery" },
-  { name: "Goal", href: "/Goal" },
   { name: "Store", href: "/Store" }
 ];
 

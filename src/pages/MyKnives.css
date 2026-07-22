@@ -1,0 +1,268 @@
+.my-knives-page {
+  min-height: 70vh;
+  background: #0a0a0a;
+  color: #f4f4f4;
+  padding: 2rem 1rem;
+}
+
+.my-knives-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.my-knives-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-bottom: 1.5rem;
+}
+
+.my-knives-header p {
+  color: #b0b0b0;
+  margin: 0.35rem 0 0;
+}
+
+.my-knives-page h1 {
+  color: #ffcc00;
+  font-weight: 700;
+  margin-bottom: 2rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: #1a1a1a;
+  border: 1px solid #2b2b2b;
+  border-radius: 12px;
+}
+
+.empty-state h2 {
+  color: #ffcc00;
+  margin-bottom: 1rem;
+}
+
+.empty-state p {
+  color: #b0b0b0;
+  margin-bottom: 1.5rem;
+}
+
+.purchases-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.my-knives-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.purchase-card-button {
+  width: 100%;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid #2b2b2b;
+}
+
+.purchase-card-button.selected {
+  border-color: #ffcc00;
+  box-shadow: 0 0 0 1px rgba(255, 204, 0, 0.3);
+}
+
+.my-knives-detail-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.detail-summary-card,
+.detail-chat-card {
+  background: #1a1a1a;
+  border: 1px solid #2b2b2b;
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.detail-summary-card h2,
+.detail-chat-card h3 {
+  color: #ffcc00;
+  margin-bottom: 0.75rem;
+}
+
+.detail-summary-card p {
+  color: #c7c7c7;
+}
+
+.detail-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.detail-summary-grid div {
+  background: #111;
+  border: 1px solid #2b2b2b;
+  border-radius: 10px;
+  padding: 0.75rem;
+}
+
+.detail-summary-grid span {
+  display: block;
+  color: #b0b0b0;
+  font-size: 0.8rem;
+  margin-bottom: 0.25rem;
+}
+
+.purchase-card-button .purchase-actions {
+  padding: 0 1.5rem 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .purchases-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .my-knives-layout,
+  .my-knives-header {
+    grid-template-columns: 1fr;
+    display: grid;
+    align-items: stretch;
+  }
+
+  .detail-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.purchase-card {
+  background: #1a1a1a;
+  border: 1px solid #2b2b2b;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.purchase-card:hover {
+  border-color: #ffcc00;
+  transform: translateY(-4px);
+}
+
+.purchase-image {
+  height: 200px;
+  overflow: hidden;
+  background: #0a0a0a;
+}
+
+.purchase-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.request-image-placeholder {
+  display: grid;
+  place-items: center;
+  color: #ffcc00;
+  background:
+    linear-gradient(135deg, rgba(255, 204, 0, 0.12), transparent),
+    #111;
+}
+
+.purchase-details {
+  padding: 1.5rem;
+}
+
+.item-type-pill {
+  display: inline-flex;
+  width: max-content;
+  max-width: 100%;
+  margin-bottom: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid rgba(255, 204, 0, 0.35);
+  border-radius: 4px;
+  color: #ffcc00;
+  background: rgba(255, 204, 0, 0.1);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.purchase-details h3 {
+  color: #fff;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #2b2b2b;
+  font-size: 0.95rem;
+}
+
+.detail-row:last-of-type {
+  border-bottom: none;
+}
+
+.detail-row .label {
+  color: #b0b0b0;
+}
+
+.detail-row .value {
+  color: #ffcc00;
+  font-weight: 600;
+}
+
+.status {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status-unfulfilled {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+}
+
+.status-processing {
+  background: rgba(33, 150, 243, 0.2);
+  color: #2196f3;
+}
+
+.status-shipped {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+}
+
+.status-delivered {
+  background: rgba(76, 175, 80, 0.3);
+  color: #66bb6a;
+}
+
+.status-public {
+  background: rgba(255, 204, 0, 0.15);
+  color: #ffcc00;
+}
+
+.purchase-actions {
+  padding: 1rem 1.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  gap: 0.75rem;
+}
+
+.purchase-actions button {
+  flex: 1;
+  font-size: 0.9rem;
+  padding: 0.5rem;
+}

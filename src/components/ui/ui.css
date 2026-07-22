@@ -1,0 +1,77 @@
+/* Shared UI component styles using design tokens */
+.nk-btn {
+  font-family: var(--font-family-sans);
+  border: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+}
+
+.nk-btn-primary {
+  background: var(--color-accent);
+  color: var(--color-text-inverse);
+}
+
+.nk-btn-secondary {
+  background: transparent;
+  color: var(--color-text-inverse);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.nk-btn-ghost {
+  background: transparent;
+  color: var(--color-text-inverse);
+}
+
+.nk-btn-sm { padding: 0.25rem 0.5rem; font-size: var(--font-size-sm); }
+.nk-btn-md { padding: 0.5rem 0.75rem; font-size: var(--font-size-base); }
+.nk-btn-lg { padding: 0.75rem 1rem; font-size: var(--font-size-lg); }
+
+.nk-card {
+  background: var(--color-primary-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  border: 1px solid rgba(255,255,255,0.03);
+}
+
+.nk-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+}
+
+.nk-modal {
+  background: var(--color-primary-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  max-width: 920px;
+  width: 100%;
+  position: relative;
+}
+
+.nk-modal-close {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-inverse);
+}
+
+.nk-skeleton {
+  display: inline-block;
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: nk-shimmer 1.2s linear infinite;
+  border-radius: 6px;
+}
+
+@keyframes nk-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

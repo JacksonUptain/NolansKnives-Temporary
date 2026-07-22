@@ -1,0 +1,117 @@
+{
+  "rules": {
+    "_authRole": {
+      ".read": false,
+      ".write": false
+    },
+    "users": {
+      ".read": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business'",
+      "$uid": {
+        ".read": "auth.uid === $uid || auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business'",
+        ".write": "auth.uid === $uid",
+        "role": {
+          ".write": false
+        },
+        "status": {
+          ".write": false
+        },
+        "uid": {
+          ".write": false
+        },
+        "createdAt": {
+          ".write": false
+        },
+        "displayName": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+        },
+        "photoURL": {
+          ".validate": "newData.isString() || newData.val() === null"
+        },
+        "email": {
+          ".write": false
+        }
+      }
+    },
+    "Products": {
+      ".read": true,
+      "$productId": {
+        ".write": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        "sold": {
+          ".write": "auth.token.role === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'admin'"
+        },
+        "saleStatus": {
+          ".write": "auth.token.role === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'admin'"
+        }
+      }
+    },
+    "Home": {
+      ".read": true,
+      ".write": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin'"
+    },
+    "orders": {
+      ".read": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business'",
+      "$orderId": {
+        ".read": "auth.uid === root.child('orders').child($orderId).child('uid').val() || auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        ".write": false,
+        "fulfillmentStatus": {
+          ".write": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin'"
+        },
+        "internalNotes": {
+          ".write": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin'"
+        }
+      }
+    },
+    "userOrders": {
+      "$uid": {
+        "$orderId": {
+          ".read": "auth.uid === $uid || auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin'",
+          ".write": false
+        }
+      }
+    },
+    "conversations": {
+      ".read": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business'",
+      "$conversationId": {
+        ".read": "auth.uid === root.child('conversations').child($conversationId).child('customerUid').val() || auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        ".write": false
+      }
+    },
+    "messages": {
+      ".read": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business'",
+      "$conversationId": {
+        ".read": "auth.uid === root.child('conversations').child($conversationId).child('customerUid').val() || auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        "$messageId": {
+          ".write": false
+        }
+      }
+    },
+    "auditLogs": {
+      ".read": "auth.token.role === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".write": false
+    },
+    "processedPayPalEvents": {
+      ".read": false,
+      ".write": false
+    },
+    "customRequests": {
+      ".read": "auth != null",
+      "$requestId": {
+        ".read": "data.child('uid').val() === auth.uid || auth.token.role === 'business' || auth.token.role === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        ".write": "newData.child('uid').val() === auth.uid || auth.token.role === 'business' || auth.token.role === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        ".validate": "newData.hasChildren(['uid', 'customerEmail', 'estimatedPrice', 'status'])"
+      }
+    },
+    "quotes": {
+      ".read": "auth != null",
+      "$quoteId": {
+        ".read": "data.child('customerId').val() === auth.uid || auth.token.role === 'business' || auth.token.role === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        ".write": "auth.token.role === 'business' || auth.token.role === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        ".validate": "newData.hasChildren(['requestId', 'finalPrice', 'status'])"
+      }
+    },
+    "notificationEvents": {
+      ".read": "auth.token.role === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".write": false
+    }
+  }
+}
