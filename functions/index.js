@@ -1,5 +1,6 @@
 const admin = require("firebase-admin");
 const axios = require("axios");
+const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const { onCall, onRequest, HttpsError } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
@@ -34,8 +35,36 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 // Email Templates
 const emailTemplates = {
+  adminInvite: (displayName, setupUrl, inviterName = "Nolan's Knives") => {
+    const safeName = escapeHtml(displayName || "there");
+    const safeSetupUrl = escapeHtml(setupUrl);
+    const safeInviterName = escapeHtml(inviterName || "Nolan's Knives");
+
+    return {
+      subject: "You're invited to Nolan's Knives Admin",
+      html: `
+        <h2>Nolan's Knives Admin Invite</h2>
+        <p>Hi ${safeName},</p>
+        <p>${safeInviterName} invited you to help manage Nolan's Knives as an admin user.</p>
+        <p>Use the secure link below to set your password and finish your account setup.</p>
+        <p><a href="${safeSetupUrl}" style="display: inline-block; background: #8b6f47; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Set Up Admin Access</a></p>
+        <p>If you were not expecting this invite, you can ignore this email.</p>
+        <p>Best regards,<br/>Nolan's Knives Team</p>
+      `
+    };
+  },
+
   customRequestSubmitted: (customerName, requestId, estimatedPrice) => ({
     subject: "Custom Knife Request Received - Nolan's Knives",
     html: `
@@ -1776,6 +1805,154 @@ exports.markCustomerConversationRead = onCall({ invoker: "public" }, async (requ
 // ============================================================================
 // ADMIN & USER MANAGEMENT FUNCTIONS
 // ============================================================================
+
+function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function createTemporaryPassword() {
+  return `${crypto.randomBytes(24).toString("base64url")}Aa1!`;
+}
+
+async function getUserByEmailOrNull(email) {
+  try {
+    return await auth.getUserByEmail(email);
+  } catch (error) {
+    if (error?.code === "auth/user-not-found") return null;
+    throw error;
+  }
+}
+
+exports.inviteAdminUser = onCall({ invoker: "public" }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "User must be signed in.");
+
+  const adminUid = request.auth.uid;
+  const { displayName } = request.data || {};
+  const email = normalizeEmail(request.data?.email);
+  const name = String(displayName || "").trim();
+
+  if (!name || !email) {
+    throw new HttpsError("invalid-argument", "Name and email are required.");
+  }
+
+  if (!isValidEmail(email)) {
+    throw new HttpsError("invalid-argument", "Enter a valid email address.");
+  }
+
+  const isAdmin = await verifyUserRole(adminUid, "admin");
+  if (!isAdmin) {
+    throw new HttpsError("permission-denied", "Only admins can invite admin users.");
+  }
+
+  let userRecord = await getUserByEmailOrNull(email);
+  const created = !userRecord;
+
+  if (!userRecord) {
+    userRecord = await auth.createUser({
+      email,
+      displayName: name,
+      password: createTemporaryPassword(),
+      emailVerified: false,
+      disabled: false
+    });
+  } else {
+    const updates = {};
+    if (userRecord.displayName !== name) updates.displayName = name;
+    if (userRecord.disabled) updates.disabled = false;
+
+    if (Object.keys(updates).length > 0) {
+      userRecord = await auth.updateUser(userRecord.uid, updates);
+    }
+  }
+
+  await auth.setCustomUserClaims(userRecord.uid, {
+    ...(userRecord.customClaims || {}),
+    role: "admin"
+  });
+
+  const userRef = db.ref(`users/${userRecord.uid}`);
+  const profileSnap = await userRef.once("value");
+  const profileUpdates = {
+    uid: userRecord.uid,
+    displayName: name,
+    email,
+    role: "admin",
+    status: "active",
+    inviteStatus: "sending",
+    invitedBy: adminUid,
+    invitedAt: admin.database.ServerValue.TIMESTAMP,
+    updatedAt: admin.database.ServerValue.TIMESTAMP
+  };
+
+  if (!profileSnap.exists()) {
+    profileUpdates.createdAt = admin.database.ServerValue.TIMESTAMP;
+  }
+
+  await userRef.update(profileUpdates);
+
+  const inviterName = request.auth.token?.name || request.auth.token?.email || "Nolan's Knives";
+
+  try {
+    const setupUrl = await auth.generatePasswordResetLink(email, {
+      url: `${SITE_URL}/admin`,
+      handleCodeInApp: false
+    });
+
+    const emailResult = await sendRequiredEmail(email, "adminInvite", name, setupUrl, inviterName);
+
+    if (!userRecord.emailVerified) {
+      try {
+        await auth.updateUser(userRecord.uid, { emailVerified: true });
+      } catch (verifyError) {
+        console.warn("Admin invite sent, but emailVerified update failed:", verifyError.message);
+      }
+    }
+
+    await userRef.update({
+      inviteStatus: "sent",
+      inviteEmailSentAt: admin.database.ServerValue.TIMESTAMP,
+      inviteEmailError: null,
+      updatedAt: admin.database.ServerValue.TIMESTAMP
+    });
+
+    await logAuditAction("admin_user_invited", adminUid, "admin", userRecord.uid, {
+      email,
+      displayName: name,
+      created,
+      messageId: emailResult.messageId || null
+    });
+
+    return {
+      success: true,
+      uid: userRecord.uid,
+      email,
+      created,
+      messageId: emailResult.messageId || null
+    };
+  } catch (error) {
+    await userRef.update({
+      inviteStatus: "email_failed",
+      inviteEmailError: error?.message || "Invitation email failed.",
+      updatedAt: admin.database.ServerValue.TIMESTAMP
+    });
+
+    await logAuditAction("admin_user_invite_failed", adminUid, "admin", userRecord.uid, {
+      email,
+      displayName: name,
+      created,
+      error: error?.message || "Invitation email failed."
+    });
+
+    throw new HttpsError(
+      "internal",
+      "Admin user was created, but the invitation email failed to send. Check email configuration and try again."
+    );
+  }
+});
 
 exports.setUserRole = onCall({ invoker: "public" }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "User must be signed in.");

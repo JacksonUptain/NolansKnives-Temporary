@@ -267,6 +267,19 @@
   border-radius: 8px;
 }
 
+.admin-dashboard-page .admin-users-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-dashboard-page .admin-users-header h1,
+.admin-dashboard-page .admin-users-header p {
+  margin-top: 0;
+}
+
 .admin-dashboard-page .action-cell {
   display: flex;
   gap: 0.5rem;
@@ -279,11 +292,19 @@
   border-radius: 8px;
   color: #1a1a1a;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   font-weight: 700;
   padding: 0.5rem 0.9rem;
   font-size: 0.9rem;
   transition: all 0.2s;
   white-space: nowrap;
+}
+
+.admin-dashboard-page .action-btn svg {
+  flex: 0 0 auto;
 }
 
 .admin-dashboard-page .action-btn:hover:not(:disabled) {
@@ -317,6 +338,51 @@
 .admin-dashboard-page .action-btn.danger:hover:not(:disabled) {
   background: rgba(204, 0, 0, 0.5);
   border-color: rgba(204, 0, 0, 0.7);
+}
+
+.admin-dashboard-page .admin-invite-form {
+  display: grid;
+  gap: 1rem;
+  padding-top: 0.25rem;
+}
+
+.admin-dashboard-page .admin-invite-form label {
+  display: grid;
+  gap: 0.45rem;
+  color: #ddd;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin-dashboard-page .admin-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  padding-top: 0.25rem;
+}
+
+.admin-dashboard-page .nk-modal {
+  max-width: 520px;
+  border: 1px solid #2b2b2b;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+}
+
+.admin-dashboard-page .nk-modal h2 {
+  color: #ffcc00;
+  margin: 0 2.25rem 1rem 0;
+  font-size: 1.35rem;
+}
+
+.admin-dashboard-page .spin {
+  animation: admin-spin 0.8s linear infinite;
+}
+
+@keyframes admin-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .admin-dashboard-shell {
@@ -506,6 +572,12 @@
   .admin-dashboard-page .action-cell {
     flex-direction: column;
     gap: 0.25rem;
+  }
+
+  .admin-dashboard-page .admin-users-header,
+  .admin-dashboard-page .admin-modal-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .admin-dashboard-page .action-btn {
