@@ -1130,6 +1130,22 @@ function appendMailgunMetadata(form, metadata = {}) {
   return tags;
 }
 
+function emailSendOptions(metadata = {}) {
+  return { __emailSendOptions: true, metadata };
+}
+
+function splitEmailArgs(args = []) {
+  const last = args[args.length - 1];
+  if (last && typeof last === "object" && last.__emailSendOptions) {
+    return {
+      templateArgs: args.slice(0, -1),
+      extraMetadata: last.metadata || {}
+    };
+  }
+
+  return { templateArgs: args, extraMetadata: {} };
+}
+
 async function sendViaMailgunHttp({ to, subject, html, metadata = {} }) {
   const form = new URLSearchParams();
   form.append("from", FROM_EMAIL);
@@ -1179,7 +1195,8 @@ async function sendViaSmtp({ to, subject, html, metadata = {} }) {
 // Helper: Send Email
 async function sendEmail(to, templateName, ...args) {
   try {
-    const { subject, html, source, context } = await resolveEmailTemplate(templateName, args);
+    const { templateArgs, extraMetadata } = splitEmailArgs(args);
+    const { subject, html, source, context } = await resolveEmailTemplate(templateName, templateArgs);
     const tagConfig = emailTemplateTagConfig[templateName] || {};
 
     if (!MAILGUN_API_KEY && !SMTP_PASS) {
@@ -1194,7 +1211,8 @@ async function sendEmail(to, templateName, ...args) {
       emailCategory: tagConfig.category,
       emailAudience: tagConfig.audience,
       emailLifecycle: tagConfig.lifecycle,
-      role: context?.role || ""
+      role: context?.role || "",
+      ...extraMetadata
     };
     const result = MAILGUN_API_KEY
       ? await sendViaMailgunHttp({ to, subject, html, metadata })
@@ -1207,7 +1225,8 @@ async function sendEmail(to, templateName, ...args) {
       source,
       provider: result.provider,
       messageId: result.messageId || null,
-      mailgunTags: result.tags || []
+      mailgunTags: result.tags || [],
+      ...extraMetadata
     });
 
     return result;
@@ -1491,6 +1510,15 @@ function extractMailgunEventSummary(eventData = {}, verification = {}) {
     campaignId: userVariables.campaignId || "",
     campaignName: userVariables.campaignName || "",
     recipientUid: userVariables.recipientUid || "",
+    requestId: userVariables.requestId || userVariables.customRequestId || "",
+    quoteId: userVariables.quoteId || "",
+    orderId: userVariables.orderId || "",
+    knifeId: userVariables.knifeId || userVariables.productId || "",
+    objectType: userVariables.objectType || "",
+    objectId: userVariables.objectId || "",
+    emailPurpose: userVariables.emailPurpose || "",
+    paymentStage: userVariables.paymentStage || "",
+    linkType: userVariables.linkType || "",
     templateName: userVariables.templateName || "",
     templateSource: userVariables.templateSource || "",
     emailCategory: userVariables.emailCategory || "",
@@ -1556,6 +1584,107 @@ function mailgunUserDeliveryUpdates(summary = {}) {
   return updates;
 }
 
+function mailgunObjectEventName(summary = {}) {
+  if (summary.event === "failed") {
+    return summary.severity === "permanent" ? "permanentFailure" : "temporaryFailure";
+  }
+  return String(summary.event || "unknown").replace(/[^a-zA-Z0-9]/g, "_");
+}
+
+function mailgunObjectActivityKey(summary = {}) {
+  if (summary.emailPurpose) return safeFirebaseKey(summary.emailPurpose);
+  if (summary.paymentStage) return safeFirebaseKey(`${summary.paymentStage}_payment`);
+  if (summary.emailLifecycle) return safeFirebaseKey(summary.emailLifecycle);
+  if (summary.templateName) return safeFirebaseKey(summary.templateName);
+  return "email";
+}
+
+function compactMailgunActivitySummary(summary = {}) {
+  return {
+    eventKey: summary.eventKey,
+    event: summary.event,
+    eventName: mailgunObjectEventName(summary),
+    severity: summary.severity || "",
+    reason: summary.reason || "",
+    recipient: summary.recipient || "",
+    subject: summary.subject || "",
+    url: summary.url || "",
+    templateName: summary.templateName || "",
+    emailPurpose: summary.emailPurpose || "",
+    emailLifecycle: summary.emailLifecycle || "",
+    paymentStage: summary.paymentStage || "",
+    linkType: summary.linkType || "",
+    eventAt: summary.eventAt,
+    receivedAt: admin.database.ServerValue.TIMESTAMP
+  };
+}
+
+function addMailgunActivityUpdates(updates, basePath, summary = {}, label = "") {
+  if (!basePath) return;
+  const activityKey = mailgunObjectActivityKey(summary);
+  const eventName = mailgunObjectEventName(summary);
+  const eventSummary = compactMailgunActivitySummary(summary);
+  const activityPath = `${basePath}/emailActivity/${activityKey}`;
+  const allActivityPath = `${basePath}/emailEvents/${summary.eventKey}`;
+
+  updates[`${activityPath}/label`] = label || summary.emailPurpose || summary.emailLifecycle || summary.templateName || "Email";
+  updates[`${activityPath}/templateName`] = summary.templateName || "";
+  updates[`${activityPath}/emailPurpose`] = summary.emailPurpose || "";
+  updates[`${activityPath}/paymentStage`] = summary.paymentStage || "";
+  updates[`${activityPath}/recipient`] = summary.recipient || "";
+  updates[`${activityPath}/subject`] = summary.subject || "";
+  updates[`${activityPath}/lastEvent`] = eventName;
+  updates[`${activityPath}/lastEventAt`] = summary.eventAt;
+  updates[`${activityPath}/lastEventKey`] = summary.eventKey;
+  updates[`${activityPath}/events/${summary.eventKey}`] = eventSummary;
+  updates[`${activityPath}/counts/${summary.counter}`] = admin.database.ServerValue.increment(1);
+  updates[`${activityPath}/${eventName}At`] = summary.eventAt;
+  updates[`${basePath}/emailActivityLatest`] = eventSummary;
+  updates[allActivityPath] = eventSummary;
+
+  if (summary.url) {
+    updates[`${activityPath}/lastClickedUrl`] = summary.url;
+  }
+}
+
+function addMailgunRequestObjectUpdates(updates, summary = {}) {
+  const inferredRequestId =
+    summary.requestId || (summary.objectType === "custom_request" ? summary.objectId : "");
+  const inferredOrderId =
+    summary.orderId || (summary.objectType === "order" ? summary.objectId : "");
+  const inferredKnifeId =
+    summary.knifeId || (summary.objectType === "product" || summary.objectType === "knife" ? summary.objectId : "");
+
+  if (!inferredRequestId && !summary.quoteId && !inferredOrderId && !inferredKnifeId) return;
+
+  const label = summary.emailPurpose || summary.emailLifecycle || summary.templateName || "Email";
+
+  if (inferredRequestId) {
+    const requestKey = safeFirebaseKey(inferredRequestId);
+    addMailgunActivityUpdates(updates, `customRequests/${requestKey}`, summary, label);
+
+    if (summary.quoteId) {
+      addMailgunActivityUpdates(updates, `customRequests/${requestKey}/quotes/${safeFirebaseKey(summary.quoteId)}`, summary, label);
+    }
+
+    if (summary.paymentStage) {
+      addMailgunActivityUpdates(updates, `customRequests/${requestKey}/payments/${safeFirebaseKey(summary.paymentStage)}`, summary, label);
+    }
+  }
+
+  if (summary.quoteId) {
+    addMailgunActivityUpdates(updates, `quotes/${safeFirebaseKey(summary.quoteId)}`, summary, label);
+  }
+
+  if (inferredOrderId) {
+    addMailgunActivityUpdates(updates, `orders/${safeFirebaseKey(inferredOrderId)}`, summary, label);
+  }
+
+  if (inferredKnifeId) {
+    addMailgunActivityUpdates(updates, `Products/${safeFirebaseKey(inferredKnifeId)}`, summary, label);
+  }
+}
+
 async function recordMailgunWebhookEvent(eventData = {}, verification = {}) {
   const summary = extractMailgunEventSummary(eventData, verification);
   const eventRef = db.ref(`mailgunWebhookEvents/${summary.eventKey}`);
@@ -1604,6 +1733,8 @@ async function recordMailgunWebhookEvent(eventData = {}, verification = {}) {
       if (tagKey) updates[`emailCampaigns/${campaignKey}/tagCounts/${tagKey}`] = admin.database.ServerValue.increment(1);
     });
   }
+
+  addMailgunRequestObjectUpdates(updates, summary);
 
   if (recipientUid) {
     const userUpdates = mailgunUserDeliveryUpdates(summary);
@@ -1907,8 +2038,34 @@ async function createCustomRequestForUser(uid, authToken = {}, formData = {}, cr
 
   if (skipPayment) {
     try {
-      await sendEmail(BUSINESS_EMAIL, "customRequestSubmittedBusiness", requestData.customerName, requestId, serverPrice);
-      await sendEmail(requestData.customerEmail, "customRequestSubmitted", requestData.customerName, requestId, serverPrice);
+      await sendEmail(
+        BUSINESS_EMAIL,
+        "customRequestSubmittedBusiness",
+        requestData.customerName,
+        requestId,
+        serverPrice,
+        emailSendOptions({
+          requestId,
+          objectType: "custom_request",
+          objectId: requestId,
+          emailPurpose: "custom_request_staff_alert",
+          linkType: "business_custom_request"
+        })
+      );
+      await sendEmail(
+        requestData.customerEmail,
+        "customRequestSubmitted",
+        requestData.customerName,
+        requestId,
+        serverPrice,
+        emailSendOptions({
+          requestId,
+          objectType: "custom_request",
+          objectId: requestId,
+          emailPurpose: "custom_request_confirmation",
+          linkType: "customer_custom_request"
+        })
+      );
     } catch (err) {
       console.warn("Failed to send low-priority custom request email:", err.message);
     }
@@ -1995,7 +2152,20 @@ exports.onCustomRequestCreated = functionsLib.database.ref('customRequests/{requ
     // requests send their notifications in createCustomRequest to avoid doubles.
     if (!request.createdVia) {
       try {
-        await sendEmail(BUSINESS_EMAIL, 'customRequestSubmittedBusiness', request.customerName || 'Customer', requestId, serverPrice);
+        await sendEmail(
+          BUSINESS_EMAIL,
+          'customRequestSubmittedBusiness',
+          request.customerName || 'Customer',
+          requestId,
+          serverPrice,
+          emailSendOptions({
+            requestId,
+            objectType: "custom_request",
+            objectId: requestId,
+            emailPurpose: "custom_request_staff_alert",
+            linkType: "business_custom_request"
+          })
+        );
       } catch (emailErr) {
         console.warn('Business notification failed for custom request:', emailErr);
       }
@@ -2053,9 +2223,43 @@ async function finalizePurchase(orderId, order, patch = {}, audit = {}) {
     const knifeName = knife?.name || "Knife";
 
     if (customerProfile?.email) {
-      await sendEmail(customerProfile.email, "knifePurchasedCustomer", customerName, orderId, knifeName, order.amount);
+      await sendEmail(
+        customerProfile.email,
+        "knifePurchasedCustomer",
+        customerName,
+        orderId,
+        knifeName,
+        order.amount,
+        emailSendOptions({
+          orderId,
+          knifeId,
+          objectType: "order",
+          objectId: orderId,
+          recipientUid: customerUid,
+          emailPurpose: "store_purchase_confirmation",
+          paymentStage: "store_purchase",
+          linkType: "customer_order"
+        })
+      );
     }
-    await sendEmail(BUSINESS_EMAIL, "knifePurchasedBusiness", customerName, orderId, knifeName, order.amount);
+    await sendEmail(
+      BUSINESS_EMAIL,
+      "knifePurchasedBusiness",
+      customerName,
+      orderId,
+      knifeName,
+      order.amount,
+      emailSendOptions({
+        orderId,
+        knifeId,
+        objectType: "order",
+        objectId: orderId,
+        recipientUid: customerUid,
+        emailPurpose: "store_purchase_staff_alert",
+        paymentStage: "store_purchase",
+        linkType: "business_order"
+      })
+    );
   } catch (emailError) {
     console.warn("Purchase notification email failed:", emailError.message);
   }
@@ -2816,14 +3020,32 @@ exports.captureCustomRequestDepositPayPalOrderHttp = onRequest(async (req, res) 
           "depositReceived",
           customRequest.customerName || "Customer",
           requestId,
-          amount
+          amount,
+          emailSendOptions({
+            requestId,
+            quoteId: customRequest.quoteId || "",
+            objectType: "custom_request",
+            objectId: requestId,
+            emailPurpose: "quote_deposit_confirmation",
+            paymentStage: "deposit",
+            linkType: "customer_custom_request"
+          })
         );
         await sendEmail(
           BUSINESS_EMAIL,
           "quoteDepositReceivedBusiness",
           customRequest.customerName || "Customer",
           requestId,
-          amount
+          amount,
+          emailSendOptions({
+            requestId,
+            quoteId: customRequest.quoteId || "",
+            objectType: "custom_request",
+            objectId: requestId,
+            emailPurpose: "quote_deposit_staff_alert",
+            paymentStage: "deposit",
+            linkType: "business_custom_request"
+          })
         );
       } else {
         await sendEmail(
@@ -2832,7 +3054,15 @@ exports.captureCustomRequestDepositPayPalOrderHttp = onRequest(async (req, res) 
           customRequest.customerName || "Customer",
           requestId,
           Number(customRequest.estimatedPrice || 0),
-          amount
+          amount,
+          emailSendOptions({
+            requestId,
+            objectType: "custom_request",
+            objectId: requestId,
+            emailPurpose: "priority_deposit_confirmation",
+            paymentStage: "priority_deposit",
+            linkType: "customer_custom_request"
+          })
         );
         await sendEmail(
           BUSINESS_EMAIL,
@@ -2840,7 +3070,15 @@ exports.captureCustomRequestDepositPayPalOrderHttp = onRequest(async (req, res) 
           customRequest.customerName || "Customer",
           requestId,
           Number(customRequest.estimatedPrice || 0),
-          amount
+          amount,
+          emailSendOptions({
+            requestId,
+            objectType: "custom_request",
+            objectId: requestId,
+            emailPurpose: "priority_deposit_staff_alert",
+            paymentStage: "priority_deposit",
+            linkType: "business_custom_request"
+          })
         );
       }
     } catch (emailError) {
@@ -2990,7 +3228,16 @@ exports.requestCustomRequestFinalPaymentHttp = onRequest(async (req, res) => {
         summary.adjustmentAmount,
         summary.totalDue,
         finalPaymentUrl,
-        cleanNote
+        cleanNote,
+        emailSendOptions({
+          requestId,
+          quoteId: customRequest.quoteId || "",
+          objectType: "custom_request",
+          objectId: requestId,
+          emailPurpose: "final_payment_request",
+          paymentStage: "final",
+          linkType: "final_payment"
+        })
       );
       await db.ref(`customRequests/${requestId}/payments/final`).update({
         emailStatus: "sent",
@@ -3193,14 +3440,32 @@ exports.captureCustomRequestFinalPaymentPayPalOrderHttp = onRequest(async (req, 
         "finalPaymentReceived",
         customRequest.customerName || "Customer",
         requestId,
-        amount
+        amount,
+        emailSendOptions({
+          requestId,
+          quoteId: customRequest.quoteId || "",
+          objectType: "custom_request",
+          objectId: requestId,
+          emailPurpose: "final_payment_confirmation",
+          paymentStage: "final",
+          linkType: "customer_custom_request"
+        })
       );
       await sendEmail(
         BUSINESS_EMAIL,
         "finalPaymentReceivedBusiness",
         customRequest.customerName || "Customer",
         requestId,
-        amount
+        amount,
+        emailSendOptions({
+          requestId,
+          quoteId: customRequest.quoteId || "",
+          objectType: "custom_request",
+          objectId: requestId,
+          emailPurpose: "final_payment_staff_alert",
+          paymentStage: "final",
+          linkType: "business_custom_request"
+        })
       );
     } catch (emailError) {
       console.warn("Custom request final payment email failed:", emailError.message);
@@ -4700,7 +4965,7 @@ exports.sendCustomKnifeQuote = onCall({ invoker: "public" }, async (request) => 
 
   // Send email notification to customer
   try {
-    await sendRequiredEmail(
+    const emailResult = await sendRequiredEmail(
       customRequest.customerEmail,
       "quoteSent",
       customRequest.customerName || "Valued Customer",
@@ -4709,11 +4974,26 @@ exports.sendCustomKnifeQuote = onCall({ invoker: "public" }, async (request) => 
       quoteDepositAmount,
       remainingAfterDeposit,
       depositAlreadyPaid,
-      depositAlreadyPaid ? `${SITE_URL}/my-knives/${encodeURIComponent(requestId)}` : getCustomRequestDepositPaymentUrl(requestId)
+      depositAlreadyPaid ? `${SITE_URL}/my-knives/${encodeURIComponent(requestId)}` : getCustomRequestDepositPaymentUrl(requestId),
+      emailSendOptions({
+        requestId,
+        quoteId,
+        objectType: "custom_request",
+        objectId: requestId,
+        emailPurpose: "quote",
+        paymentStage: depositAlreadyPaid ? "quote_view" : "deposit",
+        linkType: depositAlreadyPaid ? "customer_custom_request" : "quote_deposit"
+      })
     );
     await db.ref(`customRequests/${requestId}`).update({
       quoteSentAt: admin.database.ServerValue.TIMESTAMP,
-      quoteSentTo: customRequest.customerEmail
+      quoteSentTo: customRequest.customerEmail,
+      quoteEmailMessageId: emailResult.messageId || null,
+      "emailActivity/quote/messageId": emailResult.messageId || null,
+      "emailActivity/quote/recipient": customRequest.customerEmail,
+      "emailActivity/quote/templateName": "quoteSent",
+      "emailActivity/quote/subject": "Your Custom Knife Quote - Nolan's Knives",
+      "emailActivity/quote/sentAt": admin.database.ServerValue.TIMESTAMP
     });
   } catch (emailError) {
     console.warn("Failed to send quote email but quote was created:", emailError);
@@ -4847,7 +5127,17 @@ exports.sendUnreadMessageReminders = onSchedule("every 1 hours", async (context)
             profile.displayName || "there",
             conversationId,
             customerUnreadCount,
-            "Nolan"
+            "Nolan",
+            emailSendOptions({
+              requestId: conversation.customRequestId || (conversation.conversationType === "customRequest" ? conversationId : ""),
+              orderId: conversation.orderId || "",
+              knifeId: conversation.knifeId || "",
+              objectType: conversation.conversationType === "customRequest" ? "custom_request" : (conversation.orderId ? "order" : "conversation"),
+              objectId: conversation.customRequestId || conversation.orderId || conversationId,
+              recipientUid: customerUid || "",
+              emailPurpose: "customer_unread_message_reminder",
+              linkType: conversation.conversationType === "customRequest" ? "customer_custom_request" : "customer_message"
+            })
           );
           updates[`conversations/${conversationId}/customerUnreadReminderSentAt`] = admin.database.ServerValue.TIMESTAMP;
           remindersSent++;
@@ -4871,7 +5161,17 @@ exports.sendUnreadMessageReminders = onSchedule("every 1 hours", async (context)
             "unreadCustomerMessages",
             profile?.displayName || profile?.email || "A customer",
             conversationId,
-            staffUnreadCount
+            staffUnreadCount,
+            emailSendOptions({
+              requestId: conversation.customRequestId || (conversation.conversationType === "customRequest" ? conversationId : ""),
+              orderId: conversation.orderId || "",
+              knifeId: conversation.knifeId || "",
+              objectType: conversation.conversationType === "customRequest" ? "custom_request" : (conversation.orderId ? "order" : "conversation"),
+              objectId: conversation.customRequestId || conversation.orderId || conversationId,
+              recipientUid: customerUid || "",
+              emailPurpose: "staff_unread_customer_message_reminder",
+              linkType: conversation.conversationType === "customRequest" ? "business_custom_request" : "business_message"
+            })
           );
           updates[`conversations/${conversationId}/staffUnreadReminderSentAt`] = admin.database.ServerValue.TIMESTAMP;
           remindersSent++;
@@ -4909,7 +5209,14 @@ exports.notifyCustomRequestSubmitted = onCall({ invoker: "public" }, async (requ
       "customRequestSubmitted",
       customerName || "there",
       requestId,
-      estimatedPrice || 250
+      estimatedPrice || 250,
+      emailSendOptions({
+        requestId,
+        objectType: "custom_request",
+        objectId: requestId,
+        emailPurpose: "custom_request_confirmation",
+        linkType: "customer_custom_request"
+      })
     );
 
     return { success: true };
@@ -4953,6 +5260,7 @@ exports.notifyQuoteSent = onCall({ invoker: "public" }, async (request) => {
       : getCustomRequestDepositAmount(customRequest, numericFinalPrice, depositAmount || numericFinalPrice * DEPOSIT_PERCENTAGE);
     const remaining = Number((numericFinalPrice - deposit).toFixed(2));
 
+    const quoteId = customRequest.quoteId || "";
     const emailResult = await sendRequiredEmail(
       customerEmail,
       "quoteSent",
@@ -4962,7 +5270,16 @@ exports.notifyQuoteSent = onCall({ invoker: "public" }, async (request) => {
       deposit,
       remaining,
       depositAlreadyPaid,
-      depositAlreadyPaid ? `${SITE_URL}/my-knives/${encodeURIComponent(requestId)}` : getCustomRequestDepositPaymentUrl(requestId)
+      depositAlreadyPaid ? `${SITE_URL}/my-knives/${encodeURIComponent(requestId)}` : getCustomRequestDepositPaymentUrl(requestId),
+      emailSendOptions({
+        requestId,
+        quoteId,
+        objectType: "custom_request",
+        objectId: requestId,
+        emailPurpose: "quote",
+        paymentStage: depositAlreadyPaid ? "quote_view" : "deposit",
+        linkType: depositAlreadyPaid ? "customer_custom_request" : "quote_deposit"
+      })
     );
 
     // Update request with email sent flag
@@ -4972,7 +5289,13 @@ exports.notifyQuoteSent = onCall({ invoker: "public" }, async (request) => {
       depositAmount: deposit,
       depositRequired: depositAlreadyPaid ? 0 : deposit,
       quoteSentAt: admin.database.ServerValue.TIMESTAMP,
-      quoteSentTo: customerEmail
+      quoteSentTo: customerEmail,
+      quoteEmailMessageId: emailResult.messageId || null,
+      "emailActivity/quote/messageId": emailResult.messageId || null,
+      "emailActivity/quote/recipient": customerEmail,
+      "emailActivity/quote/templateName": "quoteSent",
+      "emailActivity/quote/subject": "Your Custom Knife Quote - Nolan's Knives",
+      "emailActivity/quote/sentAt": admin.database.ServerValue.TIMESTAMP
     });
 
     return { success: true, messageId: emailResult.messageId || null };
@@ -5005,7 +5328,14 @@ exports.notifyStatusChange = onCall({ invoker: "public" }, async (request) => {
       customerName || "there",
       requestId,
       newStatus,
-      message || ""
+      message || "",
+      emailSendOptions({
+        requestId,
+        objectType: "custom_request",
+        objectId: requestId,
+        emailPurpose: "custom_request_status_update",
+        linkType: "customer_custom_request"
+      })
     );
 
     return { success: true };
@@ -5037,7 +5367,14 @@ exports.notifyOrderComplete = onCall({ invoker: "public" }, async (request) => {
       "orderComplete",
       customerName || "there",
       requestId,
-      trackingNumber || ""
+      trackingNumber || "",
+      emailSendOptions({
+        requestId,
+        objectType: "custom_request",
+        objectId: requestId,
+        emailPurpose: "custom_request_completion",
+        linkType: "customer_custom_request"
+      })
     );
 
     // Update request with shipped flag

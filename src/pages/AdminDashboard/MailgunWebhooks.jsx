@@ -75,6 +75,14 @@ function eventLabel(event) {
   return event || 'unknown';
 }
 
+function formatObjectLink(event = {}) {
+  if (event.requestId) return `Request ${event.requestId.length > 8 ? `#${event.requestId.slice(-6).toUpperCase()}` : event.requestId}`;
+  if (event.orderId) return `Order ${event.orderId.length > 8 ? `#${event.orderId.slice(-6).toUpperCase()}` : event.orderId}`;
+  if (event.knifeId) return `Product ${event.knifeId.length > 8 ? `#${event.knifeId.slice(-6).toUpperCase()}` : event.knifeId}`;
+  if (event.objectType && event.objectId) return `${event.objectType.replace(/_/g, ' ')} ${event.objectId}`;
+  return '-';
+}
+
 function normalizeEvents(events = []) {
   const byKey = fallbackEvents.reduce((acc, event) => ({ ...acc, [event.key]: event }), {});
   return events.map((event) => ({ ...byKey[event.key], ...event, plain: event.plain || event.label })).filter((event) => event.key);
@@ -352,8 +360,8 @@ export default function MailgunWebhooks() {
             </article>
             <article>
               <LucideIcon name="Activity" size={18} />
-              <strong>Recent events are logged</strong>
-              <p>The table below shows what Mailgun sent, who it was for, and whether the signature was accepted.</p>
+              <strong>Business records get context</strong>
+              <p>Quote, payment, order, and product emails can write opens and clicks back onto the matching record.</p>
             </article>
           </div>
         </section>
@@ -428,6 +436,7 @@ export default function MailgunWebhooks() {
                 <th>Event</th>
                 <th>Recipient</th>
                 <th>Subject</th>
+                <th>Object</th>
                 <th>Campaign</th>
                 <th>Tags</th>
                 <th>Signature</th>
@@ -435,7 +444,7 @@ export default function MailgunWebhooks() {
               </tr>
             </thead>
             <tbody>
-              {recentEvents.length === 0 && <tr><td colSpan={7} className="table-empty">No Mailgun events received yet.</td></tr>}
+              {recentEvents.length === 0 && <tr><td colSpan={8} className="table-empty">No Mailgun events received yet.</td></tr>}
               {recentEvents.map((event) => (
                 <tr key={event.eventKey}>
                   <td>
@@ -445,6 +454,7 @@ export default function MailgunWebhooks() {
                   </td>
                   <td className="table-email">{event.recipient || '-'}</td>
                   <td>{event.subject || '-'}</td>
+                  <td className="webhook-object-cell">{formatObjectLink(event)}</td>
                   <td>{event.campaignName || event.campaignId || event.templateName || '-'}</td>
                   <td>
                     <div className="webhook-tag-list">

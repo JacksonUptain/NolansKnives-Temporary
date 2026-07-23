@@ -1106,6 +1106,13 @@
   vertical-align: top;
 }
 
+.webhook-object-cell {
+  color: #ffdf5d;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+  text-transform: capitalize;
+}
+
 .webhook-tag-list {
   display: flex;
   flex-wrap: wrap;

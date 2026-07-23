@@ -94,6 +94,89 @@ function calculateFinalPaymentTotal(draft = {}) {
   );
 }
 
+const EMAIL_ACTIVITY_LABELS = {
+  quote: 'Quote email',
+  final_payment_request: 'Final payment request',
+  quote_deposit_confirmation: 'Deposit confirmation',
+  quote_deposit_staff_alert: 'Deposit staff alert',
+  priority_deposit_confirmation: 'Priority deposit confirmation',
+  priority_deposit_staff_alert: 'Priority deposit staff alert',
+  custom_request_confirmation: 'Request confirmation',
+  custom_request_staff_alert: 'Staff request alert',
+  custom_request_status_update: 'Status update',
+  custom_request_completion: 'Completion notice',
+  final_payment_confirmation: 'Final payment confirmation',
+  final_payment_staff_alert: 'Final payment staff alert',
+  customer_unread_message_reminder: 'Unread message reminder',
+  staff_unread_customer_message_reminder: 'Staff unread reminder',
+  store_purchase_confirmation: 'Store purchase confirmation',
+  store_purchase_staff_alert: 'Store purchase staff alert'
+};
+
+const EMAIL_EVENT_LABELS = {
+  accepted: 'Accepted',
+  delivered: 'Delivered',
+  opened: 'Opened',
+  clicked: 'Clicked',
+  permanentFailure: 'Permanent failure',
+  temporaryFailure: 'Temporary failure',
+  complained: 'Spam complaint',
+  unsubscribed: 'Unsubscribed'
+};
+
+function getLatestActivityEvent(activity = {}) {
+  const events = Object.values(activity.events || {}).filter(Boolean);
+  if (events.length === 0) return null;
+  return events.sort((a, b) => Number(b.eventAt || b.receivedAt || 0) - Number(a.eventAt || a.receivedAt || 0))[0];
+}
+
+function emailActivityLabel(key, activity = {}) {
+  return EMAIL_ACTIVITY_LABELS[activity.emailPurpose] ||
+    EMAIL_ACTIVITY_LABELS[key] ||
+    labelize(activity.label || activity.emailPurpose || activity.templateName || key);
+}
+
+function emailEventLabel(value) {
+  return EMAIL_EVENT_LABELS[value] || labelize(value || 'waiting');
+}
+
+function emailEventClass(value) {
+  return String(value || 'waiting').replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase();
+}
+
+function getEmailActivityRows(request = {}) {
+  return Object.entries(request.emailActivity || {})
+    .filter(([, activity]) => activity && typeof activity === 'object')
+    .map(([key, activity]) => {
+      const latest = getLatestActivityEvent(activity);
+      const counts = activity.counts || {};
+      const lastEvent = activity.lastEvent || latest?.eventName || latest?.event || '';
+      const lastEventAt = activity.lastEventAt || latest?.eventAt || latest?.receivedAt || activity.sentAt || 0;
+      const failures = Number(counts.permanentFailures || 0) + Number(counts.temporaryFailures || 0);
+
+      return {
+        key,
+        label: emailActivityLabel(key, activity),
+        recipient: activity.recipient || latest?.recipient || '',
+        subject: activity.subject || latest?.subject || '',
+        templateName: activity.templateName || latest?.templateName || '',
+        sentAt: activity.sentAt || 0,
+        lastEvent,
+        lastEventLabel: lastEvent ? emailEventLabel(lastEvent) : (activity.sentAt ? 'Sent' : 'Waiting'),
+        lastEventAt,
+        lastClickedUrl: activity.lastClickedUrl || latest?.url || '',
+        metrics: [
+          ['Accepted', counts.accepted || 0],
+          ['Delivered', counts.delivered || 0],
+          ['Opens', counts.opens || 0],
+          ['Clicks', counts.clicks || 0],
+          ['Failures', failures]
+        ]
+      };
+    })
+    .sort((a, b) => Number(b.lastEventAt || b.sentAt || 0) - Number(a.lastEventAt || a.sentAt || 0));
+}
+
 function CustomRequestDashboard() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -143,6 +226,7 @@ function CustomRequestDashboard() {
   }, [requests, searchTerm, filterStatus]);
 
   const selectedRequest = filteredRequests.find((request) => request.id === selectedRequestId) || filteredRequests[0] || null;
+  const selectedEmailActivity = useMemo(() => getEmailActivityRows(selectedRequest), [selectedRequest]);
 
   const stats = useMemo(() => ({
     awaitingReview: requests.filter((request) => ['priority_review', 'pending_review', 'needs_review', 'pending_payment'].includes(request.status)).length,
@@ -600,6 +684,61 @@ function CustomRequestDashboard() {
                           : hasFinalPaymentBeenRequested(selectedRequest) ? 'Resend Final Payment' : 'Request Final Payment'}
                       </button>
                     </>
+                  )}
+                </section>
+
+                <section className="detail-section-card email-activity-panel">
+                  <div className="quote-panel-heading email-activity-heading">
+                    <div>
+                      <h3>Email Activity</h3>
+                      <p>Delivery, opens, and clicks tracked from Mailgun for this request.</p>
+                    </div>
+                    <LucideIcon name="Activity" size={20} />
+                  </div>
+
+                  {selectedEmailActivity.length === 0 ? (
+                    <div className="email-activity-empty">
+                      <LucideIcon name="RadioTower" size={18} />
+                      <p>No tracked email activity yet. New quote and payment emails will appear here after Mailgun posts events.</p>
+                    </div>
+                  ) : (
+                    <div className="email-activity-list">
+                      {selectedEmailActivity.map((activity) => (
+                        <article className="email-activity-card" key={activity.key}>
+                          <div className="email-activity-card-header">
+                            <div>
+                              <strong>{activity.label}</strong>
+                              <span>{activity.recipient || 'No recipient recorded'}</span>
+                            </div>
+                            <span className={`email-event-pill event-${emailEventClass(activity.lastEvent)}`}>
+                              {activity.lastEventLabel}
+                            </span>
+                          </div>
+
+                          <p className="email-activity-subject">{activity.subject || activity.templateName || 'Transactional email'}</p>
+
+                          <div className="email-activity-counts">
+                            {activity.metrics.map(([label, value]) => (
+                              <div key={label}>
+                                <span>{label}</span>
+                                <strong>{value}</strong>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="email-activity-meta">
+                            <span>Last event: {formatDate(activity.lastEventAt || activity.sentAt)}</span>
+                            {activity.sentAt ? <span>Sent: {formatDate(activity.sentAt)}</span> : null}
+                          </div>
+
+                          {activity.lastClickedUrl && (
+                            <a className="email-activity-link" href={activity.lastClickedUrl} target="_blank" rel="noreferrer">
+                              <LucideIcon name="ExternalLink" size={14} /> Last clicked link
+                            </a>
+                          )}
+                        </article>
+                      ))}
+                    </div>
                   )}
                 </section>
               </>
