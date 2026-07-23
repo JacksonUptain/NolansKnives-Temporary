@@ -1,27 +1,28 @@
 /* Shared UI component styles using design tokens */
 .nk-btn {
-  font-family: var(--font-family-sans);
+  font-family: var(--nk-font-body, var(--font-family-sans));
   border: none;
   padding: 0.5rem 0.75rem;
-  border-radius: var(--radius-md);
+  border-radius: var(--nk-radius-md, var(--radius-md));
+  font-weight: var(--nk-weight-heavy, 800);
   cursor: pointer;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+  transition: transform var(--nk-transition-fast, var(--transition-fast)), box-shadow var(--nk-transition-fast, var(--transition-fast)), background var(--nk-transition-fast, var(--transition-fast));
 }
 
 .nk-btn-primary {
-  background: var(--color-accent);
-  color: var(--color-text-inverse);
+  background: var(--nk-gold, var(--color-accent));
+  color: var(--nk-text-on-gold, #111);
 }
 
 .nk-btn-secondary {
-  background: transparent;
-  color: var(--color-text-inverse);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: var(--nk-surface, transparent);
+  color: var(--nk-text, #f4f4f4);
+  border: 1px solid var(--nk-border, rgba(255,255,255,0.06));
 }
 
 .nk-btn-ghost {
   background: transparent;
-  color: var(--color-text-inverse);
+  color: var(--nk-text, #f4f4f4);
 }
 
 .nk-btn-sm { padding: 0.25rem 0.5rem; font-size: var(--font-size-sm); }
@@ -29,10 +30,10 @@
 .nk-btn-lg { padding: 0.75rem 1rem; font-size: var(--font-size-lg); }
 
 .nk-card {
-  background: var(--color-primary-light);
-  border-radius: var(--radius-lg);
-  padding: var(--space-md);
-  border: 1px solid rgba(255,255,255,0.03);
+  background: var(--nk-surface-raised, var(--color-primary-light));
+  border-radius: var(--nk-radius-xl, var(--radius-lg));
+  padding: var(--nk-space-4, var(--space-md));
+  border: 1px solid var(--nk-border, rgba(255,255,255,0.03));
 }
 
 .nk-modal-overlay {
@@ -46,9 +47,9 @@
 }
 
 .nk-modal {
-  background: var(--color-primary-light);
-  border-radius: var(--radius-lg);
-  padding: var(--space-md);
+  background: var(--nk-surface-raised, var(--color-primary-light));
+  border-radius: var(--nk-radius-xl, var(--radius-lg));
+  padding: var(--nk-space-4, var(--space-md));
   max-width: 920px;
   width: 100%;
   position: relative;
@@ -60,7 +61,7 @@
   top: 12px;
   background: transparent;
   border: none;
-  color: var(--color-text-inverse);
+  color: var(--nk-text, #f4f4f4);
 }
 
 .nk-skeleton {

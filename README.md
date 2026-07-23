@@ -1,4 +1,12 @@
-# Getting Started with Create React App
+# Nolan's Knives
+
+## Project Style Guide
+
+The website and email design system is documented in [docs/STYLE_GUIDE.md](docs/STYLE_GUIDE.md).
+
+Use that guide before creating new pages, changing existing UI, or editing email templates. The matching code-level design tokens live in `src/styles/tokens.css`.
+
+## Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
