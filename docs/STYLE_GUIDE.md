@@ -570,6 +570,7 @@ Email variables:
 - Use double curly braces: `{{firstName}}`, `{{requestId}}`, `{{siteUrl}}`.
 - Only use variables listed in the Admin Dashboard Email Templates tab or `emailTemplateMetadata` in `functions/index.js`.
 - Keep fallback copy natural if a variable is empty.
+- Never save sample customer names, sample request IDs, or sample prices in production templates. Use variables such as `{{customerName}}`, `{{requestId}}`, and `{{estimatedPrice}}`; previews may render sample values, but the editable HTML should stay variable-based.
 
 ### Transactional Email Patterns
 

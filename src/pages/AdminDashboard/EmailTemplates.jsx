@@ -89,6 +89,22 @@ function formatDate(value) {
   return date.toLocaleString();
 }
 
+function escapePreviewHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function renderTemplatePreview(templateText = '', context = {}) {
+  return String(templateText || '').replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (_match, key) => {
+    const value = key.split('.').reduce((current, part) => current?.[part], context);
+    return escapePreviewHtml(value === null || value === undefined ? '' : value);
+  });
+}
+
 export default function EmailTemplates() {
   const [templates, setTemplates] = useState([]);
   const [overrides, setOverrides] = useState({});
@@ -139,6 +155,11 @@ export default function EmailTemplates() {
       enabled: override.enabled !== false,
       effectiveSubject: override.subject || template.defaultSubject || template.effectiveSubject || '',
       effectiveHtml: override.html || template.defaultHtml || template.effectiveHtml || '',
+      editableSubject: template.editableSubject || template.defaultSubject || '',
+      editableHtml: template.editableHtml || template.defaultHtml || '',
+      previewSubject: template.previewSubject || template.effectiveSubject || template.defaultSubject || '',
+      previewHtml: template.previewHtml || template.effectiveHtml || template.defaultHtml || '',
+      sampleContext: template.sampleContext || {},
       hasOverride: !!overrides[template.id]
     };
   }), [templates, overrides]);
@@ -160,8 +181,8 @@ export default function EmailTemplates() {
     label: selected.label || '',
     description: selected.description || '',
     variables: (selected.variables || []).join(', '),
-    subject: selected.subject || selected.defaultSubject || '',
-    html: selected.html || selected.defaultHtml || '',
+    subject: selected.subject || selected.editableSubject || selected.defaultSubject || '',
+    html: selected.html || selected.editableHtml || selected.defaultHtml || '',
     enabled: selected.enabled !== false,
     custom: selected.custom || false
   } : null;
@@ -173,8 +194,8 @@ export default function EmailTemplates() {
       label: selected.label || '',
       description: selected.description || '',
       variables: (selected.variables || []).join(', '),
-      subject: selected.subject || selected.defaultSubject || '',
-      html: selected.html || selected.defaultHtml || '',
+      subject: selected.subject || selected.editableSubject || selected.defaultSubject || '',
+      html: selected.html || selected.editableHtml || selected.defaultHtml || '',
       enabled: selected.enabled !== false,
       custom: selected.custom || false
     });
@@ -265,11 +286,18 @@ export default function EmailTemplates() {
     setDraft((prev) => ({
       ...(prev || {}),
       id: selected.id,
-      subject: selected.defaultSubject || selected.effectiveSubject || '',
-      html: selected.defaultHtml || selected.effectiveHtml || ''
+      subject: selected.editableSubject || selected.defaultSubject || selected.effectiveSubject || '',
+      html: selected.editableHtml || selected.defaultHtml || selected.effectiveHtml || ''
     }));
     showToast('Default loaded into editor.', 'info');
   };
+
+  const previewSubject = currentDraft
+    ? renderTemplatePreview(currentDraft.subject || '', selected?.sampleContext || {})
+    : '';
+  const previewHtml = currentDraft
+    ? renderTemplatePreview(currentDraft.html || '', selected?.sampleContext || {})
+    : '';
 
   if (loading) return <div className="admin-dashboard-page"><div className="loading-shimmer">Loading templates...</div></div>;
 
@@ -369,8 +397,8 @@ export default function EmailTemplates() {
                 <textarea className="input-field code-editor" value={currentDraft.html} onChange={(event) => updateDraft('html', event.target.value)} spellCheck={false} />
               </label>
               <div className="template-preview">
-                <div className="template-preview-subject">{currentDraft.subject || 'No subject'}</div>
-                <iframe title="Email template preview" srcDoc={currentDraft.html || '<p>No HTML yet.</p>'} />
+                <div className="template-preview-subject">{previewSubject || 'No subject'}</div>
+                <iframe title="Email template preview" srcDoc={previewHtml || '<p>No HTML yet.</p>'} />
               </div>
             </div>
           </section>
