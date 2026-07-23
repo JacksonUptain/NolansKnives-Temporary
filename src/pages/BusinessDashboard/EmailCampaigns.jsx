@@ -32,6 +32,12 @@ function userLabel(user) {
   return user.displayName || user.email || user.uid;
 }
 
+function isSuppressedUser(user = {}) {
+  const suppressionStatus = user.emailSuppression?.status || '';
+  return user.emailPreferences?.marketingSubscribed === false ||
+    ['unsubscribed', 'complained', 'permanent_failure'].includes(suppressionStatus);
+}
+
 export default function EmailCampaigns() {
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
@@ -134,7 +140,7 @@ export default function EmailCampaigns() {
       const matchesSearch = !term || label.includes(term);
       const matchesRole = roleFilter === 'all' || (user.role || 'customer') === roleFilter;
       const matchesGroup = groupFilter === 'all' || !!groupById[groupFilter]?.members?.[user.uid];
-      return matchesSearch && matchesRole && matchesGroup && user.email && user.status !== 'blocked';
+      return matchesSearch && matchesRole && matchesGroup && user.email && user.status !== 'blocked' && !isSuppressedUser(user);
     });
   }, [users, searchTerm, roleFilter, groupFilter, groupById]);
 
@@ -143,7 +149,7 @@ export default function EmailCampaigns() {
     Object.keys(selectedGroupIds).filter((id) => selectedGroupIds[id]).forEach((groupId) => {
       Object.keys(groupById[groupId]?.members || {}).forEach((uid) => ids.add(uid));
     });
-    return [...ids].filter((uid) => userById[uid]?.email && userById[uid]?.status !== 'blocked');
+    return [...ids].filter((uid) => userById[uid]?.email && userById[uid]?.status !== 'blocked' && !isSuppressedUser(userById[uid]));
   }, [selectedUids, selectedGroupIds, groupById, userById]);
 
   const selectedGroups = Object.keys(selectedGroupIds).filter((id) => selectedGroupIds[id]).map((id) => groupById[id]).filter(Boolean);
@@ -480,6 +486,10 @@ export default function EmailCampaigns() {
                   <div><span>Recipients</span><strong>{campaign.recipientCount || 0}</strong></div>
                   <div><span>Sent</span><strong>{campaign.successCount || 0}</strong></div>
                   <div><span>Failed</span><strong>{campaign.failureCount || 0}</strong></div>
+                  <div><span>Delivered</span><strong>{campaign.eventCounts?.delivered || 0}</strong></div>
+                  <div><span>Opens</span><strong>{campaign.eventCounts?.opens || 0}</strong></div>
+                  <div><span>Clicks</span><strong>{campaign.eventCounts?.clicks || 0}</strong></div>
+                  <div><span>Unsubs</span><strong>{campaign.eventCounts?.unsubscribes || 0}</strong></div>
                   <div><span>Date</span><strong>{formatDate(campaign.createdAt)}</strong></div>
                 </div>
               </article>

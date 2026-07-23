@@ -15,9 +15,23 @@ const functionsLib = require('firebase-functions');
 const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN || "mail.nolansknives.com";
 const MAILGUN_API_KEY = process.env.MAILGUN_API_KEY || "";
 const MAILGUN_API_BASE = (process.env.MAILGUN_API_BASE || "https://api.mailgun.net").replace(/\/$/, "");
+const MAILGUN_WEBHOOK_SIGNING_KEY = process.env.MAILGUN_WEBHOOK_SIGNING_KEY || process.env.MAILGUN_SIGNING_KEY || "";
+const MAILGUN_WEBHOOK_MAX_AGE_SECONDS = Number(process.env.MAILGUN_WEBHOOK_MAX_AGE_SECONDS || 86400);
 const FROM_EMAIL = process.env.FROM_EMAIL || "noreply@nolansknives.com";
 const BUSINESS_EMAIL = process.env.BUSINESS_EMAIL || "orders@nolansknives.com";
 const SITE_URL = (process.env.SITE_URL || "https://nolansknives.com").replace(/\/$/, "");
+const FUNCTION_REGION = process.env.FUNCTION_REGION || process.env.GCLOUD_REGION || "us-central1";
+
+const MAILGUN_WEBHOOK_EVENT_OPTIONS = [
+  { key: "accepted", label: "Accepted" },
+  { key: "delivered", label: "Delivered messages" },
+  { key: "opened", label: "Opens" },
+  { key: "clicked", label: "Clicked" },
+  { key: "permanent_fail", label: "Permanent failure" },
+  { key: "temporary_fail", label: "Temporary failure" },
+  { key: "unsubscribed", label: "Unsubscribes" },
+  { key: "complained", label: "Spam complaints" }
+];
 
 // SMTP remains available for explicit credentials, but Mailgun sending keys use the HTTP API.
 const SMTP_HOST = process.env.SMTP_HOST || `smtp.mailgun.org`;
@@ -534,12 +548,36 @@ function getSampleTemplateArgs(templateName) {
   return samples[templateName] || [];
 }
 
-async function sendViaMailgunHttp({ to, subject, html }) {
+function mailgunMetadataValue(value) {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "object") return JSON.stringify(value).slice(0, 998);
+  return String(value).slice(0, 998);
+}
+
+function appendMailgunMetadata(form, metadata = {}) {
+  const cleanMetadata = Object.entries(metadata)
+    .filter(([, value]) => value !== null && value !== undefined && value !== "")
+    .reduce((acc, [key, value]) => ({ ...acc, [key]: mailgunMetadataValue(value) }), {});
+
+  Object.entries(cleanMetadata).forEach(([key, value]) => {
+    if (/^[a-zA-Z0-9_-]+$/.test(key)) {
+      form.append(`v:${key}`, value);
+    }
+  });
+
+  const tags = ["nolans-knives"];
+  if (cleanMetadata.templateName) tags.push(`template:${cleanMetadata.templateName}`);
+  if (cleanMetadata.campaignId) tags.push("campaign");
+  [...new Set(tags)].forEach((tag) => form.append("o:tag", tag.slice(0, 128)));
+}
+
+async function sendViaMailgunHttp({ to, subject, html, metadata = {} }) {
   const form = new URLSearchParams();
   form.append("from", FROM_EMAIL);
   form.append("to", to);
   form.append("subject", subject);
   form.append("html", html);
+  appendMailgunMetadata(form, metadata);
 
   const response = await axios.post(
     `${MAILGUN_API_BASE}/v3/${MAILGUN_DOMAIN}/messages`,
@@ -586,8 +624,9 @@ async function sendEmail(to, templateName, ...args) {
       return { skipped: true, mode: "test" };
     }
 
+    const metadata = { templateName, templateSource: source };
     const result = MAILGUN_API_KEY
-      ? await sendViaMailgunHttp({ to, subject, html })
+      ? await sendViaMailgunHttp({ to, subject, html, metadata })
       : await sendViaSmtp({ to, subject, html });
 
     // Log successful send
@@ -617,7 +656,7 @@ async function sendRawEmail({ to, subject, html, metadata = {} }) {
     }
 
     const result = MAILGUN_API_KEY
-      ? await sendViaMailgunHttp({ to, subject, html })
+      ? await sendViaMailgunHttp({ to, subject, html, metadata })
       : await sendViaSmtp({ to, subject, html });
 
     await logNotificationEvent("email_sent", {
@@ -662,12 +701,315 @@ function applyCors(req, res) {
   const origin = req.get("origin") || "*";
   res.set("Access-Control-Allow-Origin", origin);
   res.set("Vary", "Origin");
-  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.set(
     "Access-Control-Allow-Headers",
     req.get("Access-Control-Request-Headers") || "Authorization, Content-Type, X-Firebase-AppCheck, X-Client-Version"
   );
   res.set("Access-Control-Max-Age", "3600");
+}
+
+function publicFunctionUrl(functionName) {
+  const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || "nolansknives";
+  return `https://${FUNCTION_REGION}-${projectId}.cloudfunctions.net/${functionName}`;
+}
+
+function safeFirebaseKey(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  return raw.replace(/[.#$/[\]]/g, "_").slice(0, 700);
+}
+
+function hashText(value) {
+  return crypto.createHash("sha256").update(String(value || "")).digest("hex");
+}
+
+function parseJsonField(value) {
+  if (!value || typeof value !== "string") return value;
+  try {
+    return JSON.parse(value);
+  } catch (_error) {
+    return value;
+  }
+}
+
+function firstFieldValue(value) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function normalizeMailgunWebhookBody(body = {}) {
+  const parsedEventData = parseJsonField(body["event-data"] || body.eventData);
+  const eventData = parsedEventData || { ...body };
+  if (!parsedEventData && eventData && typeof eventData === "object") {
+    delete eventData.signature;
+    delete eventData.timestamp;
+    delete eventData.token;
+    delete eventData["parent-signature"];
+  }
+  const rawSignature = body.signature;
+  const signature = rawSignature && typeof rawSignature === "object"
+    ? rawSignature
+    : {
+      timestamp: firstFieldValue(body.timestamp),
+      token: firstFieldValue(body.token),
+      signature: firstFieldValue(rawSignature),
+      "parent-signature": firstFieldValue(body["parent-signature"])
+    };
+
+  return {
+    signature: signature || {},
+    eventData: eventData || {},
+    rawPayload: body
+  };
+}
+
+function timingSafeEqualHex(left = "", right = "") {
+  const leftBuffer = Buffer.from(String(left), "hex");
+  const rightBuffer = Buffer.from(String(right), "hex");
+  return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function verifyMailgunWebhookSignature(signature = {}) {
+  if (!MAILGUN_WEBHOOK_SIGNING_KEY) {
+    return { ok: true, status: "unconfigured", reason: "MAILGUN_WEBHOOK_SIGNING_KEY is not configured." };
+  }
+
+  const timestamp = String(signature.timestamp || "");
+  const token = String(signature.token || "");
+  const providedSignatures = [signature.signature, signature["parent-signature"]]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+
+  if (!timestamp || !token || providedSignatures.length === 0) {
+    return { ok: false, status: "missing", reason: "Missing Mailgun signature fields." };
+  }
+
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const timestampSeconds = Number(timestamp);
+  if (
+    Number.isFinite(timestampSeconds) &&
+    MAILGUN_WEBHOOK_MAX_AGE_SECONDS > 0 &&
+    Math.abs(nowSeconds - timestampSeconds) > MAILGUN_WEBHOOK_MAX_AGE_SECONDS
+  ) {
+    return { ok: false, status: "expired", reason: "Mailgun webhook timestamp is outside the accepted window." };
+  }
+
+  const expected = crypto
+    .createHmac("sha256", MAILGUN_WEBHOOK_SIGNING_KEY)
+    .update(`${timestamp}${token}`)
+    .digest("hex");
+
+  const matched = providedSignatures.some((candidate) => {
+    try {
+      return timingSafeEqualHex(expected, candidate);
+    } catch (_error) {
+      return false;
+    }
+  });
+
+  return matched
+    ? { ok: true, status: "verified" }
+    : { ok: false, status: "invalid", reason: "Mailgun webhook signature did not match." };
+}
+
+async function cacheMailgunWebhookToken(signature = {}) {
+  const token = String(signature.token || "").trim();
+  if (!token) return { duplicate: false };
+
+  const tokenKey = safeFirebaseKey(token) || hashText(token);
+  const tokenRef = db.ref(`mailgunWebhookTokens/${tokenKey}`);
+  const tokenSnap = await tokenRef.once("value");
+  if (tokenSnap.exists()) {
+    return { duplicate: true, tokenKey };
+  }
+
+  await tokenRef.set({
+    timestamp: Number(signature.timestamp || 0) || null,
+    createdAt: admin.database.ServerValue.TIMESTAMP
+  });
+
+  return { duplicate: false, tokenKey };
+}
+
+function normalizeMailgunUserVariables(value) {
+  const parsed = parseJsonField(value);
+  if (!parsed) return {};
+  if (!Array.isArray(parsed) && typeof parsed === "object") return parsed;
+  if (!Array.isArray(parsed)) return {};
+
+  return parsed.reduce((acc, item) => {
+    if (!item || typeof item !== "object") return acc;
+    const key = item.key || item.name;
+    if (!key) return acc;
+    acc[key] = item.value ?? item.val ?? "";
+    return acc;
+  }, {});
+}
+
+function mailgunEventCounter(eventData = {}) {
+  const event = String(eventData.event || "unknown");
+  if (event === "failed") {
+    return eventData.severity === "permanent" ? "permanentFailures" : "temporaryFailures";
+  }
+  if (event === "complained") return "complaints";
+  if (event === "unsubscribed") return "unsubscribes";
+  if (event === "opened") return "opens";
+  if (event === "clicked") return "clicks";
+  if (event === "delivered") return "delivered";
+  if (event === "accepted") return "accepted";
+  return "other";
+}
+
+function mailgunEventKey(eventData = {}) {
+  const event = String(eventData.event || "event");
+  const recipient = normalizeEmail(eventData.recipient || eventData.envelope?.targets || "");
+  const messageId = eventData.message?.headers?.["message-id"] || "";
+  const seed = eventData.id || `${event}:${eventData.timestamp || ""}:${recipient}:${messageId}`;
+  return `${safeFirebaseKey(event)}_${hashText(seed).slice(0, 32)}`;
+}
+
+function extractMailgunEventSummary(eventData = {}, verification = {}) {
+  const headers = eventData.message?.headers || {};
+  const userVariables = normalizeMailgunUserVariables(eventData["user-variables"] || eventData.userVariables);
+  const eventAt = Number.isFinite(Number(eventData.timestamp))
+    ? Math.round(Number(eventData.timestamp) * 1000)
+    : Date.now();
+
+  return {
+    eventKey: mailgunEventKey(eventData),
+    mailgunEventId: eventData.id || "",
+    event: eventData.event || "unknown",
+    severity: eventData.severity || "",
+    reason: eventData.reason || "",
+    recipient: normalizeEmail(eventData.recipient || eventData.envelope?.targets || ""),
+    recipientDomain: eventData["recipient-domain"] || "",
+    domainName: eventData.domain?.name || "",
+    accountId: eventData.account?.id || "",
+    messageId: headers["message-id"] || "",
+    subject: headers.subject || "",
+    url: eventData.url || "",
+    campaignId: userVariables.campaignId || "",
+    campaignName: userVariables.campaignName || "",
+    recipientUid: userVariables.recipientUid || "",
+    templateName: userVariables.templateName || "",
+    templateSource: userVariables.templateSource || "",
+    provider: "mailgun",
+    counter: mailgunEventCounter(eventData),
+    eventAt,
+    receivedAt: admin.database.ServerValue.TIMESTAMP,
+    signatureStatus: verification.status || "unknown"
+  };
+}
+
+async function findUserUidForMailgunEvent(summary = {}) {
+  if (summary.recipientUid) return summary.recipientUid;
+  if (!summary.recipient) return "";
+
+  const snap = await db.ref("users").orderByChild("email").equalTo(summary.recipient).limitToFirst(1).once("value");
+  if (!snap.exists()) return "";
+  return Object.keys(snap.val() || {})[0] || "";
+}
+
+function mailgunUserDeliveryUpdates(summary = {}) {
+  const eventPathValue = summary.event === "failed" && summary.severity
+    ? `${summary.event}_${summary.severity}`
+    : summary.event;
+  const updates = {
+    "emailDelivery/lastEvent": eventPathValue,
+    "emailDelivery/lastEventAt": summary.eventAt,
+    "emailDelivery/lastMailgunEventKey": summary.eventKey,
+    updatedAt: admin.database.ServerValue.TIMESTAMP
+  };
+
+  if (summary.event === "accepted") updates["emailDelivery/acceptedAt"] = summary.eventAt;
+  if (summary.event === "delivered") updates["emailDelivery/deliveredAt"] = summary.eventAt;
+  if (summary.event === "opened") updates["emailDelivery/openedAt"] = summary.eventAt;
+  if (summary.event === "clicked") updates["emailDelivery/clickedAt"] = summary.eventAt;
+  if (summary.event === "unsubscribed") {
+    updates["emailDelivery/unsubscribedAt"] = summary.eventAt;
+    updates["emailPreferences/marketingSubscribed"] = false;
+    updates["emailPreferences/marketingUnsubscribedAt"] = summary.eventAt;
+    updates["emailSuppression/status"] = "unsubscribed";
+    updates["emailSuppression/reason"] = "mailgun_unsubscribed";
+    updates["emailSuppression/updatedAt"] = admin.database.ServerValue.TIMESTAMP;
+  }
+  if (summary.event === "complained") {
+    updates["emailDelivery/complainedAt"] = summary.eventAt;
+    updates["emailPreferences/marketingSubscribed"] = false;
+    updates["emailSuppression/status"] = "complained";
+    updates["emailSuppression/reason"] = "mailgun_complaint";
+    updates["emailSuppression/updatedAt"] = admin.database.ServerValue.TIMESTAMP;
+  }
+  if (summary.event === "failed") {
+    updates[`emailDelivery/${summary.severity === "permanent" ? "permanentFailureAt" : "temporaryFailureAt"}`] = summary.eventAt;
+    if (summary.severity === "permanent") {
+      updates["emailSuppression/status"] = "permanent_failure";
+      updates["emailSuppression/reason"] = summary.reason || "mailgun_permanent_failure";
+      updates["emailSuppression/updatedAt"] = admin.database.ServerValue.TIMESTAMP;
+    }
+  }
+
+  return updates;
+}
+
+async function recordMailgunWebhookEvent(eventData = {}, verification = {}) {
+  const summary = extractMailgunEventSummary(eventData, verification);
+  const eventRef = db.ref(`mailgunWebhookEvents/${summary.eventKey}`);
+  const existing = await eventRef.once("value");
+  if (existing.exists()) {
+    return { duplicate: true, summary };
+  }
+
+  const recipientUid = await findUserUidForMailgunEvent(summary);
+  if (recipientUid) summary.recipientUid = recipientUid;
+
+  const eventRecord = {
+    ...summary,
+    raw: eventData
+  };
+
+  const updates = {
+    [`mailgunWebhookEvents/${summary.eventKey}`]: eventRecord,
+    "mailgunWebhookStatus/latest": summary,
+    "mailgunWebhookStatus/updatedAt": admin.database.ServerValue.TIMESTAMP,
+    [`mailgunWebhookStatus/counts/${summary.counter}`]: admin.database.ServerValue.increment(1)
+  };
+
+  if (summary.messageId) {
+    const messageKey = hashText(summary.messageId);
+    updates[`mailgunMessageEvents/${messageKey}/events/${summary.eventKey}`] = summary;
+    updates[`mailgunMessageEvents/${messageKey}/latest`] = summary;
+  }
+
+  if (summary.campaignId) {
+    const campaignKey = safeFirebaseKey(summary.campaignId);
+    const recipientKey = safeFirebaseKey(summary.recipientUid || summary.recipient || "unknown");
+    updates[`emailCampaigns/${campaignKey}/eventCounts/${summary.counter}`] = admin.database.ServerValue.increment(1);
+    updates[`emailCampaigns/${campaignKey}/lastMailgunEvent`] = summary;
+    updates[`emailCampaigns/${campaignKey}/updatedAt`] = admin.database.ServerValue.TIMESTAMP;
+    updates[`emailCampaigns/${campaignKey}/recipients/${recipientKey}/latestMailgunEvent`] = summary.event;
+    updates[`emailCampaigns/${campaignKey}/recipients/${recipientKey}/latestMailgunEventAt`] = summary.eventAt;
+    updates[`emailCampaigns/${campaignKey}/recipients/${recipientKey}/events/${summary.eventKey}`] = summary;
+  }
+
+  if (recipientUid) {
+    const userUpdates = mailgunUserDeliveryUpdates(summary);
+    Object.entries(userUpdates).forEach(([path, value]) => {
+      updates[`users/${recipientUid}/${path}`] = value;
+    });
+  }
+
+  await db.ref().update(updates);
+  await logNotificationEvent("mailgun_webhook_received", {
+    event: summary.event,
+    severity: summary.severity,
+    recipient: summary.recipient,
+    campaignId: summary.campaignId || null,
+    templateName: summary.templateName || null,
+    signatureStatus: summary.signatureStatus
+  });
+
+  return { duplicate: false, summary };
 }
 
 function hasPaidCustomRequestDeposit(customRequest = {}) {
@@ -1824,6 +2166,91 @@ exports.paypalWebhook = onRequest(async (req, res) => {
   }
 });
 
+exports.mailgunWebhook = onRequest({ invoker: "public" }, async (req, res) => {
+  applyCors(req, res);
+  if (req.method === "OPTIONS") return res.status(204).send("");
+
+  if (req.method === "GET") {
+    return res.status(200).json({
+      ok: true,
+      domain: MAILGUN_DOMAIN,
+      webhookUrl: publicFunctionUrl("mailgunWebhook"),
+      events: MAILGUN_WEBHOOK_EVENT_OPTIONS,
+      signingConfigured: !!MAILGUN_WEBHOOK_SIGNING_KEY
+    });
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "method-not-allowed" });
+  }
+
+  try {
+    const { signature, eventData } = normalizeMailgunWebhookBody(req.body || {});
+    if (!eventData?.event) {
+      return res.status(400).json({ error: "missing-event-data" });
+    }
+
+    const verification = verifyMailgunWebhookSignature(signature);
+    if (!verification.ok) {
+      await logNotificationEvent("mailgun_webhook_rejected", {
+        reason: verification.reason,
+        status: verification.status,
+        event: eventData.event || null
+      });
+      return res.status(406).json({ error: "invalid-signature", message: verification.reason });
+    }
+
+    const tokenResult = await cacheMailgunWebhookToken(signature);
+    if (tokenResult.duplicate) {
+      return res.status(200).json({ received: true, duplicate: true, reason: "duplicate-token" });
+    }
+
+    const result = await recordMailgunWebhookEvent(eventData, verification);
+    return res.status(200).json({
+      received: true,
+      duplicate: result.duplicate,
+      eventKey: result.summary.eventKey,
+      event: result.summary.event,
+      counter: result.summary.counter,
+      signing: verification.status
+    });
+  } catch (error) {
+    console.error("Mailgun webhook error:", error);
+    await logNotificationEvent("mailgun_webhook_failed", { error: error.message });
+    return res.status(500).json({ error: "internal", message: "Could not process Mailgun webhook." });
+  }
+});
+
+exports.getMailgunWebhookStatus = onCall({ invoker: "public", cors: true }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "User must be signed in.");
+
+  const isStaff = await verifyUserRole(request.auth.uid, "business");
+  if (!isStaff) {
+    throw new HttpsError("permission-denied", "Only staff can view Mailgun webhook status.");
+  }
+
+  const [statusSnap, recentSnap] = await Promise.all([
+    db.ref("mailgunWebhookStatus").once("value"),
+    db.ref("mailgunWebhookEvents").orderByChild("receivedAt").limitToLast(25).once("value")
+  ]);
+
+  const recentEvents = recentSnap.exists()
+    ? Object.entries(recentSnap.val() || {})
+      .map(([eventKey, value]) => ({ eventKey, ...value, raw: undefined }))
+      .sort((a, b) => Number(b.receivedAt || b.eventAt || 0) - Number(a.receivedAt || a.eventAt || 0))
+    : [];
+
+  return {
+    domain: MAILGUN_DOMAIN,
+    webhookUrl: publicFunctionUrl("mailgunWebhook"),
+    events: MAILGUN_WEBHOOK_EVENT_OPTIONS,
+    signingConfigured: !!MAILGUN_WEBHOOK_SIGNING_KEY,
+    maxAgeSeconds: MAILGUN_WEBHOOK_MAX_AGE_SECONDS,
+    status: statusSnap.exists() ? statusSnap.val() : {},
+    recentEvents
+  };
+});
+
 // ============================================================================
 // CHAT FUNCTIONS
 // ============================================================================
@@ -2422,6 +2849,12 @@ function normalizeUidList(value) {
   return [...new Set(list.map((item) => String(item || "").trim()).filter(Boolean))];
 }
 
+function isEmailSuppressedForCampaign(profile = {}) {
+  const suppressionStatus = profile.emailSuppression?.status || "";
+  return profile.emailPreferences?.marketingSubscribed === false ||
+    ["unsubscribed", "complained", "permanent_failure"].includes(suppressionStatus);
+}
+
 async function getCampaignRecipients({ recipientUids = [], groupIds = [] }) {
   const uidSet = new Set(normalizeUidList(recipientUids));
   const selectedGroupIds = normalizeUidList(groupIds);
@@ -2439,6 +2872,7 @@ async function getCampaignRecipients({ recipientUids = [], groupIds = [] }) {
   for (const uid of uidSet) {
     const profile = await getUserProfile(uid);
     if (!profile?.email || profile.status === "blocked") continue;
+    if (isEmailSuppressedForCampaign(profile)) continue;
     recipients.push({ uid, ...profile, email: normalizeEmail(profile.email) });
   }
 
@@ -2585,6 +3019,7 @@ exports.sendEmailCampaign = onCall({ invoker: "public", cors: true, timeoutSecon
       metadata: {
         templateName,
         campaignId,
+        campaignName: String(campaignName || "").trim() || "Nolan's Knives Update",
         recipientUid: recipient.uid
       }
     });

@@ -19,6 +19,10 @@ export async function getEmailTemplateCatalog() {
   return (await call("getEmailTemplateCatalog")({})).data;
 }
 
+export async function getMailgunWebhookStatus() {
+  return (await call("getMailgunWebhookStatus")({})).data;
+}
+
 export async function sendEmailCampaign(payload) {
   return (await call("sendEmailCampaign")(payload)).data;
 }

@@ -64,6 +64,23 @@
       ".read": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business'",
       ".write": false
     },
+    "mailgunWebhookStatus": {
+      ".read": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business'",
+      ".write": false
+    },
+    "mailgunWebhookEvents": {
+      ".read": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business'",
+      ".write": false,
+      ".indexOn": ["receivedAt", "eventAt", "event", "recipient", "campaignId"]
+    },
+    "mailgunMessageEvents": {
+      ".read": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business'",
+      ".write": false
+    },
+    "mailgunWebhookTokens": {
+      ".read": false,
+      ".write": false
+    },
     "orders": {
       ".read": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business'",
       "$orderId": {

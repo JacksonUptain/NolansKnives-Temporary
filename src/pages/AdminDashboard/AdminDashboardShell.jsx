@@ -5,6 +5,7 @@ import Users from './Users';
 import AuditLogs from './AuditLogs';
 import HomeEditor from './HomeEditor';
 import EmailTemplates from './EmailTemplates';
+import MailgunWebhooks from './MailgunWebhooks';
 import '../AdminDashboard.css';
 import LucideIcon from '../../components/ui/LucideIcon';
 
@@ -40,6 +41,11 @@ export default function AdminDashboardShell() {
               </NavLink>
             </li>
             <li>
+              <NavLink to="/admin/mailgun-webhooks" className={({ isActive }) => isActive ? 'active' : ''}>
+                <LucideIcon name="Webhook" size={18} /> Mailgun Webhooks
+              </NavLink>
+            </li>
+            <li>
               <NavLink to="/admin/activity" className={({ isActive }) => isActive ? 'active' : ''}>
                 <LucideIcon name="History" size={18} /> Audit Logs
               </NavLink>
@@ -60,6 +66,7 @@ export default function AdminDashboardShell() {
           <Route path="users" element={<Users />} />
           <Route path="home" element={<HomeEditor />} />
           <Route path="email-templates" element={<EmailTemplates />} />
+          <Route path="mailgun-webhooks" element={<MailgunWebhooks />} />
           <Route path="activity" element={<AuditLogs />} />
         </Routes>
       </main>
