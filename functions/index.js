@@ -19,6 +19,9 @@ const MAILGUN_WEBHOOK_SIGNING_KEY = process.env.MAILGUN_WEBHOOK_SIGNING_KEY || p
 const MAILGUN_WEBHOOK_MAX_AGE_SECONDS = Number(process.env.MAILGUN_WEBHOOK_MAX_AGE_SECONDS || 86400);
 const FROM_EMAIL = process.env.FROM_EMAIL || "noreply@nolansknives.com";
 const BUSINESS_EMAIL = process.env.BUSINESS_EMAIL || "orders@nolansknives.com";
+const FROM_NAME = process.env.FROM_NAME || "Nolan's Knives";
+const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || BUSINESS_EMAIL;
+const REPLY_TO_NAME = process.env.REPLY_TO_NAME || FROM_NAME;
 const SITE_URL = (process.env.SITE_URL || "https://nolansknives.com").replace(/\/$/, "");
 const FUNCTION_REGION = process.env.FUNCTION_REGION || process.env.GCLOUD_REGION || "us-central1";
 
@@ -77,6 +80,16 @@ const EMAIL_STYLE = {
 function emailSafeText(value, fallback = "") {
   const rendered = value === null || value === undefined || value === "" ? fallback : value;
   return escapeHtml(rendered);
+}
+
+function emailHeaderValue(value = "") {
+  return String(value || "").replace(/[\r\n"]/g, "").trim();
+}
+
+function brandedEmailAddress(email, name = "") {
+  const cleanEmail = emailHeaderValue(email);
+  const cleanName = emailHeaderValue(name);
+  return cleanName ? `"${cleanName}" <${cleanEmail}>` : cleanEmail;
 }
 
 function emailPlainHtml(value) {
@@ -1325,10 +1338,13 @@ function splitEmailArgs(args = []) {
 
 async function sendViaMailgunHttp({ to, subject, html, metadata = {} }) {
   const form = new URLSearchParams();
-  form.append("from", FROM_EMAIL);
+  form.append("from", brandedEmailAddress(FROM_EMAIL, FROM_NAME));
   form.append("to", to);
   form.append("subject", subject);
   form.append("html", html);
+  if (REPLY_TO_EMAIL) {
+    form.append("h:Reply-To", brandedEmailAddress(REPLY_TO_EMAIL, REPLY_TO_NAME));
+  }
   const tags = appendMailgunMetadata(form, metadata);
 
   const response = await axios.post(
@@ -1355,7 +1371,8 @@ async function sendViaSmtp({ to, subject, html, metadata = {} }) {
 
   const tags = buildMailgunTags(metadata);
   const result = await transporter.sendMail({
-    from: FROM_EMAIL,
+    from: brandedEmailAddress(FROM_EMAIL, FROM_NAME),
+    replyTo: REPLY_TO_EMAIL ? brandedEmailAddress(REPLY_TO_EMAIL, REPLY_TO_NAME) : undefined,
     to,
     subject,
     html,
