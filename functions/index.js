@@ -649,6 +649,26 @@ const emailTemplateMetadata = {
   }
 };
 
+const emailTemplateTagConfig = {
+  adminInvite: { category: "user-management", audience: "invited-user", lifecycle: "invite" },
+  customRequestSubmitted: { category: "custom-request", audience: "customer", lifecycle: "submitted" },
+  customRequestPriorityPaid: { category: "custom-request", audience: "customer", lifecycle: "priority-paid" },
+  customRequestPriorityPaidBusiness: { category: "custom-request", audience: "staff", lifecycle: "priority-paid" },
+  knifePurchasedCustomer: { category: "store-order", audience: "customer", lifecycle: "purchase-confirmation" },
+  knifePurchasedBusiness: { category: "store-order", audience: "staff", lifecycle: "sale-alert" },
+  quoteSent: { category: "custom-quote", audience: "customer", lifecycle: "quote-sent" },
+  depositReceived: { category: "custom-request", audience: "customer", lifecycle: "deposit-received" },
+  statusUpdate: { category: "status-update", audience: "customer", lifecycle: "status-update" },
+  unreadMessages: { category: "message-reminder", audience: "customer", lifecycle: "unread-message" },
+  unreadCustomerMessages: { category: "message-reminder", audience: "staff", lifecycle: "staff-unread" },
+  campaignGeneral: { category: "campaign", audience: "marketing", lifecycle: "general" },
+  campaignNewInventory: { category: "campaign", audience: "marketing", lifecycle: "new-inventory" },
+  campaignCustomKnifeFollowUp: { category: "campaign", audience: "marketing", lifecycle: "custom-knife-follow-up" },
+  campaignCareTips: { category: "campaign", audience: "marketing", lifecycle: "care-tips" },
+  campaignAnnouncement: { category: "campaign", audience: "marketing", lifecycle: "announcement" },
+  orderComplete: { category: "custom-order", audience: "customer", lifecycle: "complete" }
+};
+
 const emailTemplateContexts = {
   adminInvite: (displayName, setupUrl, inviterName = "Nolan's Knives", roleLabel = "Admin", role = "admin", email = "") => ({
     displayName,
@@ -803,10 +823,80 @@ function mailgunMetadataValue(value) {
   return String(value).slice(0, 998);
 }
 
-function appendMailgunMetadata(form, metadata = {}) {
-  const cleanMetadata = Object.entries(metadata)
+function safeMailgunTag(value) {
+  const tag = String(value || "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-zA-Z0-9:._-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return tag.slice(0, 128);
+}
+
+function mailgunTagPart(value) {
+  return safeMailgunTag(String(value || "")
+    .replace(/([a-z])([A-Z])/g, "$1-$2")
+    .replace(/['’]/g, "")
+    .replace(/&/g, "and"))
+    .replace(/:/g, "-")
+    .toLowerCase()
+    .slice(0, 96);
+}
+
+function prefixedMailgunTag(prefix, value) {
+  const part = mailgunTagPart(value);
+  return part ? `${prefix}:${part}` : "";
+}
+
+function addMailgunTag(tags, value) {
+  const tag = safeMailgunTag(value);
+  if (tag && !tags.includes(tag)) tags.push(tag);
+}
+
+function normalizeMetadataForMailgun(metadata = {}) {
+  return Object.entries(metadata)
     .filter(([, value]) => value !== null && value !== undefined && value !== "")
     .reduce((acc, [key, value]) => ({ ...acc, [key]: mailgunMetadataValue(value) }), {});
+}
+
+function buildMailgunTags(metadata = {}) {
+  const cleanMetadata = normalizeMetadataForMailgun(metadata);
+  const tags = [];
+  const templateName = cleanMetadata.templateName || "raw";
+  const templateConfig = emailTemplateTagConfig[templateName] || {};
+  const isCampaign =
+    !!cleanMetadata.campaignId ||
+    cleanMetadata.emailCategory === "campaign" ||
+    String(templateName).startsWith("campaign");
+
+  addMailgunTag(tags, "nolans-knives");
+  if (templateName) addMailgunTag(tags, `template:${templateName}`);
+  if (isCampaign) addMailgunTag(tags, "campaign");
+
+  addMailgunTag(tags, prefixedMailgunTag(
+    "category",
+    cleanMetadata.emailCategory || templateConfig.category || (isCampaign ? "campaign" : "transactional")
+  ));
+  addMailgunTag(tags, prefixedMailgunTag(
+    "audience",
+    cleanMetadata.emailAudience || templateConfig.audience || (isCampaign ? "marketing" : "customer")
+  ));
+  addMailgunTag(tags, prefixedMailgunTag(
+    "lifecycle",
+    cleanMetadata.emailLifecycle || templateConfig.lifecycle || templateName
+  ));
+  addMailgunTag(tags, prefixedMailgunTag("source", cleanMetadata.templateSource));
+  addMailgunTag(tags, prefixedMailgunTag("role", cleanMetadata.role || cleanMetadata.recipientRole));
+  if (isCampaign) addMailgunTag(tags, prefixedMailgunTag("campaign", cleanMetadata.campaignName));
+
+  const extraTags = metadata.tags || metadata.mailgunTags || [];
+  (Array.isArray(extraTags) ? extraTags : [extraTags]).forEach((tag) => addMailgunTag(tags, tag));
+
+  return tags.slice(0, 10);
+}
+
+function appendMailgunMetadata(form, metadata = {}) {
+  const cleanMetadata = normalizeMetadataForMailgun(metadata);
 
   Object.entries(cleanMetadata).forEach(([key, value]) => {
     if (/^[a-zA-Z0-9_-]+$/.test(key)) {
@@ -814,10 +904,9 @@ function appendMailgunMetadata(form, metadata = {}) {
     }
   });
 
-  const tags = ["nolans-knives"];
-  if (cleanMetadata.templateName) tags.push(`template:${cleanMetadata.templateName}`);
-  if (cleanMetadata.campaignId) tags.push("campaign");
-  [...new Set(tags)].forEach((tag) => form.append("o:tag", tag.slice(0, 128)));
+  const tags = buildMailgunTags(metadata);
+  tags.forEach((tag) => form.append("o:tag", tag));
+  return tags;
 }
 
 async function sendViaMailgunHttp({ to, subject, html, metadata = {} }) {
@@ -826,7 +915,7 @@ async function sendViaMailgunHttp({ to, subject, html, metadata = {} }) {
   form.append("to", to);
   form.append("subject", subject);
   form.append("html", html);
-  appendMailgunMetadata(form, metadata);
+  const tags = appendMailgunMetadata(form, metadata);
 
   const response = await axios.post(
     `${MAILGUN_API_BASE}/v3/${MAILGUN_DOMAIN}/messages`,
@@ -840,32 +929,37 @@ async function sendViaMailgunHttp({ to, subject, html, metadata = {} }) {
   return {
     provider: "mailgun-http",
     messageId: response.data?.id || null,
-    response: response.data?.message || null
+    response: response.data?.message || null,
+    tags
   };
 }
 
-async function sendViaSmtp({ to, subject, html }) {
+async function sendViaSmtp({ to, subject, html, metadata = {} }) {
   if (!SMTP_PASS) {
     return { skipped: true, mode: "smtp-not-configured" };
   }
 
+  const tags = buildMailgunTags(metadata);
   const result = await transporter.sendMail({
     from: FROM_EMAIL,
     to,
     subject,
-    html
+    html,
+    headers: tags.map((tag) => ({ key: "X-Mailgun-Tag", value: tag }))
   });
 
   return {
     provider: "smtp",
-    messageId: result.messageId || null
+    messageId: result.messageId || null,
+    tags
   };
 }
 
 // Helper: Send Email
 async function sendEmail(to, templateName, ...args) {
   try {
-    const { subject, html, source } = await resolveEmailTemplate(templateName, args);
+    const { subject, html, source, context } = await resolveEmailTemplate(templateName, args);
+    const tagConfig = emailTemplateTagConfig[templateName] || {};
 
     if (!MAILGUN_API_KEY && !SMTP_PASS) {
       console.log(`[TEST MODE] Email not sent. To: ${to}, Template: ${templateName}`);
@@ -873,10 +967,17 @@ async function sendEmail(to, templateName, ...args) {
       return { skipped: true, mode: "test" };
     }
 
-    const metadata = { templateName, templateSource: source };
+    const metadata = {
+      templateName,
+      templateSource: source,
+      emailCategory: tagConfig.category,
+      emailAudience: tagConfig.audience,
+      emailLifecycle: tagConfig.lifecycle,
+      role: context?.role || ""
+    };
     const result = MAILGUN_API_KEY
       ? await sendViaMailgunHttp({ to, subject, html, metadata })
-      : await sendViaSmtp({ to, subject, html });
+      : await sendViaSmtp({ to, subject, html, metadata });
 
     // Log successful send
     await logNotificationEvent("email_sent", {
@@ -884,7 +985,8 @@ async function sendEmail(to, templateName, ...args) {
       template: templateName,
       source,
       provider: result.provider,
-      messageId: result.messageId || null
+      messageId: result.messageId || null,
+      mailgunTags: result.tags || []
     });
 
     return result;
@@ -906,13 +1008,14 @@ async function sendRawEmail({ to, subject, html, metadata = {} }) {
 
     const result = MAILGUN_API_KEY
       ? await sendViaMailgunHttp({ to, subject, html, metadata })
-      : await sendViaSmtp({ to, subject, html });
+      : await sendViaSmtp({ to, subject, html, metadata });
 
     await logNotificationEvent("email_sent", {
       to,
       template: metadata.templateName || "raw",
       provider: result.provider,
       messageId: result.messageId || null,
+      mailgunTags: result.tags || [],
       ...metadata
     });
 
@@ -1108,6 +1211,20 @@ function normalizeMailgunUserVariables(value) {
   }, {});
 }
 
+function normalizeMailgunTags(value) {
+  const parsed = parseJsonField(value);
+  const list = Array.isArray(parsed)
+    ? parsed
+    : typeof parsed === "string"
+      ? parsed.split(",")
+      : [];
+
+  return [...new Set(list
+    .map((tag) => String(tag || "").trim())
+    .filter(Boolean)
+    .map((tag) => tag.slice(0, 128)))];
+}
+
 function mailgunEventCounter(eventData = {}) {
   const event = String(eventData.event || "unknown");
   if (event === "failed") {
@@ -1155,6 +1272,10 @@ function extractMailgunEventSummary(eventData = {}, verification = {}) {
     recipientUid: userVariables.recipientUid || "",
     templateName: userVariables.templateName || "",
     templateSource: userVariables.templateSource || "",
+    emailCategory: userVariables.emailCategory || "",
+    emailAudience: userVariables.emailAudience || "",
+    emailLifecycle: userVariables.emailLifecycle || "",
+    tags: normalizeMailgunTags(eventData.tags),
     provider: "mailgun",
     counter: mailgunEventCounter(eventData),
     eventAt,
@@ -1237,6 +1358,11 @@ async function recordMailgunWebhookEvent(eventData = {}, verification = {}) {
     [`mailgunWebhookStatus/counts/${summary.counter}`]: admin.database.ServerValue.increment(1)
   };
 
+  (summary.tags || []).forEach((tag) => {
+    const tagKey = safeFirebaseKey(tag);
+    if (tagKey) updates[`mailgunWebhookStatus/tagCounts/${tagKey}`] = admin.database.ServerValue.increment(1);
+  });
+
   if (summary.messageId) {
     const messageKey = hashText(summary.messageId);
     updates[`mailgunMessageEvents/${messageKey}/events/${summary.eventKey}`] = summary;
@@ -1252,6 +1378,10 @@ async function recordMailgunWebhookEvent(eventData = {}, verification = {}) {
     updates[`emailCampaigns/${campaignKey}/recipients/${recipientKey}/latestMailgunEvent`] = summary.event;
     updates[`emailCampaigns/${campaignKey}/recipients/${recipientKey}/latestMailgunEventAt`] = summary.eventAt;
     updates[`emailCampaigns/${campaignKey}/recipients/${recipientKey}/events/${summary.eventKey}`] = summary;
+    (summary.tags || []).forEach((tag) => {
+      const tagKey = safeFirebaseKey(tag);
+      if (tagKey) updates[`emailCampaigns/${campaignKey}/tagCounts/${tagKey}`] = admin.database.ServerValue.increment(1);
+    });
   }
 
   if (recipientUid) {
@@ -1268,6 +1398,10 @@ async function recordMailgunWebhookEvent(eventData = {}, verification = {}) {
     recipient: summary.recipient,
     campaignId: summary.campaignId || null,
     templateName: summary.templateName || null,
+    emailCategory: summary.emailCategory || null,
+    emailAudience: summary.emailAudience || null,
+    emailLifecycle: summary.emailLifecycle || null,
+    tags: summary.tags || [],
     signatureStatus: summary.signatureStatus
   });
 
@@ -3107,6 +3241,15 @@ exports.getEmailTemplateCatalog = onCall({ invoker: "public", cors: true }, asyn
       sampleContext: baseTemplateContext({})
     };
     const override = overrides[templateId] || {};
+    const tagConfig = emailTemplateTagConfig[templateId] || {};
+    const customTemplate = !!override.custom || !emailTemplates[templateId];
+    const mailgunTags = buildMailgunTags({
+      templateName: templateId,
+      templateSource: override.subject || override.html ? "database" : "default",
+      emailCategory: tagConfig.category || (customTemplate ? "campaign" : ""),
+      emailAudience: tagConfig.audience || (customTemplate ? "marketing" : ""),
+      emailLifecycle: tagConfig.lifecycle || (customTemplate ? "custom-template" : "")
+    });
 
     return {
       ...catalogEntry,
@@ -3116,10 +3259,11 @@ exports.getEmailTemplateCatalog = onCall({ invoker: "public", cors: true }, asyn
       subject: override.subject || "",
       html: override.html || "",
       enabled: override.enabled !== false,
-      custom: !!override.custom || !emailTemplates[templateId],
+      custom: customTemplate,
       updatedAt: override.updatedAt || null,
       effectiveSubject: override.subject || catalogEntry.defaultSubject,
-      effectiveHtml: override.html || catalogEntry.defaultHtml
+      effectiveHtml: override.html || catalogEntry.defaultHtml,
+      mailgunTags
     };
   });
 
@@ -3307,7 +3451,10 @@ exports.sendEmailCampaign = onCall({ invoker: "public", cors: true, timeoutSecon
         templateName,
         campaignId,
         campaignName: String(campaignName || "").trim() || "Nolan's Knives Update",
-        recipientUid: recipient.uid
+        recipientUid: recipient.uid,
+        emailCategory: "campaign",
+        emailAudience: "marketing",
+        emailLifecycle: templateName === "custom" ? "custom-campaign" : templateName
       }
     });
 

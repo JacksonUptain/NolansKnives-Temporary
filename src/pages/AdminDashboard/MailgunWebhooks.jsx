@@ -429,12 +429,13 @@ export default function MailgunWebhooks() {
                 <th>Recipient</th>
                 <th>Subject</th>
                 <th>Campaign</th>
+                <th>Tags</th>
                 <th>Signature</th>
                 <th>Received</th>
               </tr>
             </thead>
             <tbody>
-              {recentEvents.length === 0 && <tr><td colSpan={6} className="table-empty">No Mailgun events received yet.</td></tr>}
+              {recentEvents.length === 0 && <tr><td colSpan={7} className="table-empty">No Mailgun events received yet.</td></tr>}
               {recentEvents.map((event) => (
                 <tr key={event.eventKey}>
                   <td>
@@ -445,6 +446,13 @@ export default function MailgunWebhooks() {
                   <td className="table-email">{event.recipient || '-'}</td>
                   <td>{event.subject || '-'}</td>
                   <td>{event.campaignName || event.campaignId || event.templateName || '-'}</td>
+                  <td>
+                    <div className="webhook-tag-list">
+                      {(event.tags || []).slice(0, 4).map((tag) => <span key={tag}>{tag}</span>)}
+                      {(event.tags || []).length > 4 && <em>+{event.tags.length - 4}</em>}
+                      {(!event.tags || event.tags.length === 0) && <small>-</small>}
+                    </div>
+                  </td>
                   <td>{event.signatureStatus || '-'}</td>
                   <td>{formatDate(event.receivedAt || event.eventAt)}</td>
                 </tr>

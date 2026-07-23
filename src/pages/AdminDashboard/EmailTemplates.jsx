@@ -133,6 +133,7 @@ export default function EmailTemplates() {
       label: override.label || template.label,
       description: override.description || template.description,
       variables: override.variables || template.variables || [],
+      mailgunTags: template.mailgunTags || [],
       subject: override.subject || template.subject || '',
       html: override.html || template.html || '',
       enabled: override.enabled !== false,
@@ -329,6 +330,15 @@ export default function EmailTemplates() {
             <div className="template-variable-row">
               {(selected.variables || []).map((variable) => <code key={variable}>{`{{${variable}}}`}</code>)}
             </div>
+
+            {selected.mailgunTags?.length > 0 && (
+              <div className="template-tag-block">
+                <span>Mailgun tags</span>
+                <div className="template-variable-row compact-tags">
+                  {selected.mailgunTags.map((tag) => <code key={tag}>{tag}</code>)}
+                </div>
+              </div>
+            )}
 
             <div className="template-form-grid">
               <label>

@@ -331,6 +331,15 @@ function eventCounterName(event = {}) {
   return event.event || 'other';
 }
 
+function mailgunEventTags(event = {}) {
+  const rawTags = Array.isArray(event.tags)
+    ? event.tags
+    : Array.isArray(event.raw?.tags)
+      ? event.raw.tags
+      : [];
+  return [...new Set(rawTags.map((tag) => String(tag || '').trim()).filter(Boolean))];
+}
+
 function campaignEventCount(campaign, key) {
   return toNumber(campaign.eventCounts?.[key] || 0);
 }
@@ -703,6 +712,15 @@ function buildAnalytics(data, rangeId) {
     { label: 'Complaints', value: complaints }
   ];
   const webhookEventData = breakdownFromCounts(countBy(mailgunEventsInRange, eventCounterName), 12);
+  const mailgunTagCounts = mailgunEventsInRange.reduce((acc, event) => {
+    mailgunEventTags(event).forEach((tag) => {
+      acc[tag] = (acc[tag] || 0) + 1;
+    });
+    return acc;
+  }, {});
+  const mailgunTagData = breakdownFromCounts(mailgunTagCounts, 14);
+  const taggedMailgunEvents = mailgunEventsInRange.filter((event) => mailgunEventTags(event).length > 0);
+  const topMailgunTag = mailgunTagData[0]?.label || 'No tags yet';
   const conversationTypeData = breakdownFromCounts(countBy(conversations, (conversation) => {
     if (conversation.conversationType) return conversation.conversationType;
     if (customRequests.some((request) => request.requestId === conversation.conversationId)) return 'custom_request';
@@ -944,12 +962,15 @@ function buildAnalytics(data, rangeId) {
           metric('Hard failures', formatNumber(permanentFailures), 'Permanent recipient failures.', 'AlertTriangle', permanentFailures ? 'danger' : 'success'),
           metric('Temporary failures', formatNumber(temporaryFailures), 'Temporary recipient failures.', 'Clock', temporaryFailures ? 'warning' : 'success'),
           metric('Spam complaints', formatNumber(complaints), 'Recipients who complained.', 'AlertTriangle', complaints ? 'danger' : 'success'),
-          metric('Webhook events', formatNumber(mailgunEventsInRange.length), `${formatNumber(mailgunEventsLast30.length)} in the last 30 days.`, 'Database')
+          metric('Webhook events', formatNumber(mailgunEventsInRange.length), `${formatNumber(mailgunEventsLast30.length)} in the last 30 days.`, 'Database'),
+          metric('Tagged webhook events', formatNumber(taggedMailgunEvents.length), `${formatNumber(mailgunTagData.length)} unique Mailgun tag${mailgunTagData.length === 1 ? '' : 's'} in range.`, 'Tags'),
+          metric('Top Mailgun tag', topMailgunTag, mailgunTagData[0] ? `${formatNumber(mailgunTagData[0].value)} event${mailgunTagData[0].value === 1 ? '' : 's'} in range.` : 'New tagged sends will appear here after Mailgun posts events.', 'Tags')
         ],
         charts: [
           chart('Email Event Funnel', 'Mailgun and campaign event counts.', 'bars', campaignEventData),
           chart('Campaign Volume by Month', 'Campaign sends by created date.', 'columns', buildMonthlySeries(campaigns, campaignTime, (campaign) => campaign.recipientCount || 1)),
-          chart('Webhook Event Types', 'Raw Mailgun webhook events in the selected range.', 'bars', webhookEventData)
+          chart('Webhook Event Types', 'Raw Mailgun webhook events in the selected range.', 'bars', webhookEventData),
+          chart('Mailgun Tags', 'Template, category, audience, and campaign tags received from Mailgun.', 'bars', mailgunTagData)
         ],
         lists: [
           detailList('Recent Campaign Performance', campaignsInRange
@@ -965,6 +986,11 @@ function buildAnalytics(data, rangeId) {
             label: row.label,
             value: formatNumber(row.value),
             helper: row.label === 'Hard fails' || row.label === 'Complaints' ? 'Suppresses or protects sending reputation.' : 'Tracked from Mailgun events.'
+          }))),
+          detailList('Mailgun Tag Totals', mailgunTagData.map((row) => ({
+            label: row.label,
+            value: formatNumber(row.value),
+            helper: 'Received from Mailgun webhook event tags.'
           })))
         ]
       },

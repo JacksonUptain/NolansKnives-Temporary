@@ -656,6 +656,32 @@
   font-size: 0.78rem;
 }
 
+.template-tag-block {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: #080808;
+  border: 1px solid #242424;
+  border-radius: 8px;
+}
+
+.template-tag-block > span {
+  color: #999;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.template-variable-row.compact-tags {
+  margin: 0;
+}
+
+.template-variable-row.compact-tags code {
+  color: #8bbcff;
+  border-color: rgba(100, 150, 255, 0.28);
+}
+
 .template-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1078,6 +1104,30 @@
 
 .webhook-events-table td {
   vertical-align: top;
+}
+
+.webhook-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  min-width: 150px;
+}
+
+.webhook-tag-list span,
+.webhook-tag-list em {
+  padding: 0.18rem 0.4rem;
+  background: rgba(100, 150, 255, 0.12);
+  border: 1px solid rgba(100, 150, 255, 0.26);
+  border-radius: 999px;
+  color: #8bbcff;
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.webhook-tag-list small {
+  color: #777;
 }
 
 .custom-template-create {
