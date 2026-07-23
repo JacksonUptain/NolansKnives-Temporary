@@ -5,6 +5,7 @@ import Overview from './Overview';
 import Products from './Products';
 import Orders from './Orders';
 import EmailCampaigns from './EmailCampaigns';
+import Analytics from './Analytics';
 import CustomRequestDashboard from '../CustomRequestDashboard';
 import ProductEditor from '../ProductEditor';
 import LucideIcon from '../../components/ui/LucideIcon';
@@ -41,6 +42,11 @@ export default function BusinessDashboardShell() {
               </NavLink>
             </li>
             <li>
+              <NavLink to="/business/analytics" className={({ isActive }) => isActive ? 'active' : ''}>
+                <LucideIcon name="BarChart3" size={18} /> Analytics
+              </NavLink>
+            </li>
+            <li>
               <NavLink to="/business/custom-requests" className={({ isActive }) => isActive ? 'active' : ''}>
                 <LucideIcon name="Wand2" size={18} /> Custom Requests
               </NavLink>
@@ -68,6 +74,7 @@ export default function BusinessDashboardShell() {
           <Route path="products/:productId" element={<ProductEditor />} />
           <Route path="product/:productId" element={<ProductEditor />} />
           <Route path="orders" element={<Orders />} />
+          <Route path="analytics" element={<Analytics />} />
           <Route path="custom-requests" element={<CustomRequestDashboard />} />
           <Route path="email-campaigns" element={<EmailCampaigns />} />
         </Routes>
