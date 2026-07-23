@@ -156,6 +156,9 @@ Prefer the `--nk-*` token names in new CSS. Legacy variables such as `--color-ac
 
 - Use Oswald as the default site typeface.
 - Use heavy weights for headings, labels, dashboard totals, and buttons.
+- Body copy should use `--nk-leading-normal` (`1.5`) or `--nk-leading-relaxed` (`1.65`) when paragraphs run longer than one line.
+- Large Oswald display headings can be tight, but should usually live around `1.25`-`1.35`; long product-name headings should reduce max size before they are allowed to clip, collide, or create awkward eight-line stacks.
+- Badges, pills, buttons, table cells, and form controls should use at least `1.25` line-height with vertical padding so wrapped content still fits.
 - Keep letter spacing at `0` unless existing uppercase labels require a small positive tracking.
 - Do not use negative letter spacing.
 - Do not scale font size directly with viewport width.
@@ -279,6 +282,7 @@ Button text rules:
 
 - Use verbs: `Save`, `Send Campaign`, `Invite User`, `Delete`, `Preview`, `Copy`.
 - Keep labels short enough to fit on mobile.
+- Buttons must use `inline-flex`, centered alignment, vertical padding, and at least `1.22` line-height so labels can wrap without clipping.
 - Use icons from `LucideIcon` when a matching icon exists.
 - Do not use text-only rounded rectangles when a familiar icon is enough for compact tools.
 
