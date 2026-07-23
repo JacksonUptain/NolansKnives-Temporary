@@ -55,7 +55,19 @@ function customerFulfillmentStatus(status) {
 }
 
 function isPriorityRequest(request = {}) {
-  return !!request.priority || !!request.priorityDepositPaid || request.paymentStatus === "paid";
+  const normalized = String(request.status || "").toLowerCase();
+  if (request.depositPurpose === "quote_acceptance" || request.quoteAcceptedAt || normalized === "quote_accepted") {
+    return false;
+  }
+  return !!request.priority || !!request.priorityDepositPaid || normalized === "priority_review";
+}
+
+function customRequestTypeLabel(request = {}) {
+  const normalized = String(request.status || "").toLowerCase();
+  if (["quote_accepted", "in_production", "completed", "shipped", "delivered"].includes(normalized)) {
+    return "Custom build";
+  }
+  return isPriorityRequest(request) ? "Priority custom request" : "Custom request";
 }
 
 function customerRequestStatus(request = {}) {
@@ -219,7 +231,7 @@ export default function MyKnives() {
                     )}
 
                     <div className="purchase-details">
-                      <span className="item-type-pill">{isOrder ? "Store purchase" : isPriorityRequest(request) ? "Priority custom request" : "Custom request"}</span>
+                      <span className="item-type-pill">{isOrder ? "Store purchase" : customRequestTypeLabel(request)}</span>
                       <h3>{isOrder ? knife.name || "Knife purchase" : "Custom Knife Request"}</h3>
 
                       <div className="detail-row">

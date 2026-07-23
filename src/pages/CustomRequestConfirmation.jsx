@@ -25,6 +25,46 @@ function hasDepositPayment(requestRecord) {
   return !!requestRecord?.priorityDepositPaid || requestRecord?.paymentStatus === 'paid' || !!requestRecord?.depositPaidAt;
 }
 
+function isQuoteDepositContext(requestRecord) {
+  if (!requestRecord) return false;
+  const status = String(requestRecord.status || '').toLowerCase();
+  const finalPrice = Number(requestRecord.finalPrice || 0);
+  return Boolean(
+    requestRecord.depositPurpose === 'quote_acceptance' ||
+    requestRecord.quoteAcceptedAt ||
+    (
+      finalPrice > 0 &&
+      (
+        status === 'quote_sent' ||
+        status === 'pending_acceptance' ||
+        status === 'quote_accepted' ||
+        requestRecord.quoteId ||
+        requestRecord.quoteSentAt
+      )
+    )
+  );
+}
+
+const PRIORITY_DEPOSIT_COPY = {
+  title: 'Place Priority Deposit',
+  completeTitle: 'Deposit Received',
+  intro: 'Pay the 15% deposit to move this custom request into priority review.',
+  panelTitle: 'Priority review deposit',
+  panelBody: 'Nolan will review your request and send a final quote. If it is not the right fit, the priority deposit can be refunded.',
+  toast: 'Deposit received. Your request is now in Your Knives.',
+  completeBody: 'Deposit received. Your request is with Nolan, and messages are available in Your Knives.'
+};
+
+const QUOTE_DEPOSIT_COPY = {
+  title: 'Accept Quote & Pay Deposit',
+  completeTitle: 'Quote Accepted',
+  intro: 'Pay the 15% deposit to accept this final quote and reserve your custom build.',
+  panelTitle: 'Quote deposit',
+  panelBody: 'This payment accepts the final quote and reserves the build. The remaining balance is due later in the build process.',
+  toast: 'Deposit received. Your quote is accepted and saved in Your Knives.',
+  completeBody: 'Deposit received. Your quote is accepted, and messages are available in Your Knives.'
+};
+
 export default function CustomRequestConfirmation() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -54,6 +94,9 @@ export default function CustomRequestConfirmation() {
   );
   const paymentComplete = depositPaid || depositJustPaid;
   const confirmationComplete = paymentComplete || !depositRequested;
+  const quoteDepositContext = isQuoteDepositContext(requestRecord);
+  const depositCopy = quoteDepositContext ? QUOTE_DEPOSIT_COPY : PRIORITY_DEPOSIT_COPY;
+  const activeDepositView = depositRequested || (depositLinkRequested && paymentComplete);
 
   useEffect(() => {
     let active = true;
@@ -105,7 +148,7 @@ export default function CustomRequestConfirmation() {
             paypalOrderId: data.orderID
           });
           setDepositJustPaid(true);
-          showToast('Deposit received. Your request is now in Your Knives.', 'success');
+          showToast(depositCopy.toast, 'success');
         } catch (error) {
           const message = error.message || 'Could not confirm the deposit payment.';
           setPaymentError(message);
@@ -129,7 +172,7 @@ export default function CustomRequestConfirmation() {
         buttons.close();
       } catch {}
     };
-  }, [depositRequested, paymentComplete, requestId, user]);
+  }, [depositCopy.toast, depositRequested, paymentComplete, requestId, user]);
 
   const handleSignInForDeposit = () => {
     showToast('Sign in to pay your deposit.', 'info');
@@ -145,11 +188,13 @@ export default function CustomRequestConfirmation() {
 
         <div>
             <h1 id="custom-request-confirmation-title">
-              {depositRequested && !paymentComplete ? 'Place Priority Deposit' : 'Request Received'}
+              {activeDepositView
+                ? (paymentComplete ? depositCopy.completeTitle : depositCopy.title)
+                : 'Request Received'}
             </h1>
             <p>
-              {depositRequested
-                ? 'Pay the 15% deposit to move forward with this custom request.'
+              {activeDepositView
+                ? (paymentComplete ? depositCopy.completeBody : depositCopy.intro)
                 : 'Your request has been sent. Nolan will review it when his schedule allows and follow up if the build is a fit.'}
             </p>
         </div>
@@ -164,18 +209,15 @@ export default function CustomRequestConfirmation() {
             <strong>{estimatedPrice ? `$${estimatedPrice.toFixed(2)}` : 'To review'}</strong>
           </div>
           <div>
-            <span>{depositRequested ? 'Deposit' : 'Next step'}</span>
-            <strong>{depositRequested && depositAmount ? `$${depositAmount.toFixed(2)}` : 'Nolan will review'}</strong>
+            <span>{activeDepositView ? 'Deposit' : 'Next step'}</span>
+            <strong>{activeDepositView && depositAmount ? `$${depositAmount.toFixed(2)}` : 'Nolan will review'}</strong>
           </div>
         </div>
 
         {depositRequested && !paymentComplete && (
           <div className="deposit-payment-panel">
-            <h2>Priority review deposit</h2>
-            <p>
-              Nolan will review your request and send a final quote. If it is not the right fit,
-              the priority deposit can be refunded.
-            </p>
+            <h2>{depositCopy.panelTitle}</h2>
+            <p>{depositCopy.panelBody}</p>
             {!user ? (
               <div className="deposit-signin-panel">
                 <p>{initializing ? 'Checking your account...' : 'Sign in to pay this deposit securely.'}</p>
@@ -195,11 +237,9 @@ export default function CustomRequestConfirmation() {
           </div>
         )}
 
-        {confirmationComplete && (
+        {confirmationComplete && !activeDepositView && (
           <p>
-            {depositRequested
-              ? 'Deposit received. Your request is with Nolan, and messages are available in Your Knives.'
-              : 'Your request is in Nolan\'s queue. If he is able to take it on, the next step will appear in Your Knives.'}
+            Your request is in Nolan&apos;s queue. If he is able to take it on, the next step will appear in Your Knives.
           </p>
         )}
 
