@@ -18,6 +18,12 @@ function formatCurrency(value) {
   return `$${Number(value || 0).toFixed(2)}`;
 }
 
+function moneyValue(value, fallback = 0) {
+  if (value === null || value === undefined || value === "") return fallback;
+  const amount = Number(value);
+  return Number.isFinite(amount) ? Number(amount.toFixed(2)) : fallback;
+}
+
 function formatDate(value) {
   if (!value) return "-";
   const date = typeof value === "number" ? new Date(value) : new Date(value);
@@ -82,6 +88,9 @@ function customerRequestStatus(request = {}) {
     pending_acceptance: "Quote ready",
     quote_accepted: "Accepted",
     in_production: "In progress",
+    awaiting_final_payment: "Final payment due",
+    paid_in_full: "Paid in full",
+    ready_to_ship: "Ready to ship",
     completed: "Complete",
     shipped: "Shipped",
     delivered: "Delivered",
@@ -98,7 +107,25 @@ function customerRequestDeposit(request = {}) {
   return "Not requested";
 }
 
+function isFinalPaymentPaid(request = {}) {
+  return Boolean(request.finalPaymentStatus === "paid" || request.payments?.final?.status === "paid" || request.finalPaymentPaidAt);
+}
+
+function isFinalPaymentDue(request = {}) {
+  const status = String(request.finalPaymentStatus || request.payments?.final?.status || "").toLowerCase();
+  return !isFinalPaymentPaid(request) && (
+    status === "requested" ||
+    String(request.status || "").toLowerCase() === "awaiting_final_payment"
+  ) && finalPaymentAmount(request) > 0;
+}
+
+function finalPaymentAmount(request = {}) {
+  return moneyValue(request.payments?.final?.amount || request.finalPaymentAmount || request.balanceDue, 0);
+}
+
 function customerRequestNextStep(request = {}) {
+  if (isFinalPaymentDue(request)) return "Pay final balance";
+  if (isFinalPaymentPaid(request)) return "Paid in full";
   if (request.chatEnabled) return "Messages available";
   if (String(request.status || "").toLowerCase() === "pending_payment") return "Place deposit";
   return "Awaiting review";
@@ -240,8 +267,8 @@ export default function MyKnives() {
                       </div>
 
                       <div className="detail-row">
-                        <span className="label">{isOrder ? "Price" : "Estimate"}:</span>
-                        <span className="value">{formatCurrency(isOrder ? order.amount || knife.price : request.estimatedPrice)}</span>
+                        <span className="label">{isOrder ? "Price" : request.finalPrice ? "Quote" : "Estimate"}:</span>
+                        <span className="value">{formatCurrency(isOrder ? order.amount || knife.price : request.finalPrice || request.estimatedPrice)}</span>
                       </div>
 
                       <div className="detail-row">
@@ -261,6 +288,11 @@ export default function MyKnives() {
                       {isOrder && (
                         <button className="btn btn-outline-light btn-sm" onClick={(event) => { event.stopPropagation(); navigate(`/my-knives/${item.id}`); }}>
                           <LucideIcon name="Eye" size={14} /> <span>Open</span>
+                        </button>
+                      )}
+                      {!isOrder && isFinalPaymentDue(request) && (
+                        <button className="btn btn-warning btn-sm" onClick={(event) => { event.stopPropagation(); navigate(`/my-knives/${item.id}/final-payment`); }}>
+                          <LucideIcon name="CreditCard" size={14} /> <span>Pay</span>
                         </button>
                       )}
                       <button className="btn btn-warning btn-sm" onClick={(event) => { event.stopPropagation(); setSelectedKey(item.key); }}>
@@ -307,10 +339,16 @@ export default function MyKnives() {
                     <div className="detail-summary-grid">
                       <div><span>Request</span><strong>{formatOrderId(selectedItem.id)}</strong></div>
                       <div><span>Status</span><strong>{customerRequestStatus(selectedItem.request)}</strong></div>
-                      <div><span>Estimate</span><strong>{formatCurrency(selectedItem.request.estimatedPrice)}</strong></div>
+                      <div><span>{selectedItem.request.finalPrice ? "Quote" : "Estimate"}</span><strong>{formatCurrency(selectedItem.request.finalPrice || selectedItem.request.estimatedPrice)}</strong></div>
                       <div><span>Deposit</span><strong>{customerRequestDeposit(selectedItem.request)}</strong></div>
+                      <div><span>Final payment</span><strong>{isFinalPaymentPaid(selectedItem.request) ? "Paid" : isFinalPaymentDue(selectedItem.request) ? formatCurrency(finalPaymentAmount(selectedItem.request)) : "Not requested"}</strong></div>
                       <div><span>Next step</span><strong>{customerRequestNextStep(selectedItem.request)}</strong></div>
                     </div>
+                    {isFinalPaymentDue(selectedItem.request) && (
+                      <button className="btn btn-warning" onClick={() => navigate(`/my-knives/${selectedItem.id}/final-payment`)}>
+                        <LucideIcon name="CreditCard" size={16} /> Pay Final Balance
+                      </button>
+                    )}
                   </div>
                   <div className="detail-chat-card">
                     <h3>Request Messages</h3>

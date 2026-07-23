@@ -39,5 +39,17 @@ export const customRequestService = {
 
   captureDepositPayPalOrder: async ({ requestId, paypalOrderId }) => (
     postCustomRequestEndpoint('captureCustomRequestDepositPayPalOrderHttp', { requestId, paypalOrderId })
+  ),
+
+  requestFinalPayment: async (payload) => (
+    postCustomRequestEndpoint('requestCustomRequestFinalPaymentHttp', payload)
+  ),
+
+  createFinalPaymentPayPalOrder: async (requestId) => (
+    postCustomRequestEndpoint('createCustomRequestFinalPaymentPayPalOrderHttp', { requestId })
+  ),
+
+  captureFinalPaymentPayPalOrder: async ({ requestId, paypalOrderId }) => (
+    postCustomRequestEndpoint('captureCustomRequestFinalPaymentPayPalOrderHttp', { requestId, paypalOrderId })
   )
 };

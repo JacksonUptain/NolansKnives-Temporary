@@ -46,11 +46,11 @@ const SECTION_CONFIG = [
 ];
 
 const PAID_ORDER_STATUSES = new Set(['paid', 'approved', 'completed']);
-const CLOSED_REQUEST_STATUSES = new Set(['completed', 'shipped', 'cancelled']);
-const ACTIVE_REQUEST_STATUSES = new Set(['priority_review', 'quote_accepted', 'in_production']);
+const CLOSED_REQUEST_STATUSES = new Set(['completed', 'shipped', 'delivered', 'cancelled']);
+const ACTIVE_REQUEST_STATUSES = new Set(['priority_review', 'quote_accepted', 'in_production', 'awaiting_final_payment', 'paid_in_full', 'ready_to_ship']);
 const REVIEW_REQUEST_STATUSES = new Set(['needs_review', 'pending_review', 'priority_review', 'pending_payment']);
-const QUOTED_REQUEST_STATUSES = new Set(['quote_sent', 'pending_acceptance', 'quote_accepted', 'in_production', 'completed', 'shipped']);
-const ACCEPTED_REQUEST_STATUSES = new Set(['quote_accepted', 'in_production', 'completed', 'shipped']);
+const QUOTED_REQUEST_STATUSES = new Set(['quote_sent', 'pending_acceptance', 'quote_accepted', 'in_production', 'awaiting_final_payment', 'paid_in_full', 'ready_to_ship', 'completed', 'shipped']);
+const ACCEPTED_REQUEST_STATUSES = new Set(['quote_accepted', 'in_production', 'awaiting_final_payment', 'paid_in_full', 'ready_to_ship', 'completed', 'shipped']);
 const ACTIVE_FULFILLMENT_STATUSES = new Set(['unfulfilled', 'processing']);
 const IMAGE_URL_PATTERN = /(firebasestorage|googleusercontent|githubusercontent|images\/|\.)(png|jpe?g|webp|gif|avif|svg)(\?|$|&)/i;
 
@@ -301,6 +301,18 @@ function hasPaidDeposit(request) {
   return Boolean(request.priorityDepositPaid || request.paymentStatus === 'paid' || request.depositPaidAt);
 }
 
+function hasPaidFinalPayment(request) {
+  return Boolean(request.finalPaymentStatus === 'paid' || request.payments?.final?.status === 'paid' || request.finalPaymentPaidAt);
+}
+
+function requestFinalPaymentAmount(request) {
+  return toNumber(request.payments?.final?.amountPaid || request.finalPaymentAmountPaid || request.payments?.final?.amount || request.finalPaymentAmount || 0);
+}
+
+function requestFinalPaymentTime(request) {
+  return firstTimestamp(request, ['finalPaymentPaidAt', 'updatedAt', 'createdAt']);
+}
+
 function userDisplayName(user) {
   return user.displayName || user.name || user.email || user.uid || 'Unknown customer';
 }
@@ -537,8 +549,17 @@ function buildAnalytics(data, rangeId) {
   const activeBuilds = customRequests.filter((request) => ACTIVE_REQUEST_STATUSES.has(request.status));
   const paidDepositRequests = customRequests.filter(hasPaidDeposit);
   const paidDepositRequestsInRange = requestsInRange.filter(hasPaidDeposit);
+  const paidFinalPaymentRequests = customRequests.filter(hasPaidFinalPayment);
+  const paidFinalPaymentRequestsInRange = paidFinalPaymentRequests.filter((request) => isInRange(requestFinalPaymentTime(request), rangeStart));
   const customDepositRevenue = sum(paidDepositRequestsInRange, requestDepositAmount);
   const allCustomDepositRevenue = sum(paidDepositRequests, requestDepositAmount);
+  const customFinalPaymentRevenue = sum(paidFinalPaymentRequestsInRange, requestFinalPaymentAmount);
+  const allCustomFinalPaymentRevenue = sum(paidFinalPaymentRequests, requestFinalPaymentAmount);
+  const customRevenueEvents = [
+    ...paidOrders.map((order) => ({ source: 'order', time: orderTime(order), amount: orderAmount(order) })),
+    ...paidDepositRequests.map((request) => ({ source: 'deposit', time: customRequestTime(request), amount: requestDepositAmount(request) })),
+    ...paidFinalPaymentRequests.map((request) => ({ source: 'final', time: requestFinalPaymentTime(request), amount: requestFinalPaymentAmount(request) }))
+  ];
   const customPipelineValue = sum(openRequests, (request) => requestFinalPrice(request) || requestEstimate(request));
   const customFinalQuoteValue = sum(customRequests, requestFinalPrice);
   const customEstimateValue = sum(customRequests, requestEstimate);
@@ -641,8 +662,8 @@ function buildAnalytics(data, rangeId) {
   const healthScore = Math.max(0, Math.min(100, 100 - weightedIssueTotal));
 
   const rangeLabel = range.label.toLowerCase();
-  const totalConfirmedRevenue = currentRevenue + customDepositRevenue;
-  const allConfirmedRevenue = allOrderRevenue + allCustomDepositRevenue;
+  const totalConfirmedRevenue = currentRevenue + customDepositRevenue + customFinalPaymentRevenue;
+  const allConfirmedRevenue = allOrderRevenue + allCustomDepositRevenue + allCustomFinalPaymentRevenue;
   const averagePaidOrder = average(paidOrdersInRange.map(orderAmount));
   const averageAllPaidOrder = average(paidOrders.map(orderAmount));
   const conversionFromInventory = products.length ? soldProducts.length / products.length : 0;
@@ -750,10 +771,11 @@ function buildAnalytics(data, rangeId) {
         title: 'Money Analytics',
         description: 'Confirmed revenue, pending money, inventory value, and custom pipeline.',
         metrics: [
-          metric('Confirmed revenue', formatCurrency(totalConfirmedRevenue), `${range.label}: paid knife orders plus paid custom deposits.`, 'DollarSign', 'success'),
+          metric('Confirmed revenue', formatCurrency(totalConfirmedRevenue), `${range.label}: paid knife orders, custom deposits, and final balances.`, 'DollarSign', 'success'),
           metric('Knife order revenue', formatCurrency(currentRevenue), `${formatNumber(paidOrdersInRange.length)} paid order${paidOrdersInRange.length === 1 ? '' : 's'} in range.`, 'ShoppingCart'),
           metric('Custom deposit revenue', formatCurrency(customDepositRevenue), `${formatNumber(paidDepositRequestsInRange.length)} paid custom deposit${paidDepositRequestsInRange.length === 1 ? '' : 's'} in range.`, 'Wand2'),
-          metric('All-time confirmed revenue', formatCurrency(allConfirmedRevenue), `${formatCurrency(allOrderRevenue)} orders and ${formatCurrency(allCustomDepositRevenue)} custom deposits.`, 'TrendingUp'),
+          metric('Custom final payments', formatCurrency(customFinalPaymentRevenue), `${formatNumber(paidFinalPaymentRequestsInRange.length)} final balance payment${paidFinalPaymentRequestsInRange.length === 1 ? '' : 's'} in range.`, 'CreditCard'),
+          metric('All-time confirmed revenue', formatCurrency(allConfirmedRevenue), `${formatCurrency(allOrderRevenue)} orders, ${formatCurrency(allCustomDepositRevenue)} deposits, and ${formatCurrency(allCustomFinalPaymentRevenue)} final balances.`, 'TrendingUp'),
           metric('Pending order value', formatCurrency(pendingOrderValue), `${formatNumber(pendingOrders.length)} pending order${pendingOrders.length === 1 ? '' : 's'} currently in database.`, 'Clock', pendingOrders.length ? 'warning' : ''),
           metric('Available inventory value', formatCurrency(availableInventoryValue), `${formatNumber(availableProducts.length)} available catalog item${availableProducts.length === 1 ? '' : 's'}.`, 'Package'),
           metric('Visible available value', formatCurrency(visibleInventoryValue), 'Available inventory that is not hidden.', 'Eye'),
@@ -766,7 +788,7 @@ function buildAnalytics(data, rangeId) {
           metric('Revenue per buyer', formatCurrency(buyerUids.length ? allOrderRevenue / buyerUids.length : 0, true), `${formatNumber(buyerUids.length)} buyer${buyerUids.length === 1 ? '' : 's'} with paid orders.`, 'Users')
         ],
         charts: [
-          chart('Revenue by Month', 'Paid orders plus paid custom deposits.', 'columns', buildMonthlySeries([...paidOrders, ...paidDepositRequests], (item) => orderTime(item) || customRequestTime(item), (item) => (item.orderId ? orderAmount(item) : requestDepositAmount(item))), formatCurrency),
+          chart('Revenue by Month', 'Paid orders, custom deposits, and final balances.', 'columns', buildMonthlySeries(customRevenueEvents, (item) => item.time, (item) => item.amount), formatCurrency),
           chart('Inventory Value by Status', 'Current catalog price value by public status.', 'bars', [
             { label: 'Available', value: availableInventoryValue },
             { label: 'Pending', value: sum(pendingProducts, (product) => product.price) },
@@ -777,7 +799,8 @@ function buildAnalytics(data, rangeId) {
             { label: 'Open pipeline', value: customPipelineValue },
             { label: 'Final quoted', value: customFinalQuoteValue },
             { label: 'Original estimates', value: customEstimateValue },
-            { label: 'Paid deposits', value: allCustomDepositRevenue }
+            { label: 'Paid deposits', value: allCustomDepositRevenue },
+            { label: 'Final payments', value: allCustomFinalPaymentRevenue }
           ], formatCurrency)
         ],
         lists: [
@@ -785,6 +808,7 @@ function buildAnalytics(data, rangeId) {
           detailList('Revenue Sources', [
             { label: 'Paid knife orders', value: formatCurrency(allOrderRevenue), helper: `${formatNumber(paidOrders.length)} all-time paid orders` },
             { label: 'Paid custom deposits', value: formatCurrency(allCustomDepositRevenue), helper: `${formatNumber(paidDepositRequests.length)} all-time deposits` },
+            { label: 'Paid final balances', value: formatCurrency(allCustomFinalPaymentRevenue), helper: `${formatNumber(paidFinalPaymentRequests.length)} all-time final payments` },
             { label: 'Open custom pipeline', value: formatCurrency(customPipelineValue), helper: `${formatNumber(openRequests.length)} open requests` },
             { label: 'Available inventory', value: formatCurrency(availableInventoryValue), helper: `${formatNumber(availableProducts.length)} available knives` }
           ])
@@ -875,14 +899,15 @@ function buildAnalytics(data, rangeId) {
           metric('Total custom requests', formatNumber(customRequests.length), `${formatNumber(requestsInRange.length)} submitted or updated in ${rangeLabel}.`, 'Wand2'),
           metric('Open custom requests', formatNumber(openRequests.length), `${formatCurrency(customPipelineValue)} estimated or quoted pipeline.`, 'ListChecks', openRequests.length ? 'warning' : 'success'),
           metric('Awaiting review', formatNumber(reviewRequests.length), 'Needs review, priority review, or payment step.', 'Clock', reviewRequests.length ? 'warning' : 'success'),
-          metric('Active builds', formatNumber(activeBuilds.length), 'Priority review, accepted quote, or production.', 'Activity'),
+          metric('Active builds', formatNumber(activeBuilds.length), 'Priority review, accepted quote, production, payment, or shipping prep.', 'Activity'),
           metric('Quotes sent', formatNumber(quotedRequests.length), `${formatCurrency(customFinalQuoteValue)} final quoted value.`, 'Mail'),
           metric('Quotes accepted', formatNumber(acceptedRequests.length), `${formatRate(quoteAcceptanceRate)} acceptance rate among quoted requests.`, 'CheckCircle', 'success'),
           metric('Paid deposits', formatNumber(paidDepositRequests.length), `${formatCurrency(allCustomDepositRevenue)} all-time deposit revenue.`, 'DollarSign'),
+          metric('Paid final balances', formatNumber(paidFinalPaymentRequests.length), `${formatCurrency(allCustomFinalPaymentRevenue)} all-time final payment revenue.`, 'CreditCard'),
           metric('Average estimate', formatCurrency(average(customRequests.map(requestEstimate)), true), 'Average initial custom request estimate.', 'BadgeDollarSign'),
           metric('Average final quote', formatCurrency(average(customRequests.map(requestFinalPrice)), true), 'Average final price where quoted.', 'TrendingUp'),
           metric('Average deposit', formatCurrency(average(paidDepositRequests.map(requestDepositAmount)), true), 'Average paid custom deposit.', 'DollarSign'),
-          metric('Completed custom work', formatNumber(customRequests.filter((request) => ['completed', 'shipped'].includes(request.status)).length), 'Requests marked completed or shipped.', 'CheckCircle'),
+          metric('Completed custom work', formatNumber(customRequests.filter((request) => ['paid_in_full', 'ready_to_ship', 'completed', 'shipped'].includes(request.status)).length), 'Requests paid in full, ready, completed, or shipped.', 'CheckCircle'),
           metric('Cancelled requests', formatNumber(customRequests.filter((request) => request.status === 'cancelled').length), 'Custom requests marked cancelled.', 'AlertTriangle')
         ],
         charts: [
@@ -900,7 +925,8 @@ function buildAnalytics(data, rangeId) {
             { label: 'Open pipeline', value: formatCurrency(customPipelineValue), helper: `${formatNumber(openRequests.length)} open requests` },
             { label: 'Final quoted value', value: formatCurrency(customFinalQuoteValue), helper: `${formatNumber(quotedRequests.length)} quoted requests` },
             { label: 'Estimated value', value: formatCurrency(customEstimateValue), helper: `${formatNumber(customRequests.length)} total requests` },
-            { label: 'Deposits collected', value: formatCurrency(allCustomDepositRevenue), helper: `${formatNumber(paidDepositRequests.length)} paid deposits` }
+            { label: 'Deposits collected', value: formatCurrency(allCustomDepositRevenue), helper: `${formatNumber(paidDepositRequests.length)} paid deposits` },
+            { label: 'Final balances collected', value: formatCurrency(allCustomFinalPaymentRevenue), helper: `${formatNumber(paidFinalPaymentRequests.length)} paid final balances` }
           ])
         ]
       },

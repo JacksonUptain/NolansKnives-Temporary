@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { db } from './firebase';
 import { ref, onValue, update, serverTimestamp } from 'firebase/database';
 import { emailService } from '../services/emailService';
+import { customRequestService } from '../services/customRequestService';
 import { showToast } from '../components/Toast';
 import './CustomRequestDashboard.css';
 import LucideIcon from '../components/ui/LucideIcon';
@@ -17,6 +18,9 @@ const REQUEST_STATUSES = [
   'pending_acceptance',
   'quote_accepted',
   'in_production',
+  'awaiting_final_payment',
+  'paid_in_full',
+  'ready_to_ship',
   'completed',
   'shipped',
   'cancelled'
@@ -38,6 +42,12 @@ function formatCurrency(value) {
   return `$${Number(value || 0).toFixed(2)}`;
 }
 
+function toMoneyNumber(value, fallback = 0) {
+  if (value === null || value === undefined || value === '') return fallback;
+  const amount = Number(value);
+  return Number.isFinite(amount) ? Number(amount.toFixed(2)) : fallback;
+}
+
 function formatDate(value) {
   if (!value) return 'No date';
   const date = typeof value === 'number' ? new Date(value) : new Date(value);
@@ -49,6 +59,41 @@ function hasQuoteBeenSent(request = {}) {
   return !!request.quoteSentAt || !!request.quoteSentTo;
 }
 
+function getDepositPaid(request = {}) {
+  if (!(request.priorityDepositPaid || request.paymentStatus === 'paid' || request.depositPaidAt)) return 0;
+  return toMoneyNumber(
+    request.payments?.deposit?.amount ||
+      request.payments?.deposit?.paidAmount ||
+      request.depositPaid ||
+      request.depositAmount,
+    0
+  );
+}
+
+function isFinalPaymentPaid(request = {}) {
+  return Boolean(request.finalPaymentStatus === 'paid' || request.payments?.final?.status === 'paid' || request.finalPaymentPaidAt);
+}
+
+function hasFinalPaymentBeenRequested(request = {}) {
+  return Boolean(request.finalPaymentStatus === 'requested' || request.payments?.final?.status === 'requested' || request.finalPaymentRequestedAt);
+}
+
+function finalPaymentStatusLabel(request = {}) {
+  if (isFinalPaymentPaid(request)) return 'Paid in full';
+  if (hasFinalPaymentBeenRequested(request)) return 'Requested';
+  return 'Not requested';
+}
+
+function calculateFinalPaymentTotal(draft = {}) {
+  return Math.max(
+    toMoneyNumber(draft.remainingBalance) +
+      toMoneyNumber(draft.shippingAmount) +
+      toMoneyNumber(draft.taxAmount) +
+      toMoneyNumber(draft.adjustmentAmount),
+    0
+  );
+}
+
 function CustomRequestDashboard() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -58,6 +103,7 @@ function CustomRequestDashboard() {
   const [selectedRequestId, setSelectedRequestId] = useState('');
   const [statusDrafts, setStatusDrafts] = useState({});
   const [quoteDrafts, setQuoteDrafts] = useState({});
+  const [finalPaymentDrafts, setFinalPaymentDrafts] = useState({});
   const [savingRequestId, setSavingRequestId] = useState('');
   const [savingAction, setSavingAction] = useState('');
 
@@ -102,7 +148,7 @@ function CustomRequestDashboard() {
     awaitingReview: requests.filter((request) => ['priority_review', 'pending_review', 'needs_review', 'pending_payment'].includes(request.status)).length,
     unverified: requests.filter((request) => request.status === 'unpaid_unverified').length,
     quotes: requests.filter((request) => ['quote_sent', 'pending_acceptance'].includes(request.status)).length,
-    active: requests.filter((request) => ['priority_review', 'quote_accepted', 'in_production'].includes(request.status)).length
+    active: requests.filter((request) => ['priority_review', 'quote_accepted', 'in_production', 'awaiting_final_payment', 'paid_in_full', 'ready_to_ship'].includes(request.status)).length
   }), [requests]);
 
   const getQuoteDraft = (request) => {
@@ -112,6 +158,22 @@ function CustomRequestDashboard() {
       finalPrice: draft.finalPrice ?? (estimatedPrice ? estimatedPrice.toFixed(2) : ''),
       depositAmount: draft.depositAmount ?? (estimatedPrice ? (estimatedPrice * 0.15).toFixed(2) : ''),
       notes: draft.notes ?? ''
+    };
+  };
+
+  const getFinalPaymentDraft = (request) => {
+    const draft = finalPaymentDrafts[request.id] || {};
+    const payment = request.payments?.final || {};
+    const finalPrice = toMoneyNumber(request.finalPrice || request.quotedPrice, 0);
+    const depositPaid = getDepositPaid(request);
+    const defaultRemaining = Math.max(finalPrice - depositPaid, 0);
+
+    return {
+      remainingBalance: draft.remainingBalance ?? toMoneyNumber(payment.remainingBalance ?? request.remainingBalance, defaultRemaining).toFixed(2),
+      shippingAmount: draft.shippingAmount ?? toMoneyNumber(payment.shippingAmount ?? request.shippingAmount, 0).toFixed(2),
+      taxAmount: draft.taxAmount ?? toMoneyNumber(payment.taxAmount ?? request.taxAmount, 0).toFixed(2),
+      adjustmentAmount: draft.adjustmentAmount ?? toMoneyNumber(payment.adjustmentAmount ?? request.adjustmentAmount, 0).toFixed(2),
+      note: draft.note ?? (payment.note ?? request.finalPaymentNote ?? '')
     };
   };
 
@@ -183,6 +245,47 @@ function CustomRequestDashboard() {
       }
     } catch (err) {
       const message = err?.message || 'Failed to send quote';
+      setError(message);
+      showToast(message, 'error');
+    } finally {
+      setSavingRequestId('');
+      setSavingAction('');
+    }
+  };
+
+  const requestFinalPayment = async (request) => {
+    if (!request?.id) return;
+    const finalPrice = toMoneyNumber(request.finalPrice || request.quotedPrice, 0);
+    if (!finalPrice) {
+      showToast('Send a final quote before requesting final payment.', 'error');
+      return;
+    }
+    if (isFinalPaymentPaid(request)) {
+      showToast('This request is already paid in full.', 'info');
+      return;
+    }
+
+    const draft = getFinalPaymentDraft(request);
+    const totalDue = calculateFinalPaymentTotal(draft);
+    if (!totalDue) {
+      showToast('Final payment total must be greater than zero.', 'error');
+      return;
+    }
+
+    try {
+      setSavingAction('final-payment');
+      setSavingRequestId(request.id);
+      await customRequestService.requestFinalPayment({
+        requestId: request.id,
+        remainingBalance: toMoneyNumber(draft.remainingBalance),
+        shippingAmount: toMoneyNumber(draft.shippingAmount),
+        taxAmount: toMoneyNumber(draft.taxAmount),
+        adjustmentAmount: toMoneyNumber(draft.adjustmentAmount),
+        note: draft.note
+      });
+      showToast(hasFinalPaymentBeenRequested(request) ? 'Final payment request resent.' : 'Final payment request sent.', 'success');
+    } catch (err) {
+      const message = err?.message || 'Failed to request final payment';
       setError(message);
       showToast(message, 'error');
     } finally {
@@ -310,6 +413,8 @@ function CustomRequestDashboard() {
                   <div><span>Submitted</span><strong>{formatDate(selectedRequest.createdAt)}</strong></div>
                   <div><span>Estimate</span><strong>{formatCurrency(selectedRequest.estimatedPrice)}</strong></div>
                   <div><span>Deposit</span><strong>{selectedRequest.depositAmount ? formatCurrency(selectedRequest.depositAmount) : 'Not paid'}</strong></div>
+                  <div><span>Final payment</span><strong>{finalPaymentStatusLabel(selectedRequest)}</strong></div>
+                  <div><span>Balance due</span><strong>{selectedRequest.balanceDue ? formatCurrency(selectedRequest.balanceDue) : '-'}</strong></div>
                   <div><span>Delivery</span><strong>{labelize(selectedRequest.deliveryPreference)}</strong></div>
                   <div><span>Desired date</span><strong>{selectedRequest.desiredCompletionDate || 'Flexible'}</strong></div>
                 </div>
@@ -394,6 +499,108 @@ function CustomRequestDashboard() {
                       ? hasQuoteBeenSent(selectedRequest) ? 'Resending...' : 'Sending...'
                       : hasQuoteBeenSent(selectedRequest) ? 'Resend Quote Email' : 'Send Quote Email'}
                   </button>
+                </section>
+
+                <section className="detail-section-card final-payment-panel">
+                  <div className="quote-panel-heading">
+                    <h3>Final Payment</h3>
+                    <span className={`quote-sent-pill final-payment-status ${isFinalPaymentPaid(selectedRequest) ? 'paid' : hasFinalPaymentBeenRequested(selectedRequest) ? 'requested' : ''}`}>
+                      {finalPaymentStatusLabel(selectedRequest)}
+                    </span>
+                  </div>
+
+                  {!selectedRequest.finalPrice ? (
+                    <p>Send a final quote before requesting the final balance.</p>
+                  ) : (
+                    <>
+                      <div className="quote-grid">
+                        <label>
+                          <span>Remaining balance</span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={getFinalPaymentDraft(selectedRequest).remainingBalance}
+                            onChange={(event) => setFinalPaymentDrafts((prev) => ({
+                              ...prev,
+                              [selectedRequest.id]: { ...getFinalPaymentDraft(selectedRequest), remainingBalance: event.target.value }
+                            }))}
+                            disabled={isFinalPaymentPaid(selectedRequest)}
+                          />
+                        </label>
+                        <label>
+                          <span>Shipping</span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={getFinalPaymentDraft(selectedRequest).shippingAmount}
+                            onChange={(event) => setFinalPaymentDrafts((prev) => ({
+                              ...prev,
+                              [selectedRequest.id]: { ...getFinalPaymentDraft(selectedRequest), shippingAmount: event.target.value }
+                            }))}
+                            disabled={isFinalPaymentPaid(selectedRequest)}
+                          />
+                        </label>
+                        <label>
+                          <span>Tax</span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={getFinalPaymentDraft(selectedRequest).taxAmount}
+                            onChange={(event) => setFinalPaymentDrafts((prev) => ({
+                              ...prev,
+                              [selectedRequest.id]: { ...getFinalPaymentDraft(selectedRequest), taxAmount: event.target.value }
+                            }))}
+                            disabled={isFinalPaymentPaid(selectedRequest)}
+                          />
+                        </label>
+                        <label>
+                          <span>Adjustment</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={getFinalPaymentDraft(selectedRequest).adjustmentAmount}
+                            onChange={(event) => setFinalPaymentDrafts((prev) => ({
+                              ...prev,
+                              [selectedRequest.id]: { ...getFinalPaymentDraft(selectedRequest), adjustmentAmount: event.target.value }
+                            }))}
+                            disabled={isFinalPaymentPaid(selectedRequest)}
+                          />
+                        </label>
+                        <label className="quote-notes">
+                          <span>Customer note</span>
+                          <textarea
+                            rows="3"
+                            value={getFinalPaymentDraft(selectedRequest).note}
+                            onChange={(event) => setFinalPaymentDrafts((prev) => ({
+                              ...prev,
+                              [selectedRequest.id]: { ...getFinalPaymentDraft(selectedRequest), note: event.target.value }
+                            }))}
+                            placeholder="Pickup timing, shipping detail, or a short note for the final payment email."
+                            disabled={isFinalPaymentPaid(selectedRequest)}
+                          />
+                        </label>
+                      </div>
+
+                      <div className="final-payment-total">
+                        <span>Total Due</span>
+                        <strong>{formatCurrency(calculateFinalPaymentTotal(getFinalPaymentDraft(selectedRequest)))}</strong>
+                      </div>
+
+                      <button
+                        className="action-btn"
+                        disabled={savingRequestId === selectedRequest.id || !selectedRequest.customerEmail || isFinalPaymentPaid(selectedRequest)}
+                        onClick={() => requestFinalPayment(selectedRequest)}
+                      >
+                        <LucideIcon name={hasFinalPaymentBeenRequested(selectedRequest) ? 'RefreshCw' : 'CreditCard'} size={15} />
+                        {savingRequestId === selectedRequest.id && savingAction === 'final-payment'
+                          ? hasFinalPaymentBeenRequested(selectedRequest) ? 'Resending...' : 'Sending...'
+                          : hasFinalPaymentBeenRequested(selectedRequest) ? 'Resend Final Payment' : 'Request Final Payment'}
+                      </button>
+                    </>
+                  )}
                 </section>
               </>
             ) : (

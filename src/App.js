@@ -19,6 +19,7 @@ import PurchaseDetail from "./pages/PurchaseDetail";
 import ProductPage from "./pages/ProductPage";
 import CustomKnifeRequest from "./pages/CustomKnifeRequest";
 import CustomRequestConfirmation from "./pages/CustomRequestConfirmation";
+import CustomFinalPayment from "./pages/CustomFinalPayment";
 
 // Route guards
 import RequireAuth from "./auth/RequireAuth";
@@ -70,6 +71,16 @@ function App() {
               <RequireAuth>
                 <RequireActiveUser>
                   <MyKnives />
+                </RequireActiveUser>
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/my-knives/:requestId/final-payment"
+            element={
+              <RequireAuth>
+                <RequireActiveUser>
+                  <CustomFinalPayment />
                 </RequireActiveUser>
               </RequireAuth>
             }

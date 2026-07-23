@@ -1422,7 +1422,9 @@
 .status-badge.status-approved,
 .status-badge.status-delivered,
 .status-badge.status-completed,
-.status-badge.status-quote_accepted {
+.status-badge.status-quote_accepted,
+.status-badge.status-paid_in_full,
+.status-badge.status-ready_to_ship {
   background: rgba(76, 175, 80, 0.16);
   color: #9ee59e;
   border: 1px solid rgba(76, 175, 80, 0.34);
@@ -1435,7 +1437,8 @@
 .status-badge.status-needs_review,
 .status-badge.status-priority_review,
 .status-badge.status-quote_sent,
-.status-badge.status-pending_acceptance {
+.status-badge.status-pending_acceptance,
+.status-badge.status-awaiting_final_payment {
   background: rgba(255, 204, 0, 0.13);
   color: #ffdf5d;
   border: 1px solid rgba(255, 204, 0, 0.32);
