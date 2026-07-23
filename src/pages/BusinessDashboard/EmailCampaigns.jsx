@@ -44,6 +44,43 @@ function isSuppressedUser(user = {}) {
     ['unsubscribed', 'complained', 'permanent_failure'].includes(suppressionStatus);
 }
 
+function normalizeEmailInput(value = '') {
+  return String(value || '').trim().toLowerCase();
+}
+
+function isValidEmailInput(value = '') {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmailInput(value));
+}
+
+function parseManualRecipients(value = '') {
+  const text = String(value || '');
+  const recipients = new Map();
+  const addRecipient = ({ email, displayName = '' }) => {
+    const normalizedEmail = normalizeEmailInput(email);
+    if (!isValidEmailInput(normalizedEmail)) return;
+    const name = String(displayName || '').trim().replace(/^["']|["']$/g, '');
+    recipients.set(normalizedEmail, {
+      email: normalizedEmail,
+      displayName: name || normalizedEmail.split('@')[0],
+      manual: true
+    });
+  };
+
+  const anglePattern = /([^<>\n;,]*?)<([^<>\s@]+@[^\s<>@]+\.[^\s<>@]+)>/g;
+  let remaining = text.replace(anglePattern, (_match, name, email) => {
+    addRecipient({ email, displayName: name });
+    return ' ';
+  });
+
+  remaining
+    .split(/[\s,;]+/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .forEach((email) => addRecipient({ email }));
+
+  return [...recipients.values()].sort((a, b) => a.email.localeCompare(b.email));
+}
+
 export default function EmailCampaigns() {
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
@@ -61,6 +98,7 @@ export default function EmailCampaigns() {
   const [campaignName, setCampaignName] = useState("Nolan's Knives Update");
   const [customSubject, setCustomSubject] = useState('');
   const [customHtml, setCustomHtml] = useState('<h2>{{campaignName}}</h2>\n<p>Hi {{firstName}},</p>\n<p></p>');
+  const [manualRecipientText, setManualRecipientText] = useState('');
   const [groupDraft, setGroupDraft] = useState({ name: '', description: '', members: {} });
   const [editingGroupId, setEditingGroupId] = useState('');
   const [loading, setLoading] = useState(true);
@@ -162,13 +200,29 @@ export default function EmailCampaigns() {
   const selectedDirectUids = useMemo(() => Object.keys(selectedUids).filter((uid) => selectedUids[uid]), [selectedUids]);
   const selectedGroupIdList = useMemo(() => Object.keys(selectedGroupIds).filter((id) => selectedGroupIds[id]), [selectedGroupIds]);
   const selectedGroups = useMemo(() => selectedGroupIdList.map((id) => groupById[id]).filter(Boolean), [selectedGroupIdList, groupById]);
+  const manualRecipients = useMemo(() => parseManualRecipients(manualRecipientText), [manualRecipientText]);
+  const selectedUserEmailSet = useMemo(() => new Set(
+    selectedRecipientUids
+      .map((uid) => normalizeEmailInput(userById[uid]?.email))
+      .filter(Boolean)
+  ), [selectedRecipientUids, userById]);
+  const selectedRecipientCount = useMemo(() => {
+    const emailSet = new Set(selectedUserEmailSet);
+    manualRecipients.forEach((recipient) => emailSet.add(recipient.email));
+    return emailSet.size;
+  }, [selectedUserEmailSet, manualRecipients]);
+  const selectedManualRecipients = useMemo(
+    () => manualRecipients.filter((recipient) => !selectedUserEmailSet.has(recipient.email)),
+    [manualRecipients, selectedUserEmailSet]
+  );
   const previewSubject = mode === 'template' ? activeTemplate?.effectiveSubject || activeTemplate?.subject || '' : customSubject;
   const previewHtml = mode === 'template' ? activeTemplate?.effectiveHtml || activeTemplate?.html || '<p>No template selected.</p>' : customHtml;
-  const hasRecipients = selectedRecipientUids.length > 0;
+  const hasRecipients = selectedRecipientCount > 0;
   const hasMessage = mode === 'template' ? !!templateId : !!customSubject.trim() && !!customHtml.trim();
   const flowStepIndex = Math.max(FLOW_STEPS.findIndex((step) => step.id === flowStep), 0);
   const selectedPreviewUsers = selectedRecipientUids.slice(0, 8).map((uid) => userById[uid]).filter(Boolean);
-  const hiddenPreviewRecipientCount = Math.max(selectedRecipientUids.length - selectedPreviewUsers.length, 0);
+  const selectedPreviewManualRecipients = selectedManualRecipients.slice(0, Math.max(0, 8 - selectedPreviewUsers.length));
+  const hiddenPreviewRecipientCount = Math.max(selectedRecipientCount - selectedPreviewUsers.length - selectedPreviewManualRecipients.length, 0);
   const messageLabel = mode === 'template' ? activeTemplate?.label || 'Template' : 'Custom HTML';
 
   const getFlowStepClass = (step, index) => {
@@ -226,6 +280,7 @@ export default function EmailCampaigns() {
   const clearRecipients = () => {
     setSelectedUids({});
     setSelectedGroupIds({});
+    setManualRecipientText('');
   };
 
   const copyTemplateToCustom = () => {
@@ -241,13 +296,14 @@ export default function EmailCampaigns() {
       campaignName,
       recipientUids: selectedDirectUids,
       groupIds: selectedGroupIdList,
+      manualRecipients,
       mode,
       templateId,
       subject: customSubject,
       html: customHtml
     };
 
-    if (selectedRecipientUids.length === 0) {
+    if (selectedRecipientCount === 0) {
       showToast('Select at least one recipient.', 'error');
       return;
     }
@@ -262,7 +318,7 @@ export default function EmailCampaigns() {
 
     await showConfirm(
       'Send Email Campaign',
-      `Send "${campaignName || 'this campaign'}" to ${selectedRecipientUids.length} recipient${selectedRecipientUids.length === 1 ? '' : 's'}?`,
+      `Send "${campaignName || 'this campaign'}" to ${selectedRecipientCount} recipient${selectedRecipientCount === 1 ? '' : 's'}?`,
       async () => {
         try {
           setSending(true);
@@ -380,10 +436,10 @@ export default function EmailCampaigns() {
       {error && <div className="alert-error">{error}</div>}
 
       <div className="workspace-stats">
-        <div className="stat-card compact"><span>Recipients</span><strong>{selectedRecipientUids.length}</strong></div>
+        <div className="stat-card compact"><span>Recipients</span><strong>{selectedRecipientCount}</strong></div>
         <div className="stat-card compact"><span>Groups</span><strong>{selectedGroups.length}</strong></div>
+        <div className="stat-card compact"><span>Manual</span><strong>{selectedManualRecipients.length}</strong></div>
         <div className="stat-card compact"><span>Templates</span><strong>{templates.length}</strong></div>
-        <div className="stat-card compact"><span>Campaigns</span><strong>{campaigns.length}</strong></div>
       </div>
 
       <div className="editor-tabs business-tabs">
@@ -418,7 +474,7 @@ export default function EmailCampaigns() {
           <div className="campaign-selection-strip">
             <div>
               <span>Recipients</span>
-              <strong>{selectedRecipientUids.length}</strong>
+              <strong>{selectedRecipientCount}</strong>
             </div>
             <div>
               <span>Direct</span>
@@ -427,6 +483,10 @@ export default function EmailCampaigns() {
             <div>
               <span>Groups</span>
               <strong>{selectedGroups.length}</strong>
+            </div>
+            <div>
+              <span>Manual</span>
+              <strong>{selectedManualRecipients.length}</strong>
             </div>
             <div>
               <span>Message</span>
@@ -439,13 +499,13 @@ export default function EmailCampaigns() {
               <div className="campaign-step-header">
                 <div>
                   <h2>Audience</h2>
-                  <p>{selectedRecipientUids.length} recipient{selectedRecipientUids.length === 1 ? '' : 's'} selected</p>
+                  <p>{selectedRecipientCount} recipient{selectedRecipientCount === 1 ? '' : 's'} selected</p>
                 </div>
                 <div className="campaign-recipient-actions">
                   <button type="button" className="action-btn secondary" onClick={selectAllFiltered}>
                     <LucideIcon name="CheckSquare" size={15} /> Select Filtered
                   </button>
-                  <button type="button" className="action-btn secondary" onClick={clearRecipients} disabled={!hasRecipients}>
+                  <button type="button" className="action-btn secondary" onClick={clearRecipients} disabled={!hasRecipients && !manualRecipientText.trim()}>
                     <LucideIcon name="X" size={15} /> Clear
                   </button>
                 </div>
@@ -478,6 +538,37 @@ export default function EmailCampaigns() {
                   </label>
                 ))}
                 {groups.length === 0 && <div className="empty-state refined compact-empty"><LucideIcon name="Users" size={28} /><h2>No groups yet.</h2></div>}
+              </div>
+
+              <div className="campaign-section-label">
+                <span>Manual emails</span>
+                <strong>{selectedManualRecipients.length} valid</strong>
+              </div>
+              <div className="manual-recipient-panel">
+                <label>
+                  Paste or type emails
+                  <textarea
+                    className="input-field manual-recipient-input"
+                    value={manualRecipientText}
+                    onChange={(event) => setManualRecipientText(event.target.value)}
+                    placeholder={'nolan@example.com\nJordan Miller <jordan@example.com>\norders@example.com'}
+                    spellCheck={false}
+                  />
+                </label>
+                <div className="manual-recipient-help">
+                  <LucideIcon name="Info" size={15} />
+                  <span>Use commas, spaces, or new lines. Existing selected users are deduped by email.</span>
+                </div>
+                {manualRecipients.length > 0 && (
+                  <div className="manual-recipient-chips">
+                    {manualRecipients.map((recipient) => (
+                      <span className={selectedUserEmailSet.has(recipient.email) ? 'deduped' : ''} key={recipient.email}>
+                        <strong>{recipient.displayName}</strong>
+                        <small>{recipient.email}</small>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="campaign-section-label">
@@ -568,7 +659,7 @@ export default function EmailCampaigns() {
               <div className="campaign-step-header">
                 <div>
                   <h2>Preview</h2>
-                  <p>{selectedRecipientUids.length} recipient{selectedRecipientUids.length === 1 ? '' : 's'}</p>
+                  <p>{selectedRecipientCount} recipient{selectedRecipientCount === 1 ? '' : 's'}</p>
                 </div>
                 <button type="button" className="action-btn secondary" onClick={() => setFlowStep('message')}>
                   <LucideIcon name="Pencil" size={15} /> Edit Message
@@ -580,6 +671,12 @@ export default function EmailCampaigns() {
                   <span key={user.uid}>
                     <strong>{userLabel(user)}</strong>
                     <small>{user.email}</small>
+                  </span>
+                ))}
+                {selectedPreviewManualRecipients.map((recipient) => (
+                  <span key={recipient.email}>
+                    <strong>{recipient.displayName}</strong>
+                    <small>{recipient.email}</small>
                   </span>
                 ))}
                 {hiddenPreviewRecipientCount > 0 && <em>+{hiddenPreviewRecipientCount} more</em>}
@@ -608,11 +705,15 @@ export default function EmailCampaigns() {
                 </div>
                 <div className="campaign-review-card">
                   <span>Recipients</span>
-                  <strong>{selectedRecipientUids.length}</strong>
+                  <strong>{selectedRecipientCount}</strong>
                 </div>
                 <div className="campaign-review-card">
                   <span>Groups</span>
                   <strong>{selectedGroups.length ? selectedGroups.map((group) => group.name).join(', ') : 'None'}</strong>
+                </div>
+                <div className="campaign-review-card">
+                  <span>Manual</span>
+                  <strong>{selectedManualRecipients.length ? `${selectedManualRecipients.length} email${selectedManualRecipients.length === 1 ? '' : 's'}` : 'None'}</strong>
                 </div>
                 <div className="campaign-review-card">
                   <span>Message</span>
@@ -710,6 +811,7 @@ export default function EmailCampaigns() {
                 </div>
                 <div className="campaign-history-meta">
                   <div><span>Recipients</span><strong>{campaign.recipientCount || 0}</strong></div>
+                  <div><span>Manual</span><strong>{campaign.manualRecipientCount || 0}</strong></div>
                   <div><span>Sent</span><strong>{campaign.successCount || 0}</strong></div>
                   <div><span>Failed</span><strong>{campaign.failureCount || 0}</strong></div>
                   <div><span>Delivered</span><strong>{campaign.eventCounts?.delivered || 0}</strong></div>

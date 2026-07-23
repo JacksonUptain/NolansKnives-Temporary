@@ -1639,7 +1639,7 @@
 .campaign-selection-strip,
 .campaign-review-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 0.75rem;
 }
 
@@ -1845,6 +1845,74 @@
   color: #ffcc00;
   font-style: normal;
   font-size: 0.8rem;
+}
+
+.manual-recipient-panel {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.85rem;
+  background: #080808;
+  border: 1px solid #242424;
+  border-radius: 8px;
+}
+
+.manual-recipient-input {
+  min-height: 110px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.manual-recipient-help {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  color: #999;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.manual-recipient-help svg {
+  flex: 0 0 auto;
+  color: #8bbcff;
+  margin-top: 0.05rem;
+}
+
+.manual-recipient-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.manual-recipient-chips span {
+  display: grid;
+  gap: 0.1rem;
+  max-width: min(100%, 260px);
+  padding: 0.48rem 0.58rem;
+  background: #111;
+  border: 1px solid #303030;
+  border-radius: 8px;
+}
+
+.manual-recipient-chips span.deduped {
+  border-color: rgba(139, 188, 255, 0.32);
+  background: rgba(139, 188, 255, 0.08);
+}
+
+.manual-recipient-chips strong,
+.manual-recipient-chips small {
+  overflow-wrap: anywhere;
+}
+
+.manual-recipient-chips strong {
+  color: #f4f4f4;
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+
+.manual-recipient-chips small {
+  color: #999;
+  font-size: 0.76rem;
+  line-height: 1.25;
 }
 
 .recipient-list {

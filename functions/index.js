@@ -231,6 +231,159 @@ function buildPremiumEmail({
 </html>`;
 }
 
+function buildBirthdayCampaignEmail(
+  displayName = "Customer",
+  campaignName = "Happy Birthday from Nolan's Knives",
+  birthdayOffer = "A birthday note from the forge: may the next year feel sharp, steady, and built with purpose.",
+  birthdayCode = "No code needed"
+) {
+  const firstName = firstNameFrom(displayName) || displayName || "there";
+
+  return `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>${emailSafeText(campaignName)}</title>
+    <style>
+      @media screen and (max-width: 620px) {
+        .birthday-shell { padding: 18px 10px !important; }
+        .birthday-card { border-radius: 14px !important; }
+        .birthday-hero { padding: 30px 18px 22px !important; }
+        .birthday-title { font-size: 34px !important; line-height: 1.04 !important; }
+        .birthday-copy { font-size: 15px !important; }
+        .birthday-grid { display: block !important; }
+        .birthday-grid td { display: block !important; width: 100% !important; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .forge-glow, .spark, .blade, .glint, .ember-line { animation: none !important; }
+      }
+      @keyframes forgePulse {
+        0%, 100% { opacity: .72; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.035); }
+      }
+      @keyframes glintSweep {
+        0% { transform: translateX(-120%) skewX(-18deg); opacity: 0; }
+        28% { opacity: .95; }
+        54% { opacity: .2; }
+        100% { transform: translateX(150%) skewX(-18deg); opacity: 0; }
+      }
+      @keyframes bladeFloat {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-7px); }
+      }
+      @keyframes sparkRise {
+        0% { opacity: 0; transform: translateY(16px) scale(.55); }
+        25% { opacity: 1; }
+        100% { opacity: 0; transform: translateY(-42px) scale(1); }
+      }
+      @keyframes emberLine {
+        0%, 100% { opacity: .45; }
+        50% { opacity: 1; }
+      }
+    </style>
+  </head>
+  <body style="margin:0;padding:0;background:#050505;">
+    <div style="display:none;max-height:0;max-width:0;opacity:0;overflow:hidden;color:#050505;font-size:1px;line-height:1px;">A forged birthday wish from Nolan's Knives.</div>
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" class="birthday-shell" style="background:#050505;margin:0;padding:34px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:720px;margin:0 auto;">
+            <tr>
+              <td style="padding:0 0 14px 2px;">
+                <div style="color:#ffcc00;font-family:${EMAIL_STYLE.font};font-size:13px;font-weight:900;letter-spacing:.12em;line-height:1.2;text-transform:uppercase;">Nolan's Knives</div>
+                <div style="margin-top:5px;color:#a9a9a9;font-family:${EMAIL_STYLE.font};font-size:13px;line-height:1.4;">A birthday spark from the forge.</div>
+              </td>
+            </tr>
+            <tr>
+              <td class="birthday-card" style="background:#101010;border:1px solid #302a12;border-radius:18px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.55);">
+                <div class="ember-line" style="height:5px;background:linear-gradient(90deg,#ffcc00,#ff5c2a,#8bbcff,#ffcc00);line-height:5px;font-size:5px;animation:emberLine 2.8s ease-in-out infinite;">&nbsp;</div>
+                <div class="birthday-hero" style="position:relative;padding:42px 34px 28px;background:
+                  radial-gradient(circle at 20% 12%, rgba(255,204,0,.24), transparent 30%),
+                  radial-gradient(circle at 84% 16%, rgba(139,188,255,.18), transparent 30%),
+                  linear-gradient(145deg,#151515 0%,#070707 62%,#171005 100%);">
+                  <div class="forge-glow" style="position:absolute;right:28px;top:22px;width:164px;height:164px;border-radius:999px;background:radial-gradient(circle,rgba(255,204,0,.26),rgba(255,92,42,.08) 48%,transparent 70%);animation:forgePulse 3.8s ease-in-out infinite;">&nbsp;</div>
+                  <span class="spark" style="position:absolute;left:12%;top:74%;width:7px;height:7px;border-radius:99px;background:#ffcc00;box-shadow:0 0 14px #ffcc00;animation:sparkRise 3.1s ease-in-out infinite;">&nbsp;</span>
+                  <span class="spark" style="position:absolute;left:72%;top:78%;width:5px;height:5px;border-radius:99px;background:#8bbcff;box-shadow:0 0 12px #8bbcff;animation:sparkRise 2.7s ease-in-out .4s infinite;">&nbsp;</span>
+                  <span class="spark" style="position:absolute;left:86%;top:58%;width:6px;height:6px;border-radius:99px;background:#ff5c2a;box-shadow:0 0 14px #ff5c2a;animation:sparkRise 3.5s ease-in-out .9s infinite;">&nbsp;</span>
+
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="position:relative;z-index:2;">
+                    <tr>
+                      <td>
+                        <div style="margin:0 0 12px;color:#ffcc00;font-family:${EMAIL_STYLE.font};font-size:12px;font-weight:900;letter-spacing:.14em;line-height:1.4;text-transform:uppercase;">Birthday Forge Edition</div>
+                        <h1 class="birthday-title" style="margin:0;color:#ffffff;font-family:${EMAIL_STYLE.font};font-size:46px;font-weight:900;letter-spacing:0;line-height:1.02;">Happy Birthday, ${emailSafeText(firstName)}</h1>
+                        <p class="birthday-copy" style="max-width:520px;margin:18px 0 0;color:#f4f4f4;font-family:${EMAIL_STYLE.font};font-size:17px;line-height:1.65;">Today gets the premium treatment: hot steel energy, a little gold, and a wish for a year that holds an edge.</p>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+
+                <div style="padding:30px 34px 32px;background:#101010;">
+                  <div class="blade" style="position:relative;margin:0 auto 26px;width:86%;max-width:520px;height:38px;animation:bladeFloat 4.4s ease-in-out infinite;">
+                    <div style="position:absolute;left:0;right:84px;top:12px;height:12px;border-radius:999px;background:linear-gradient(90deg,#292929,#f7f7f7 22%,#8a8a8a 48%,#ffffff 68%,#242424);overflow:hidden;">
+                      <div class="glint" style="height:36px;width:110px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent);animation:glintSweep 3.6s ease-in-out infinite;">&nbsp;</div>
+                    </div>
+                    <div style="position:absolute;right:0;top:7px;width:112px;height:22px;border-radius:999px;background:linear-gradient(90deg,#2b1b08,#ffcc00,#5b3710);box-shadow:0 0 24px rgba(255,204,0,.24);">&nbsp;</div>
+                  </div>
+
+                  <p style="margin:0 0 16px;color:#f4f4f4;font-family:${EMAIL_STYLE.font};font-size:16px;line-height:1.65;">Hi ${emailSafeText(firstName)},</p>
+                  <p style="margin:0 0 18px;color:#f4f4f4;font-family:${EMAIL_STYLE.font};font-size:16px;line-height:1.65;">From Nolan's Knives, happy birthday. Whether your perfect day involves shop talk, a new blade idea, or just a quieter moment with something well-made, we hope it feels fully yours.</p>
+
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" class="birthday-grid" style="margin:22px 0;border-spacing:0;">
+                    <tr>
+                      <td width="50%" style="padding:0 7px 14px 0;">
+                        <div style="min-height:130px;padding:18px;background:#171717;border:1px solid #332f1b;border-radius:12px;">
+                          <div style="color:#ffcc00;font-family:${EMAIL_STYLE.font};font-size:12px;font-weight:900;letter-spacing:.1em;line-height:1.4;text-transform:uppercase;">Birthday Wish</div>
+                          <p style="margin:10px 0 0;color:#ffffff;font-family:${EMAIL_STYLE.font};font-size:20px;font-weight:900;line-height:1.25;">A sharper year ahead.</p>
+                          <p style="margin:10px 0 0;color:#bdbdbd;font-family:${EMAIL_STYLE.font};font-size:14px;line-height:1.55;">Good tools, clean lines, better stories, and a blade that feels like it belongs in your hand.</p>
+                        </div>
+                      </td>
+                      <td width="50%" style="padding:0 0 14px 7px;">
+                        <div style="min-height:130px;padding:18px;background:#171717;border:1px solid #1f3347;border-radius:12px;">
+                          <div style="color:#8bbcff;font-family:${EMAIL_STYLE.font};font-size:12px;font-weight:900;letter-spacing:.1em;line-height:1.4;text-transform:uppercase;">Birthday Note</div>
+                          <p style="margin:10px 0 0;color:#ffffff;font-family:${EMAIL_STYLE.font};font-size:20px;font-weight:900;line-height:1.25;">${emailSafeText(birthdayCode)}</p>
+                          <p style="margin:10px 0 0;color:#bdbdbd;font-family:${EMAIL_STYLE.font};font-size:14px;line-height:1.55;">${emailSafeText(birthdayOffer)}</p>
+                        </div>
+                      </td>
+                    </tr>
+                  </table>
+
+                  <div style="margin:22px 0;padding:18px 18px 16px;background:#080808;border:1px solid #2b2b2b;border-radius:12px;">
+                    <div style="color:#ffcc00;font-family:${EMAIL_STYLE.font};font-size:12px;font-weight:900;letter-spacing:.1em;line-height:1.4;text-transform:uppercase;">The Birthday Menu</div>
+                    <p style="margin:12px 0 0;color:#ededed;font-family:${EMAIL_STYLE.font};font-size:15px;line-height:1.65;">Look through available knives, start a custom idea, or just enjoy the day knowing the forge is sending a little heat your way.</p>
+                  </div>
+
+                  <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0 6px;">
+                    <tr>
+                      <td style="border-radius:8px;background:#ffcc00;">
+                        <a href="${emailSafeText(emailPath("/Store"))}" style="display:inline-block;padding:14px 20px;color:#111111;font-family:${EMAIL_STYLE.font};font-size:15px;font-weight:900;line-height:1.2;text-decoration:none;border-radius:8px;">Explore Available Knives</a>
+                      </td>
+                      <td style="width:12px;font-size:12px;line-height:12px;">&nbsp;</td>
+                      <td style="border-radius:8px;border:1px solid #ffcc00;">
+                        <a href="${emailSafeText(emailPath("/custom-knife-request"))}" style="display:inline-block;padding:13px 18px;color:#ffcc00;font-family:${EMAIL_STYLE.font};font-size:15px;font-weight:900;line-height:1.2;text-decoration:none;border-radius:8px;">Start A Custom Build</a>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+
+                <div style="padding:18px 34px;background:#060606;border-top:1px solid #2b2b2b;">
+                  <p style="margin:0;color:#9f9f9f;font-family:${EMAIL_STYLE.font};font-size:13px;line-height:1.6;">You are receiving this birthday email from Nolan's Knives. Questions? Reply to this email or contact ${emailSafeText(BUSINESS_EMAIL)}.</p>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 2px 0;color:#858585;font-family:${EMAIL_STYLE.font};font-size:12px;line-height:1.6;text-align:center;">
+                Nolan's Knives &bull; <a href="${emailSafeText(SITE_URL)}" style="color:#ffcc00;text-decoration:none;">nolansknives.com</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+}
+
 // Email Templates
 const emailTemplates = {
   adminInvite: (displayName, setupUrl, inviterName = "Nolan's Knives", roleLabel = "Admin") => {
@@ -660,6 +813,16 @@ const emailTemplates = {
     })
   }),
 
+  campaignBirthday: (
+    displayName = "Customer",
+    campaignName = "Happy Birthday from Nolan's Knives",
+    birthdayOffer = "A birthday note from the forge: may the next year feel sharp, steady, and built with purpose.",
+    birthdayCode = "No code needed"
+  ) => ({
+    subject: `Happy Birthday from Nolan's Knives, ${firstNameFrom(displayName) || displayName || "there"}`,
+    html: buildBirthdayCampaignEmail(displayName, campaignName, birthdayOffer, birthdayCode)
+  }),
+
   orderComplete: (customerName, requestId, trackingInfo) => ({
     subject: "Your Custom Knife is Ready! - Nolan's Knives",
     html: buildPremiumEmail({
@@ -791,6 +954,11 @@ const emailTemplateMetadata = {
     label: "Campaign - Announcement",
     description: "A flexible announcement template for general customer updates.",
     variables: ["displayName", "firstName", "email", "campaignName", "siteUrl", "businessEmail"]
+  },
+  campaignBirthday: {
+    label: "Campaign - Happy Birthday",
+    description: "A high-energy birthday campaign template with premium Nolan's Knives styling and animated email flourishes.",
+    variables: ["displayName", "firstName", "email", "campaignName", "birthdayOffer", "birthdayCode", "siteUrl", "businessEmail"]
   }
 };
 
@@ -816,6 +984,7 @@ const emailTemplateTagConfig = {
   campaignCustomKnifeFollowUp: { category: "campaign", audience: "marketing", lifecycle: "custom-knife-follow-up" },
   campaignCareTips: { category: "campaign", audience: "marketing", lifecycle: "care-tips" },
   campaignAnnouncement: { category: "campaign", audience: "marketing", lifecycle: "announcement" },
+  campaignBirthday: { category: "campaign", audience: "marketing", lifecycle: "birthday" },
   orderComplete: { category: "custom-order", audience: "customer", lifecycle: "complete" }
 };
 
@@ -890,6 +1059,12 @@ const emailTemplateContexts = {
   campaignCustomKnifeFollowUp: (displayName = "Customer", campaignName = "Custom Knife Follow-Up") => ({ displayName, campaignName }),
   campaignCareTips: (displayName = "Customer", campaignName = "Knife Care Tips") => ({ displayName, campaignName }),
   campaignAnnouncement: (displayName = "Customer", campaignName = "Nolan's Knives Announcement") => ({ displayName, campaignName }),
+  campaignBirthday: (
+    displayName = "Customer",
+    campaignName = "Happy Birthday from Nolan's Knives",
+    birthdayOffer = "A birthday note from the forge: may the next year feel sharp, steady, and built with purpose.",
+    birthdayCode = "No code needed"
+  ) => ({ displayName, campaignName, birthdayOffer, birthdayCode }),
   orderComplete: (customerName, requestId, trackingInfo) => ({ customerName, requestId, trackingInfo })
 };
 
@@ -1005,6 +1180,7 @@ function getSampleTemplateArgs(templateName) {
     campaignCustomKnifeFollowUp: ["Jordan Miller", "Custom Knife Follow-Up"],
     campaignCareTips: ["Jordan Miller", "Knife Care Tips"],
     campaignAnnouncement: ["Jordan Miller", "Nolan's Knives Announcement"],
+    campaignBirthday: ["Jordan Miller", "Happy Birthday from Nolan's Knives", "A birthday note from the forge: may the next year feel sharp, steady, and built with purpose.", "No code needed"],
     orderComplete: ["Jordan Miller", "CR-7K9P2", "1Z999AA10123456784"]
   };
   return samples[templateName] || [];
@@ -1033,6 +1209,7 @@ function getEditableTemplateArgs(templateName) {
     campaignCustomKnifeFollowUp: ["{{displayName}}", "{{campaignName}}"],
     campaignCareTips: ["{{displayName}}", "{{campaignName}}"],
     campaignAnnouncement: ["{{displayName}}", "{{campaignName}}"],
+    campaignBirthday: ["{{firstName}}", "{{campaignName}}", "{{birthdayOffer}}", "{{birthdayCode}}"],
     orderComplete: ["{{customerName}}", "{{requestId}}", "{{trackingInfo}}"]
   };
   return variables[templateName] || [];
@@ -4267,15 +4444,74 @@ function normalizeUidList(value) {
   return [...new Set(list.map((item) => String(item || "").trim()).filter(Boolean))];
 }
 
+function extractManualCampaignRecipientsFromText(value = "") {
+  const recipients = [];
+  const text = String(value || "");
+  const anglePattern = /([^<>\n;,]*?)<([^<>\s@]+@[^\s<>@]+\.[^\s<>@]+)>/g;
+  const remaining = text.replace(anglePattern, (_match, displayName, email) => {
+    recipients.push({
+      displayName: String(displayName || "").trim().replace(/^["']|["']$/g, ""),
+      email
+    });
+    return " ";
+  });
+
+  remaining
+    .split(/[\s,;]+/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .forEach((email) => recipients.push({ email }));
+
+  return recipients;
+}
+
+function normalizeManualCampaignRecipients(value = []) {
+  const manualMap = new Map();
+  const addRecipient = (recipient = {}) => {
+    const email = normalizeEmail(recipient.email);
+    if (!email || !isValidEmail(email)) return;
+    const displayName = String(
+      recipient.displayName ||
+      recipient.name ||
+      recipient.fullName ||
+      ""
+    ).trim();
+
+    manualMap.set(email, {
+      uid: `manual_${hashText(email).slice(0, 18)}`,
+      email,
+      displayName: displayName || email.split("@")[0],
+      role: "manual",
+      manual: true,
+      status: "active"
+    });
+  };
+
+  if (Array.isArray(value)) {
+    value.forEach((item) => {
+      if (typeof item === "string") {
+        extractManualCampaignRecipientsFromText(item).forEach(addRecipient);
+      } else if (item && typeof item === "object") {
+        addRecipient(item);
+      }
+    });
+  } else {
+    extractManualCampaignRecipientsFromText(value).forEach(addRecipient);
+  }
+
+  return [...manualMap.values()];
+}
+
 function isEmailSuppressedForCampaign(profile = {}) {
   const suppressionStatus = profile.emailSuppression?.status || "";
   return profile.emailPreferences?.marketingSubscribed === false ||
     ["unsubscribed", "complained", "permanent_failure"].includes(suppressionStatus);
 }
 
-async function getCampaignRecipients({ recipientUids = [], groupIds = [] }) {
+async function getCampaignRecipients({ recipientUids = [], groupIds = [], manualRecipients = [] }) {
   const uidSet = new Set(normalizeUidList(recipientUids));
   const selectedGroupIds = normalizeUidList(groupIds);
+  const normalizedManualRecipients = normalizeManualCampaignRecipients(manualRecipients);
   const groups = [];
 
   for (const groupId of selectedGroupIds) {
@@ -4292,6 +4528,30 @@ async function getCampaignRecipients({ recipientUids = [], groupIds = [] }) {
     if (!profile?.email || profile.status === "blocked") continue;
     if (isEmailSuppressedForCampaign(profile)) continue;
     recipients.push({ uid, ...profile, email: normalizeEmail(profile.email) });
+  }
+
+  if (normalizedManualRecipients.length > 0) {
+    const existingUsersByEmail = new Map();
+    const usersSnap = await db.ref("users").once("value");
+    Object.entries(usersSnap.val() || {}).forEach(([profileUid, profile]) => {
+      const email = normalizeEmail(profile?.email);
+      if (email) existingUsersByEmail.set(email, { uid: profileUid, ...profile, email });
+    });
+
+    normalizedManualRecipients.forEach((manualRecipient) => {
+      const existingProfile = existingUsersByEmail.get(manualRecipient.email);
+      if (existingProfile?.status === "blocked" || isEmailSuppressedForCampaign(existingProfile)) return;
+
+      recipients.push({
+        ...(existingProfile || {}),
+        ...manualRecipient,
+        uid: existingProfile?.uid || manualRecipient.uid,
+        displayName: manualRecipient.displayName || existingProfile?.displayName || existingProfile?.email || manualRecipient.email,
+        role: existingProfile?.role || "manual",
+        manual: true,
+        registered: !!existingProfile
+      });
+    });
   }
 
   const dedupedByEmail = new Map();
@@ -4316,7 +4576,9 @@ function campaignRecipientContext(recipient = {}, campaignName = "") {
     firstName: firstNameFrom(displayName),
     email: recipient.email || "",
     role: recipient.role || "customer",
-    campaignName: campaignName || "Nolan's Knives Update"
+    campaignName: campaignName || "Nolan's Knives Update",
+    birthdayOffer: "A birthday note from the forge: may the next year feel sharp, steady, and built with purpose.",
+    birthdayCode: "No code needed"
   });
 }
 
@@ -4341,7 +4603,8 @@ async function resolveCampaignTemplateSources(templateId, campaignName) {
     campaignNewInventory: ["{{displayName}}", campaignName || "New Knives Available"],
     campaignCustomKnifeFollowUp: ["{{displayName}}", campaignName || "Custom Knife Follow-Up"],
     campaignCareTips: ["{{displayName}}", campaignName || "Knife Care Tips"],
-    campaignAnnouncement: ["{{displayName}}", campaignName || "Nolan's Knives Announcement"]
+    campaignAnnouncement: ["{{displayName}}", campaignName || "Nolan's Knives Announcement"],
+    campaignBirthday: ["{{firstName}}", campaignName || "Happy Birthday from Nolan's Knives", "{{birthdayOffer}}", "{{birthdayCode}}"]
   };
   const sampleArgs = campaignTemplateArgs[templateId] || getSampleTemplateArgs(templateId);
   const fallback = template(...sampleArgs);
@@ -4367,13 +4630,14 @@ exports.sendEmailCampaign = onCall({ invoker: "public", cors: true, timeoutSecon
     campaignName = "Nolan's Knives Update",
     recipientUids = [],
     groupIds = [],
+    manualRecipients = [],
     templateId = "",
     subject = "",
     html = "",
     mode = "custom"
   } = request.data || {};
 
-  const { recipients, groups } = await getCampaignRecipients({ recipientUids, groupIds });
+  const { recipients, groups } = await getCampaignRecipients({ recipientUids, groupIds, manualRecipients });
   if (recipients.length === 0) {
     throw new HttpsError("invalid-argument", "Select at least one active recipient with an email address.");
   }
@@ -4403,6 +4667,7 @@ exports.sendEmailCampaign = onCall({ invoker: "public", cors: true, timeoutSecon
   const senderProfile = await getUserProfile(uid);
   const campaignId = db.ref("emailCampaigns").push().key;
   const startedAt = admin.database.ServerValue.TIMESTAMP;
+  const manualRecipientCount = recipients.filter((recipient) => recipient.manual).length;
 
   await db.ref(`emailCampaigns/${campaignId}`).set({
     campaignId,
@@ -4414,6 +4679,7 @@ exports.sendEmailCampaign = onCall({ invoker: "public", cors: true, timeoutSecon
     html: sourceHtml,
     groupIds: groups.reduce((acc, group) => ({ ...acc, [group.groupId]: true }), {}),
     recipientCount: recipients.length,
+    manualRecipientCount,
     status: "sending",
     createdBy: uid,
     createdByEmail: senderProfile?.email || request.auth.token?.email || "",
@@ -4449,6 +4715,9 @@ exports.sendEmailCampaign = onCall({ invoker: "public", cors: true, timeoutSecon
       uid: recipient.uid,
       email: recipient.email,
       displayName: recipient.displayName || "",
+      role: recipient.role || "",
+      manual: !!recipient.manual,
+      registered: !!recipient.registered,
       messageId: result.messageId || null,
       sentAt: admin.database.ServerValue.TIMESTAMP
     };
@@ -4484,6 +4753,7 @@ exports.sendEmailCampaign = onCall({ invoker: "public", cors: true, timeoutSecon
     campaignName,
     templateName,
     recipientCount: recipients.length,
+    manualRecipientCount,
     successCount: successes.length,
     failureCount: failures.length,
     skippedCount: skipped.length
@@ -4493,6 +4763,7 @@ exports.sendEmailCampaign = onCall({ invoker: "public", cors: true, timeoutSecon
     success: failures.length === 0,
     campaignId,
     recipientCount: recipients.length,
+    manualRecipientCount,
     successCount: successes.length,
     failureCount: failures.length,
     skippedCount: skipped.length,
