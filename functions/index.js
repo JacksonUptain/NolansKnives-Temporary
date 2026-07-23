@@ -46,19 +46,20 @@ function escapeHtml(value) {
 
 // Email Templates
 const emailTemplates = {
-  adminInvite: (displayName, setupUrl, inviterName = "Nolan's Knives") => {
+  adminInvite: (displayName, setupUrl, inviterName = "Nolan's Knives", roleLabel = "Admin") => {
     const safeName = escapeHtml(displayName || "there");
     const safeSetupUrl = escapeHtml(setupUrl);
     const safeInviterName = escapeHtml(inviterName || "Nolan's Knives");
+    const safeRoleLabel = escapeHtml(roleLabel || "Admin");
 
     return {
-      subject: "You're invited to Nolan's Knives Admin",
+      subject: `You're invited to Nolan's Knives as ${roleLabel}`,
       html: `
-        <h2>Nolan's Knives Admin Invite</h2>
+        <h2>Nolan's Knives Invite</h2>
         <p>Hi ${safeName},</p>
-        <p>${safeInviterName} invited you to help manage Nolan's Knives as an admin user.</p>
+        <p>${safeInviterName} invited you to Nolan's Knives with ${safeRoleLabel} access.</p>
         <p>Use the secure link below to set your password and finish your account setup.</p>
-        <p><a href="${safeSetupUrl}" style="display: inline-block; background: #8b6f47; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Set Up Admin Access</a></p>
+        <p><a href="${safeSetupUrl}" style="display: inline-block; background: #8b6f47; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Set Up Access</a></p>
         <p>If you were not expecting this invite, you can ignore this email.</p>
         <p>Best regards,<br/>Nolan's Knives Team</p>
       `
@@ -223,6 +224,62 @@ const emailTemplates = {
     `
   }),
 
+  campaignGeneral: (displayName = "Customer", campaignName = "Nolan's Knives Update") => ({
+    subject: `${campaignName} - Nolan's Knives`,
+    html: `
+      <h2>${campaignName}</h2>
+      <p>Hi ${displayName},</p>
+      <p>We wanted to send you an update from Nolan's Knives.</p>
+      <p><a href="${SITE_URL}/Store" style="display: inline-block; background: #8b6f47; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Visit the Store</a></p>
+      <p>Best regards,<br/>Nolan's Knives Team</p>
+    `
+  }),
+
+  campaignNewInventory: (displayName = "Customer", campaignName = "New Knives Available") => ({
+    subject: `${campaignName} - Nolan's Knives`,
+    html: `
+      <h2>${campaignName}</h2>
+      <p>Hi ${displayName},</p>
+      <p>New knives have been added to the store. If you've been waiting for the next batch, this is a good time to take a look.</p>
+      <p><a href="${SITE_URL}/Store" style="display: inline-block; background: #8b6f47; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Shop Available Knives</a></p>
+      <p>Best regards,<br/>Nolan's Knives Team</p>
+    `
+  }),
+
+  campaignCustomKnifeFollowUp: (displayName = "Customer", campaignName = "Custom Knife Follow-Up") => ({
+    subject: `${campaignName} - Nolan's Knives`,
+    html: `
+      <h2>${campaignName}</h2>
+      <p>Hi ${displayName},</p>
+      <p>If you're thinking about a custom knife, Nolan can help turn the details into a practical build plan and quote.</p>
+      <p><a href="${SITE_URL}/custom-knife-request" style="display: inline-block; background: #8b6f47; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Start a Custom Request</a></p>
+      <p>Questions? Reply to this email and we'll help from there.</p>
+      <p>Best regards,<br/>Nolan's Knives Team</p>
+    `
+  }),
+
+  campaignCareTips: (displayName = "Customer", campaignName = "Knife Care Tips") => ({
+    subject: `${campaignName} - Nolan's Knives`,
+    html: `
+      <h2>${campaignName}</h2>
+      <p>Hi ${displayName},</p>
+      <p>A few simple habits keep a handmade knife working beautifully: hand wash it, dry it completely, avoid the dishwasher, and keep the edge touched up before it gets dull.</p>
+      <p>If you have questions about caring for your knife, reply to this email.</p>
+      <p>Best regards,<br/>Nolan's Knives Team</p>
+    `
+  }),
+
+  campaignAnnouncement: (displayName = "Customer", campaignName = "Nolan's Knives Announcement") => ({
+    subject: `${campaignName} - Nolan's Knives`,
+    html: `
+      <h2>${campaignName}</h2>
+      <p>Hi ${displayName},</p>
+      <p>We wanted to share an update from Nolan's Knives.</p>
+      <p><a href="${SITE_URL}" style="display: inline-block; background: #8b6f47; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Visit Nolan's Knives</a></p>
+      <p>Best regards,<br/>Nolan's Knives Team</p>
+    `
+  }),
+
   orderComplete: (customerName, requestId, trackingInfo) => ({
     subject: "Your Custom Knife is Ready! - Nolan's Knives",
     html: `
@@ -240,6 +297,242 @@ const emailTemplates = {
     `
   })
 };
+
+const emailTemplateMetadata = {
+  adminInvite: {
+    label: "User Invite",
+    description: "Sent when an admin invites a customer, business user, or admin to the site.",
+    variables: ["displayName", "firstName", "email", "setupUrl", "inviterName", "role", "roleLabel", "siteUrl", "businessEmail"]
+  },
+  customRequestSubmitted: {
+    label: "Custom Request Confirmation",
+    description: "Sent to a customer after a custom knife request is submitted.",
+    variables: ["customerName", "firstName", "requestId", "estimatedPrice", "siteUrl", "businessEmail"]
+  },
+  customRequestPriorityPaid: {
+    label: "Priority Request Confirmation",
+    description: "Sent to a customer after the priority deposit is paid.",
+    variables: ["customerName", "firstName", "requestId", "estimatedPrice", "depositAmount", "siteUrl", "businessEmail"]
+  },
+  customRequestPriorityPaidBusiness: {
+    label: "Priority Request Staff Alert",
+    description: "Sent to Nolan's team when a customer pays the priority deposit.",
+    variables: ["customerName", "firstName", "requestId", "estimatedPrice", "depositAmount", "siteUrl", "businessEmail"]
+  },
+  knifePurchasedCustomer: {
+    label: "Store Purchase Confirmation",
+    description: "Sent to the buyer after a store knife purchase is completed.",
+    variables: ["customerName", "firstName", "orderId", "knifeName", "amount", "siteUrl", "businessEmail"]
+  },
+  knifePurchasedBusiness: {
+    label: "Knife Sold Staff Alert",
+    description: "Sent to Nolan's team after a store knife purchase is completed.",
+    variables: ["customerName", "firstName", "orderId", "knifeName", "amount", "siteUrl", "businessEmail"]
+  },
+  quoteSent: {
+    label: "Custom Quote",
+    description: "Sent to a customer when Nolan sends a custom knife quote.",
+    variables: ["customerName", "firstName", "requestId", "finalPrice", "depositDue", "remainingBalance", "depositAlreadyPaid", "depositPaymentUrl", "siteUrl", "businessEmail"]
+  },
+  depositReceived: {
+    label: "Deposit Received",
+    description: "Sent to a customer after a custom knife deposit is recorded.",
+    variables: ["customerName", "firstName", "requestId", "depositAmount", "siteUrl", "businessEmail"]
+  },
+  statusUpdate: {
+    label: "Order Status Update",
+    description: "Sent to a customer when a custom request status changes.",
+    variables: ["customerName", "firstName", "requestId", "newStatus", "message", "siteUrl", "businessEmail"]
+  },
+  unreadMessages: {
+    label: "Customer Unread Message Reminder",
+    description: "Sent to a customer when they have unread staff messages.",
+    variables: ["customerName", "firstName", "requestId", "messageCount", "senderName", "siteUrl", "businessEmail"]
+  },
+  unreadCustomerMessages: {
+    label: "Staff Unread Message Reminder",
+    description: "Sent to Nolan's team when customers have unread messages.",
+    variables: ["customerName", "firstName", "requestId", "messageCount", "siteUrl", "businessEmail"]
+  },
+  orderComplete: {
+    label: "Order Complete / Shipped",
+    description: "Sent to a customer when a custom knife is complete or shipped.",
+    variables: ["customerName", "firstName", "requestId", "trackingInfo", "siteUrl", "businessEmail"]
+  },
+  campaignGeneral: {
+    label: "Campaign - General",
+    description: "A reusable business email campaign template.",
+    variables: ["displayName", "firstName", "email", "campaignName", "siteUrl", "businessEmail"]
+  },
+  campaignNewInventory: {
+    label: "Campaign - New Inventory",
+    description: "A campaign template for announcing new available knives.",
+    variables: ["displayName", "firstName", "email", "campaignName", "siteUrl", "businessEmail"]
+  },
+  campaignCustomKnifeFollowUp: {
+    label: "Campaign - Custom Knife Follow-Up",
+    description: "A campaign template for encouraging customers to start or resume custom requests.",
+    variables: ["displayName", "firstName", "email", "campaignName", "siteUrl", "businessEmail"]
+  },
+  campaignCareTips: {
+    label: "Campaign - Care Tips",
+    description: "A campaign template for care advice and customer education.",
+    variables: ["displayName", "firstName", "email", "campaignName", "siteUrl", "businessEmail"]
+  },
+  campaignAnnouncement: {
+    label: "Campaign - Announcement",
+    description: "A flexible announcement template for general customer updates.",
+    variables: ["displayName", "firstName", "email", "campaignName", "siteUrl", "businessEmail"]
+  }
+};
+
+const emailTemplateContexts = {
+  adminInvite: (displayName, setupUrl, inviterName = "Nolan's Knives", roleLabel = "Admin", role = "admin", email = "") => ({
+    displayName,
+    email,
+    setupUrl,
+    inviterName,
+    role,
+    roleLabel
+  }),
+  customRequestSubmitted: (customerName, requestId, estimatedPrice) => ({ customerName, requestId, estimatedPrice: formatMoney(estimatedPrice) }),
+  customRequestPriorityPaid: (customerName, requestId, estimatedPrice, depositAmount) => ({
+    customerName,
+    requestId,
+    estimatedPrice: formatMoney(estimatedPrice),
+    depositAmount: formatMoney(depositAmount)
+  }),
+  customRequestPriorityPaidBusiness: (customerName, requestId, estimatedPrice, depositAmount) => ({
+    customerName,
+    requestId,
+    estimatedPrice: formatMoney(estimatedPrice),
+    depositAmount: formatMoney(depositAmount)
+  }),
+  knifePurchasedCustomer: (customerName, orderId, knifeName, amount) => ({ customerName, orderId, knifeName, amount: formatMoney(amount) }),
+  knifePurchasedBusiness: (customerName, orderId, knifeName, amount) => ({ customerName, orderId, knifeName, amount: formatMoney(amount) }),
+  quoteSent: (customerName, requestId, finalPrice, depositDue, remainingBalance, depositAlreadyPaid = false, depositPaymentUrl = "") => ({
+    customerName,
+    requestId,
+    finalPrice: formatMoney(finalPrice),
+    depositDue: formatMoney(depositDue),
+    remainingBalance: formatMoney(remainingBalance),
+    depositAlreadyPaid: depositAlreadyPaid ? "Yes" : "No",
+    depositPaymentUrl
+  }),
+  depositReceived: (customerName, requestId, depositAmount) => ({ customerName, requestId, depositAmount: formatMoney(depositAmount) }),
+  statusUpdate: (customerName, requestId, newStatus, message) => ({ customerName, requestId, newStatus, message }),
+  unreadMessages: (customerName, requestId, messageCount, senderName = "Nolan's team") => ({ customerName, requestId, messageCount, senderName }),
+  unreadCustomerMessages: (customerName, requestId, messageCount) => ({ customerName, requestId, messageCount }),
+  campaignGeneral: (displayName = "Customer", campaignName = "Nolan's Knives Update") => ({ displayName, campaignName }),
+  campaignNewInventory: (displayName = "Customer", campaignName = "New Knives Available") => ({ displayName, campaignName }),
+  campaignCustomKnifeFollowUp: (displayName = "Customer", campaignName = "Custom Knife Follow-Up") => ({ displayName, campaignName }),
+  campaignCareTips: (displayName = "Customer", campaignName = "Knife Care Tips") => ({ displayName, campaignName }),
+  campaignAnnouncement: (displayName = "Customer", campaignName = "Nolan's Knives Announcement") => ({ displayName, campaignName }),
+  orderComplete: (customerName, requestId, trackingInfo) => ({ customerName, requestId, trackingInfo })
+};
+
+function formatMoney(value) {
+  return Number(value || 0).toFixed(2);
+}
+
+function firstNameFrom(value) {
+  return String(value || "").trim().split(/\s+/)[0] || "";
+}
+
+function baseTemplateContext(context = {}) {
+  const displayName = context.displayName || context.customerName || "";
+  return {
+    siteUrl: SITE_URL,
+    businessEmail: BUSINESS_EMAIL,
+    firstName: firstNameFrom(displayName),
+    ...context
+  };
+}
+
+function renderTemplateString(templateText = "", context = {}, escapeValues = true) {
+  return String(templateText).replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (_match, key) => {
+    const value = key.split(".").reduce((current, part) => current?.[part], context);
+    const rendered = value === null || value === undefined ? "" : String(value);
+    return escapeValues ? escapeHtml(rendered) : rendered;
+  });
+}
+
+async function getConfiguredEmailTemplate(templateName) {
+  const snap = await db.ref(`emailTemplates/${templateName}`).once("value");
+  if (!snap.exists()) return null;
+
+  const template = snap.val() || {};
+  if (template.enabled === false) return null;
+  if (!template.subject && !template.html) return null;
+  return template;
+}
+
+async function resolveEmailTemplate(templateName, args = []) {
+  const template = emailTemplates[templateName];
+  if (!template) {
+    throw new Error(`Unknown email template: ${templateName}`);
+  }
+
+  const fallback = template(...args);
+  const templateContext = emailTemplateContexts[templateName]
+    ? emailTemplateContexts[templateName](...args)
+    : {};
+  const context = baseTemplateContext(templateContext);
+  const configured = await getConfiguredEmailTemplate(templateName);
+  const subjectSource = configured?.subject || fallback.subject;
+  const htmlSource = configured?.html || fallback.html;
+
+  return {
+    subject: renderTemplateString(subjectSource, context, false),
+    html: renderTemplateString(htmlSource, context, true),
+    source: configured ? "database" : "default",
+    context
+  };
+}
+
+function getEmailTemplateCatalogEntry(templateName) {
+  const template = emailTemplates[templateName];
+  if (!template) return null;
+
+  const sampleArgs = getSampleTemplateArgs(templateName);
+  const fallback = template(...sampleArgs);
+  const context = baseTemplateContext(emailTemplateContexts[templateName]
+    ? emailTemplateContexts[templateName](...sampleArgs)
+    : {});
+
+  return {
+    id: templateName,
+    label: emailTemplateMetadata[templateName]?.label || templateName,
+    description: emailTemplateMetadata[templateName]?.description || "",
+    variables: emailTemplateMetadata[templateName]?.variables || [],
+    defaultSubject: renderTemplateString(fallback.subject, context, false),
+    defaultHtml: renderTemplateString(fallback.html, context, false),
+    sampleContext: context
+  };
+}
+
+function getSampleTemplateArgs(templateName) {
+  const samples = {
+    adminInvite: ["Nolan Admin", `${SITE_URL}/account`, "Nolan's Knives", "Admin", "admin", "admin@example.com"],
+    customRequestSubmitted: ["Customer", "REQ123", 250],
+    customRequestPriorityPaid: ["Customer", "REQ123", 650, 97.5],
+    customRequestPriorityPaidBusiness: ["Customer", "REQ123", 650, 97.5],
+    knifePurchasedCustomer: ["Customer", "ORDER123", "Chef Knife", 425],
+    knifePurchasedBusiness: ["Customer", "ORDER123", "Chef Knife", 425],
+    quoteSent: ["Customer", "REQ123", 800, 120, 680, false, `${SITE_URL}/custom-knife/confirmation/REQ123?deposit=1`],
+    depositReceived: ["Customer", "REQ123", 120],
+    statusUpdate: ["Customer", "REQ123", "In Production", "Nolan started your blade this week."],
+    unreadMessages: ["Customer", "REQ123", 2, "Nolan's team"],
+    unreadCustomerMessages: ["Customer", "REQ123", 2],
+    campaignGeneral: ["Customer", "Nolan's Knives Update"],
+    campaignNewInventory: ["Customer", "New Knives Available"],
+    campaignCustomKnifeFollowUp: ["Customer", "Custom Knife Follow-Up"],
+    campaignCareTips: ["Customer", "Knife Care Tips"],
+    campaignAnnouncement: ["Customer", "Nolan's Knives Announcement"],
+    orderComplete: ["Customer", "REQ123", "1Z999AA10123456784"]
+  };
+  return samples[templateName] || [];
+}
 
 async function sendViaMailgunHttp({ to, subject, html }) {
   const form = new URLSearchParams();
@@ -285,16 +578,11 @@ async function sendViaSmtp({ to, subject, html }) {
 // Helper: Send Email
 async function sendEmail(to, templateName, ...args) {
   try {
-    const template = emailTemplates[templateName];
-    if (!template) {
-      throw new Error(`Unknown email template: ${templateName}`);
-    }
-
-    const { subject, html } = template(...args);
+    const { subject, html, source } = await resolveEmailTemplate(templateName, args);
 
     if (!MAILGUN_API_KEY && !SMTP_PASS) {
       console.log(`[TEST MODE] Email not sent. To: ${to}, Template: ${templateName}`);
-      await logNotificationEvent("email_skipped_test_mode", { to, template: templateName });
+      await logNotificationEvent("email_skipped_test_mode", { to, template: templateName, source });
       return { skipped: true, mode: "test" };
     }
 
@@ -306,6 +594,7 @@ async function sendEmail(to, templateName, ...args) {
     await logNotificationEvent("email_sent", {
       to,
       template: templateName,
+      source,
       provider: result.provider,
       messageId: result.messageId || null
     });
@@ -315,6 +604,34 @@ async function sendEmail(to, templateName, ...args) {
     console.error(`Error sending ${templateName} email to ${to}:`, error);
     await logNotificationEvent("email_failed", { to, template: templateName, error: error.message });
     // Don't throw - email failures shouldn't block the main operation
+    return { error: error.message, skipped: true };
+  }
+}
+
+async function sendRawEmail({ to, subject, html, metadata = {} }) {
+  try {
+    if (!MAILGUN_API_KEY && !SMTP_PASS) {
+      console.log(`[TEST MODE] Raw email not sent. To: ${to}, Subject: ${subject}`);
+      await logNotificationEvent("email_skipped_test_mode", { to, template: "raw", ...metadata });
+      return { skipped: true, mode: "test" };
+    }
+
+    const result = MAILGUN_API_KEY
+      ? await sendViaMailgunHttp({ to, subject, html })
+      : await sendViaSmtp({ to, subject, html });
+
+    await logNotificationEvent("email_sent", {
+      to,
+      template: metadata.templateName || "raw",
+      provider: result.provider,
+      messageId: result.messageId || null,
+      ...metadata
+    });
+
+    return result;
+  } catch (error) {
+    console.error(`Error sending raw email to ${to}:`, error);
+    await logNotificationEvent("email_failed", { to, template: metadata.templateName || "raw", error: error.message, ...metadata });
     return { error: error.message, skipped: true };
   }
 }
@@ -1818,6 +2135,18 @@ function createTemporaryPassword() {
   return `${crypto.randomBytes(24).toString("base64url")}Aa1!`;
 }
 
+function roleLabel(role) {
+  if (role === "admin") return "Admin";
+  if (role === "business") return "Business";
+  return "Customer";
+}
+
+function roleLandingPath(role) {
+  if (role === "admin") return "/admin";
+  if (role === "business") return "/business";
+  return "/my-account";
+}
+
 async function getUserByEmailOrNull(email) {
   try {
     return await auth.getUserByEmail(email);
@@ -1834,9 +2163,14 @@ exports.inviteAdminUser = onCall({ invoker: "public", cors: true }, async (reque
   const { displayName } = request.data || {};
   const email = normalizeEmail(request.data?.email);
   const name = String(displayName || "").trim();
+  const role = String(request.data?.role || "admin").trim().toLowerCase();
 
   if (!name || !email) {
     throw new HttpsError("invalid-argument", "Name and email are required.");
+  }
+
+  if (!["customer", "business", "admin"].includes(role)) {
+    throw new HttpsError("invalid-argument", "Choose a valid role.");
   }
 
   if (!isValidEmail(email)) {
@@ -1845,7 +2179,7 @@ exports.inviteAdminUser = onCall({ invoker: "public", cors: true }, async (reque
 
   const isAdmin = await verifyUserRole(adminUid, "admin");
   if (!isAdmin) {
-    throw new HttpsError("permission-denied", "Only admins can invite admin users.");
+    throw new HttpsError("permission-denied", "Only admins can invite users.");
   }
 
   let userRecord = await getUserByEmailOrNull(email);
@@ -1871,7 +2205,7 @@ exports.inviteAdminUser = onCall({ invoker: "public", cors: true }, async (reque
 
   await auth.setCustomUserClaims(userRecord.uid, {
     ...(userRecord.customClaims || {}),
-    role: "admin"
+    role
   });
 
   const userRef = db.ref(`users/${userRecord.uid}`);
@@ -1880,7 +2214,7 @@ exports.inviteAdminUser = onCall({ invoker: "public", cors: true }, async (reque
     uid: userRecord.uid,
     displayName: name,
     email,
-    role: "admin",
+    role,
     status: "active",
     inviteStatus: "sending",
     invitedBy: adminUid,
@@ -1898,11 +2232,11 @@ exports.inviteAdminUser = onCall({ invoker: "public", cors: true }, async (reque
 
   try {
     const setupUrl = await auth.generatePasswordResetLink(email, {
-      url: `${SITE_URL}/admin`,
+      url: `${SITE_URL}${roleLandingPath(role)}`,
       handleCodeInApp: false
     });
 
-    const emailResult = await sendRequiredEmail(email, "adminInvite", name, setupUrl, inviterName);
+    const emailResult = await sendRequiredEmail(email, "adminInvite", name, setupUrl, inviterName, roleLabel(role), role, email);
 
     if (!userRecord.emailVerified) {
       try {
@@ -1919,9 +2253,10 @@ exports.inviteAdminUser = onCall({ invoker: "public", cors: true }, async (reque
       updatedAt: admin.database.ServerValue.TIMESTAMP
     });
 
-    await logAuditAction("admin_user_invited", adminUid, "admin", userRecord.uid, {
+    await logAuditAction("user_invited", adminUid, "admin", userRecord.uid, {
       email,
       displayName: name,
+      role,
       created,
       messageId: emailResult.messageId || null
     });
@@ -1930,6 +2265,7 @@ exports.inviteAdminUser = onCall({ invoker: "public", cors: true }, async (reque
       success: true,
       uid: userRecord.uid,
       email,
+      role,
       created,
       messageId: emailResult.messageId || null
     };
@@ -1940,16 +2276,17 @@ exports.inviteAdminUser = onCall({ invoker: "public", cors: true }, async (reque
       updatedAt: admin.database.ServerValue.TIMESTAMP
     });
 
-    await logAuditAction("admin_user_invite_failed", adminUid, "admin", userRecord.uid, {
+    await logAuditAction("user_invite_failed", adminUid, "admin", userRecord.uid, {
       email,
       displayName: name,
+      role,
       created,
       error: error?.message || "Invitation email failed."
     });
 
     throw new HttpsError(
       "internal",
-      "Admin user was created, but the invitation email failed to send. Check email configuration and try again."
+      "User was created, but the invitation email failed to send. Check email configuration and try again."
     );
   }
 });
@@ -2023,6 +2360,288 @@ exports.setUserBlocked = onCall({ invoker: "public" }, async (request) => {
   await logAuditAction(blocked ? "user_blocked" : "user_unblocked", adminUid, "admin", uid, {});
 
   return { success: true, status: blocked ? "blocked" : "active" };
+});
+
+exports.getEmailTemplateCatalog = onCall({ invoker: "public", cors: true }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "User must be signed in.");
+
+  const isStaff = await verifyUserRole(request.auth.uid, "business");
+  if (!isStaff) {
+    throw new HttpsError("permission-denied", "Only staff can view email templates.");
+  }
+
+  const overridesSnap = await db.ref("emailTemplates").once("value");
+  const overrides = overridesSnap.exists() ? overridesSnap.val() || {} : {};
+  const templateIds = [...new Set([
+    ...Object.keys(emailTemplates),
+    ...Object.keys(emailTemplateMetadata),
+    ...Object.keys(overrides)
+  ])].sort((a, b) => {
+    const aLabel = emailTemplateMetadata[a]?.label || overrides[a]?.label || a;
+    const bLabel = emailTemplateMetadata[b]?.label || overrides[b]?.label || b;
+    return aLabel.localeCompare(bLabel);
+  });
+
+  const templates = templateIds.map((templateId) => {
+    const catalogEntry = getEmailTemplateCatalogEntry(templateId) || {
+      id: templateId,
+      label: overrides[templateId]?.label || templateId,
+      description: overrides[templateId]?.description || "",
+      variables: overrides[templateId]?.variables || emailTemplateMetadata[templateId]?.variables || [],
+      defaultSubject: "",
+      defaultHtml: "",
+      sampleContext: baseTemplateContext({})
+    };
+    const override = overrides[templateId] || {};
+
+    return {
+      ...catalogEntry,
+      label: override.label || catalogEntry.label,
+      description: override.description || catalogEntry.description,
+      variables: override.variables || catalogEntry.variables,
+      subject: override.subject || "",
+      html: override.html || "",
+      enabled: override.enabled !== false,
+      custom: !!override.custom || !emailTemplates[templateId],
+      updatedAt: override.updatedAt || null,
+      effectiveSubject: override.subject || catalogEntry.defaultSubject,
+      effectiveHtml: override.html || catalogEntry.defaultHtml
+    };
+  });
+
+  return { templates };
+});
+
+function normalizeUidList(value) {
+  if (!value) return [];
+  const list = Array.isArray(value)
+    ? value
+    : Object.entries(value || {})
+      .filter(([, selected]) => selected !== false && selected !== null && selected !== undefined)
+      .map(([uid]) => uid);
+  return [...new Set(list.map((item) => String(item || "").trim()).filter(Boolean))];
+}
+
+async function getCampaignRecipients({ recipientUids = [], groupIds = [] }) {
+  const uidSet = new Set(normalizeUidList(recipientUids));
+  const selectedGroupIds = normalizeUidList(groupIds);
+  const groups = [];
+
+  for (const groupId of selectedGroupIds) {
+    const groupSnap = await db.ref(`emailGroups/${groupId}`).once("value");
+    if (!groupSnap.exists()) continue;
+    const group = groupSnap.val() || {};
+    groups.push({ groupId, ...group });
+    normalizeUidList(group.members).forEach((uid) => uidSet.add(uid));
+  }
+
+  const recipients = [];
+  for (const uid of uidSet) {
+    const profile = await getUserProfile(uid);
+    if (!profile?.email || profile.status === "blocked") continue;
+    recipients.push({ uid, ...profile, email: normalizeEmail(profile.email) });
+  }
+
+  const dedupedByEmail = new Map();
+  recipients.forEach((recipient) => {
+    if (!dedupedByEmail.has(recipient.email)) {
+      dedupedByEmail.set(recipient.email, recipient);
+    }
+  });
+
+  return {
+    recipients: [...dedupedByEmail.values()].sort((a, b) => (a.displayName || a.email || "").localeCompare(b.displayName || b.email || "")),
+    groups
+  };
+}
+
+function campaignRecipientContext(recipient = {}, campaignName = "") {
+  const displayName = recipient.displayName || recipient.email || "there";
+  return baseTemplateContext({
+    uid: recipient.uid,
+    displayName,
+    customerName: displayName,
+    firstName: firstNameFrom(displayName),
+    email: recipient.email || "",
+    role: recipient.role || "customer",
+    campaignName: campaignName || "Nolan's Knives Update"
+  });
+}
+
+async function resolveCampaignTemplateSources(templateId, campaignName) {
+  const configured = await getConfiguredEmailTemplate(templateId);
+  if (configured?.subject && configured?.html) {
+    return {
+      templateName: templateId,
+      subject: configured.subject,
+      html: configured.html,
+      source: "database"
+    };
+  }
+
+  const template = emailTemplates[templateId];
+  if (!template) {
+    throw new HttpsError("not-found", "Email template not found.");
+  }
+
+  const campaignTemplateArgs = {
+    campaignGeneral: ["{{displayName}}", campaignName || "{{campaignName}}"],
+    campaignNewInventory: ["{{displayName}}", campaignName || "New Knives Available"],
+    campaignCustomKnifeFollowUp: ["{{displayName}}", campaignName || "Custom Knife Follow-Up"],
+    campaignCareTips: ["{{displayName}}", campaignName || "Knife Care Tips"],
+    campaignAnnouncement: ["{{displayName}}", campaignName || "Nolan's Knives Announcement"]
+  };
+  const sampleArgs = campaignTemplateArgs[templateId] || getSampleTemplateArgs(templateId);
+  const fallback = template(...sampleArgs);
+
+  return {
+    templateName: templateId,
+    subject: fallback.subject,
+    html: fallback.html,
+    source: "default"
+  };
+}
+
+exports.sendEmailCampaign = onCall({ invoker: "public", cors: true, timeoutSeconds: 540, memory: "512MiB" }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "User must be signed in.");
+
+  const uid = request.auth.uid;
+  const isStaff = await verifyUserRole(uid, "business");
+  if (!isStaff) {
+    throw new HttpsError("permission-denied", "Only staff can send email campaigns.");
+  }
+
+  const {
+    campaignName = "Nolan's Knives Update",
+    recipientUids = [],
+    groupIds = [],
+    templateId = "",
+    subject = "",
+    html = "",
+    mode = "custom"
+  } = request.data || {};
+
+  const { recipients, groups } = await getCampaignRecipients({ recipientUids, groupIds });
+  if (recipients.length === 0) {
+    throw new HttpsError("invalid-argument", "Select at least one active recipient with an email address.");
+  }
+  if (recipients.length > 500) {
+    throw new HttpsError("failed-precondition", "Campaigns are limited to 500 recipients per send.");
+  }
+
+  let sourceSubject = String(subject || "").trim();
+  let sourceHtml = String(html || "").trim();
+  let templateName = mode === "template" ? String(templateId || "").trim() : "custom";
+  let templateSource = "custom";
+
+  if (mode === "template") {
+    if (!templateName) {
+      throw new HttpsError("invalid-argument", "Choose an email template.");
+    }
+    const resolved = await resolveCampaignTemplateSources(templateName, campaignName);
+    sourceSubject = resolved.subject;
+    sourceHtml = resolved.html;
+    templateSource = resolved.source;
+  }
+
+  if (!sourceSubject || !sourceHtml) {
+    throw new HttpsError("invalid-argument", "Subject and HTML are required.");
+  }
+
+  const senderProfile = await getUserProfile(uid);
+  const campaignId = db.ref("emailCampaigns").push().key;
+  const startedAt = admin.database.ServerValue.TIMESTAMP;
+
+  await db.ref(`emailCampaigns/${campaignId}`).set({
+    campaignId,
+    campaignName: String(campaignName || "").trim() || "Nolan's Knives Update",
+    mode,
+    templateName,
+    templateSource,
+    subject: sourceSubject,
+    html: sourceHtml,
+    groupIds: groups.reduce((acc, group) => ({ ...acc, [group.groupId]: true }), {}),
+    recipientCount: recipients.length,
+    status: "sending",
+    createdBy: uid,
+    createdByEmail: senderProfile?.email || request.auth.token?.email || "",
+    createdAt: startedAt,
+    updatedAt: startedAt
+  });
+
+  const successes = [];
+  const failures = [];
+  const skipped = [];
+
+  for (const recipient of recipients) {
+    const context = campaignRecipientContext(recipient, campaignName);
+    const renderedSubject = renderTemplateString(sourceSubject, context, false);
+    const renderedHtml = renderTemplateString(sourceHtml, context, true);
+
+    const result = await sendRawEmail({
+      to: recipient.email,
+      subject: renderedSubject,
+      html: renderedHtml,
+      metadata: {
+        templateName,
+        campaignId,
+        recipientUid: recipient.uid
+      }
+    });
+
+    const recipientLog = {
+      uid: recipient.uid,
+      email: recipient.email,
+      displayName: recipient.displayName || "",
+      messageId: result.messageId || null,
+      sentAt: admin.database.ServerValue.TIMESTAMP
+    };
+
+    if (result?.error) {
+      failures.push({ ...recipientLog, error: result.error });
+    } else if (result?.skipped) {
+      skipped.push({ ...recipientLog, mode: result.mode || "skipped" });
+    } else {
+      successes.push(recipientLog);
+    }
+  }
+
+  const status = failures.length > 0
+    ? (successes.length > 0 || skipped.length > 0 ? "partial" : "failed")
+    : (successes.length > 0 ? "sent" : "skipped");
+
+  await db.ref(`emailCampaigns/${campaignId}`).update({
+    status,
+    successCount: successes.length,
+    failureCount: failures.length,
+    skippedCount: skipped.length,
+    recipients: [...successes, ...failures, ...skipped].reduce((acc, item) => {
+      acc[item.uid || item.email.replace(/[.#$/[\]]/g, "_")] = item;
+      return acc;
+    }, {}),
+    updatedAt: admin.database.ServerValue.TIMESTAMP,
+    completedAt: admin.database.ServerValue.TIMESTAMP
+  });
+
+  await logAuditAction("email_campaign_sent", uid, senderProfile?.role || "business", null, {
+    campaignId,
+    campaignName,
+    templateName,
+    recipientCount: recipients.length,
+    successCount: successes.length,
+    failureCount: failures.length,
+    skippedCount: skipped.length
+  });
+
+  return {
+    success: failures.length === 0,
+    campaignId,
+    recipientCount: recipients.length,
+    successCount: successes.length,
+    failureCount: failures.length,
+    skippedCount: skipped.length,
+    failures: failures.slice(0, 10)
+  };
 });
 
 exports.assignHistoricalPurchase = onCall({ invoker: "public" }, async (request) => {

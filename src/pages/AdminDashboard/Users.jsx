@@ -17,7 +17,7 @@ export default function Users() {
   const [roleDrafts, setRoleDrafts] = useState({});
   const [savingUid, setSavingUid] = useState('');
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [inviteForm, setInviteForm] = useState({ displayName: '', email: '' });
+  const [inviteForm, setInviteForm] = useState({ displayName: '', email: '', role: 'admin' });
   const [inviting, setInviting] = useState(false);
 
   useEffect(() => {
@@ -76,7 +76,7 @@ export default function Users() {
   const closeInvite = () => {
     if (inviting) return;
     setInviteOpen(false);
-    setInviteForm({ displayName: '', email: '' });
+    setInviteForm({ displayName: '', email: '', role: 'admin' });
   };
 
   const handleInviteChange = (event) => {
@@ -89,6 +89,7 @@ export default function Users() {
 
     const displayName = inviteForm.displayName.trim();
     const email = inviteForm.email.trim();
+    const role = inviteForm.role || 'admin';
 
     if (!displayName || !email) {
       showToast('Name and email are required.', 'error');
@@ -98,10 +99,10 @@ export default function Users() {
     try {
       setError(null);
       setInviting(true);
-      const result = await inviteAdminUser({ displayName, email });
-      showToast(`Admin invite sent to ${result.email || email}.`, 'success');
+      const result = await inviteAdminUser({ displayName, email, role });
+      showToast(`${result.role || role} invite sent to ${result.email || email}.`, 'success');
       setInviteOpen(false);
-      setInviteForm({ displayName: '', email: '' });
+      setInviteForm({ displayName: '', email: '', role: 'admin' });
     } catch (err) {
       const message = err?.message || 'Failed to send admin invite.';
       setError(message);
@@ -153,6 +154,20 @@ export default function Users() {
               autoComplete="email"
               required
             />
+          </label>
+          <label htmlFor="inviteRole">
+            Role
+            <select
+              id="inviteRole"
+              name="role"
+              className="select-input"
+              value={inviteForm.role}
+              onChange={handleInviteChange}
+            >
+              {ROLE_OPTIONS.map((role) => (
+                <option key={role} value={role}>{role}</option>
+              ))}
+            </select>
           </label>
           <div className="admin-modal-actions">
             <button type="button" className="action-btn secondary" onClick={closeInvite} disabled={inviting}>

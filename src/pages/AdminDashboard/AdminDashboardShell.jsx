@@ -3,6 +3,8 @@ import { NavLink, Routes, Route, useNavigate } from 'react-router-dom';
 import Overview from './Overview';
 import Users from './Users';
 import AuditLogs from './AuditLogs';
+import HomeEditor from './HomeEditor';
+import EmailTemplates from './EmailTemplates';
 import '../AdminDashboard.css';
 import LucideIcon from '../../components/ui/LucideIcon';
 
@@ -28,6 +30,16 @@ export default function AdminDashboardShell() {
               </NavLink>
             </li>
             <li>
+              <NavLink to="/admin/home" className={({ isActive }) => isActive ? 'active' : ''}>
+                <LucideIcon name="PanelTop" size={18} /> Home Editor
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/admin/email-templates" className={({ isActive }) => isActive ? 'active' : ''}>
+                <LucideIcon name="MailCheck" size={18} /> Email Templates
+              </NavLink>
+            </li>
+            <li>
               <NavLink to="/admin/activity" className={({ isActive }) => isActive ? 'active' : ''}>
                 <LucideIcon name="History" size={18} /> Audit Logs
               </NavLink>
@@ -46,6 +58,8 @@ export default function AdminDashboardShell() {
         <Routes>
           <Route index element={<Overview />} />
           <Route path="users" element={<Users />} />
+          <Route path="home" element={<HomeEditor />} />
+          <Route path="email-templates" element={<EmailTemplates />} />
           <Route path="activity" element={<AuditLogs />} />
         </Routes>
       </main>

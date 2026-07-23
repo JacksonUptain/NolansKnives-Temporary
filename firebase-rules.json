@@ -48,6 +48,22 @@
       ".read": true,
       ".write": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin'"
     },
+    "HomeCarousel": {
+      ".read": true,
+      ".write": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin'"
+    },
+    "emailTemplates": {
+      ".read": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business'",
+      ".write": "auth.token.role === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'admin'"
+    },
+    "emailGroups": {
+      ".read": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business'",
+      ".write": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business'"
+    },
+    "emailCampaigns": {
+      ".read": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business'",
+      ".write": false
+    },
     "orders": {
       ".read": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business'",
       "$orderId": {

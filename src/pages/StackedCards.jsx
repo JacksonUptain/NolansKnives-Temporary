@@ -14,6 +14,13 @@ function StackedCards({ items }) {
    
         <div className="stacked-cards-wrapper">
             {items.map((item, index) => (
+                (() => {
+                    const isExternal = /^https?:\/\//i.test(item.href || '');
+                    const buttonProps = isExternal
+                        ? { as: 'a', href: item.href, target: '_blank', rel: 'noreferrer' }
+                        : { as: Link, to: item.href || '/Store' };
+
+                    return (
                 <Card
                     key={index}
                     className="stacked-card"
@@ -28,7 +35,7 @@ function StackedCards({ items }) {
                     <div className="stacked-card-text">
                         <h2>{item.title}</h2>
                         <p>{item.text}</p>
-                        <Button variant="outline-light" className="stacked-card-button" as={Link} to={item.href} > {item.hrefText} </Button>
+                        <Button variant="outline-light" className="stacked-card-button" {...buttonProps}> {item.hrefText} </Button>
                     </div>
                     {item.src && (
                         <Image
@@ -39,6 +46,8 @@ function StackedCards({ items }) {
                         />
                     )}
                 </Card>
+                    );
+                })()
             ))}
         </div>
 

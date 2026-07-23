@@ -23,6 +23,7 @@ const fallbackCards = [
 
 export default function Home() {
   const [cards, setCards] = useState(fallbackCards);
+  const [carouselItems, setCarouselItems] = useState(items);
 
   useEffect(() => {
     const homeRef = ref(db, 'Home');
@@ -33,14 +34,44 @@ export default function Home() {
         return;
       }
 
-      const fromDb = Object.entries(data).map(([id, value]) => ({
+      const fromDb = Object.entries(data).filter(([, value]) => Boolean(value)).map(([id, value]) => ({
         id,
         ...value,
         // If a legacy entry stores multiple images, keep first for stacked card layout.
         src: Array.isArray(value?.src) ? value.src[0] : value?.src
-      })).sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0) || (a.title || "").localeCompare(b.title || ""));
+      }))
+        .filter((item) => item.isVisible !== false)
+        .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0) || (a.title || "").localeCompare(b.title || ""));
 
       setCards(fromDb.length > 0 ? fromDb : fallbackCards);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const carouselRef = ref(db, 'HomeCarousel');
+    const unsubscribe = onValue(carouselRef, (snapshot) => {
+      const data = snapshot.val();
+      if (!data) {
+        setCarouselItems(items);
+        return;
+      }
+
+      const fromDb = Object.entries(data)
+        .filter(([, value]) => Boolean(value) && value.isVisible !== false)
+        .map(([id, value]) => ({
+          id,
+          name: value.name || value.title || '',
+          interval: Number(value.interval || 3500),
+          src: Array.isArray(value.src) ? value.src[0] : value.src,
+          caption: value.caption || '',
+          sortOrder: value.sortOrder
+        }))
+        .filter((item) => item.src)
+        .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0) || (a.name || '').localeCompare(b.name || ''));
+
+      setCarouselItems(fromDb.length > 0 ? fromDb : items);
     });
 
     return () => unsubscribe();
@@ -49,7 +80,7 @@ export default function Home() {
   return (
     <div id="MainContainerDiv">
       <AutoScrollToTop />
-      <TimedCarousel items={items} />
+      <TimedCarousel items={carouselItems} />
       <StackedCards items={cards}/>
     </div>
   );

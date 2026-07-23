@@ -4,6 +4,7 @@ import '../BusinessDashboard.css';
 import Overview from './Overview';
 import Products from './Products';
 import Orders from './Orders';
+import EmailCampaigns from './EmailCampaigns';
 import CustomRequestDashboard from '../CustomRequestDashboard';
 import ProductEditor from '../ProductEditor';
 import LucideIcon from '../../components/ui/LucideIcon';
@@ -44,6 +45,11 @@ export default function BusinessDashboardShell() {
                 <LucideIcon name="Wand2" size={18} /> Custom Requests
               </NavLink>
             </li>
+            <li>
+              <NavLink to="/business/email-campaigns" className={({ isActive }) => isActive ? 'active' : ''}>
+                <LucideIcon name="Mails" size={18} /> Email Campaigns
+              </NavLink>
+            </li>
           </ul>
         </nav>
 
@@ -63,6 +69,7 @@ export default function BusinessDashboardShell() {
           <Route path="product/:productId" element={<ProductEditor />} />
           <Route path="orders" element={<Orders />} />
           <Route path="custom-requests" element={<CustomRequestDashboard />} />
+          <Route path="email-campaigns" element={<EmailCampaigns />} />
         </Routes>
       </main>
     </div>

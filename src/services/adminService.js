@@ -11,8 +11,16 @@ export async function setUserBlocked(uid, blocked) {
   return (await call("setUserBlocked")({ uid, blocked })).data;
 }
 
-export async function inviteAdminUser({ displayName, email }) {
-  return (await call("inviteAdminUser")({ displayName, email })).data;
+export async function inviteAdminUser({ displayName, email, role }) {
+  return (await call("inviteAdminUser")({ displayName, email, role })).data;
+}
+
+export async function getEmailTemplateCatalog() {
+  return (await call("getEmailTemplateCatalog")({})).data;
+}
+
+export async function sendEmailCampaign(payload) {
+  return (await call("sendEmailCampaign")(payload)).data;
 }
 
 export async function assignHistoricalPurchase(payload) {
