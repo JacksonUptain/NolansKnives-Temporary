@@ -8,6 +8,12 @@ import LucideIcon from '../../components/ui/LucideIcon';
 import '../BusinessDashboard.css';
 
 const roleOptions = ['all', 'customer', 'business', 'admin'];
+const FLOW_STEPS = [
+  { id: 'audience', label: 'Audience', icon: 'Users' },
+  { id: 'message', label: 'Message', icon: 'Mail' },
+  { id: 'preview', label: 'Preview', icon: 'Eye' },
+  { id: 'send', label: 'Send', icon: 'Send' }
+];
 
 function formatDate(value) {
   if (!value) return 'No date';
@@ -44,6 +50,7 @@ export default function EmailCampaigns() {
   const [campaigns, setCampaigns] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [activeTab, setActiveTab] = useState('compose');
+  const [flowStep, setFlowStep] = useState('audience');
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [groupFilter, setGroupFilter] = useState('all');
@@ -152,9 +159,51 @@ export default function EmailCampaigns() {
     return [...ids].filter((uid) => userById[uid]?.email && userById[uid]?.status !== 'blocked' && !isSuppressedUser(userById[uid]));
   }, [selectedUids, selectedGroupIds, groupById, userById]);
 
-  const selectedGroups = Object.keys(selectedGroupIds).filter((id) => selectedGroupIds[id]).map((id) => groupById[id]).filter(Boolean);
+  const selectedDirectUids = useMemo(() => Object.keys(selectedUids).filter((uid) => selectedUids[uid]), [selectedUids]);
+  const selectedGroupIdList = useMemo(() => Object.keys(selectedGroupIds).filter((id) => selectedGroupIds[id]), [selectedGroupIds]);
+  const selectedGroups = useMemo(() => selectedGroupIdList.map((id) => groupById[id]).filter(Boolean), [selectedGroupIdList, groupById]);
   const previewSubject = mode === 'template' ? activeTemplate?.effectiveSubject || activeTemplate?.subject || '' : customSubject;
   const previewHtml = mode === 'template' ? activeTemplate?.effectiveHtml || activeTemplate?.html || '<p>No template selected.</p>' : customHtml;
+  const hasRecipients = selectedRecipientUids.length > 0;
+  const hasMessage = mode === 'template' ? !!templateId : !!customSubject.trim() && !!customHtml.trim();
+  const flowStepIndex = Math.max(FLOW_STEPS.findIndex((step) => step.id === flowStep), 0);
+  const selectedPreviewUsers = selectedRecipientUids.slice(0, 8).map((uid) => userById[uid]).filter(Boolean);
+  const hiddenPreviewRecipientCount = Math.max(selectedRecipientUids.length - selectedPreviewUsers.length, 0);
+  const messageLabel = mode === 'template' ? activeTemplate?.label || 'Template' : 'Custom HTML';
+
+  const getFlowStepClass = (step, index) => {
+    const complete = (step.id === 'audience' && hasRecipients) ||
+      (step.id === 'message' && hasMessage) ||
+      (index < flowStepIndex);
+    return [
+      'campaign-flow-step',
+      step.id === flowStep ? 'is-active' : '',
+      complete ? 'is-complete' : ''
+    ].filter(Boolean).join(' ');
+  };
+
+  const goToFlowStep = (stepId) => {
+    const targetIndex = FLOW_STEPS.findIndex((step) => step.id === stepId);
+    if (targetIndex > 0 && !hasRecipients) {
+      showToast('Select at least one recipient first.', 'error');
+      return;
+    }
+    if (targetIndex > 1 && !hasMessage) {
+      showToast('Choose a template or add custom email HTML first.', 'error');
+      return;
+    }
+    setFlowStep(stepId);
+  };
+
+  const nextFlowStep = () => {
+    const nextStep = FLOW_STEPS[Math.min(flowStepIndex + 1, FLOW_STEPS.length - 1)];
+    if (nextStep) goToFlowStep(nextStep.id);
+  };
+
+  const previousFlowStep = () => {
+    const previousStep = FLOW_STEPS[Math.max(flowStepIndex - 1, 0)];
+    if (previousStep) setFlowStep(previousStep.id);
+  };
 
   const toggleUid = (uid) => {
     setSelectedUids((prev) => ({ ...prev, [uid]: !prev[uid] }));
@@ -190,8 +239,8 @@ export default function EmailCampaigns() {
   const handleSend = async () => {
     const payload = {
       campaignName,
-      recipientUids: Object.keys(selectedUids).filter((uid) => selectedUids[uid]),
-      groupIds: Object.keys(selectedGroupIds).filter((groupId) => selectedGroupIds[groupId]),
+      recipientUids: selectedDirectUids,
+      groupIds: selectedGroupIdList,
       mode,
       templateId,
       subject: customSubject,
@@ -299,6 +348,13 @@ export default function EmailCampaigns() {
     );
   };
 
+  const addGroupToCampaign = (group) => {
+    setSelectedGroupIds((prev) => ({ ...prev, [group.groupId]: true }));
+    setActiveTab('compose');
+    setFlowStep('message');
+    showToast(`${group.name} added to the campaign.`, 'success');
+  };
+
   if (loading) return <div className="business-workspace"><div className="loading-shimmer">Loading email campaigns...</div></div>;
 
   return (
@@ -309,8 +365,15 @@ export default function EmailCampaigns() {
           <h1>Campaigns</h1>
           <p>Select customers, groups, or individual users, then send a reusable template or pasted HTML email.</p>
         </div>
-        <button className="action-btn workspace-primary-action" onClick={handleSend} disabled={sending}>
-          <LucideIcon name="Send" size={16} /> {sending ? 'Sending...' : 'Send Campaign'}
+        <button
+          className="action-btn workspace-primary-action"
+          onClick={() => {
+            setActiveTab('compose');
+            goToFlowStep('send');
+          }}
+          disabled={sending}
+        >
+          <LucideIcon name="Eye" size={16} /> Review Campaign
         </button>
       </div>
 
@@ -330,104 +393,266 @@ export default function EmailCampaigns() {
       </div>
 
       {activeTab === 'compose' && (
-        <div className="campaign-compose-grid">
-          <section className="campaign-panel">
-            <h2>Recipients</h2>
-            <div className="workspace-toolbar compact-toolbar">
-              <label className="toolbar-search">
-                <LucideIcon name="Search" size={16} />
-                <input placeholder="Search users" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} />
-              </label>
-              <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
-                {roleOptions.map((role) => <option key={role} value={role}>{role === 'all' ? 'All roles' : role}</option>)}
-              </select>
-              <select value={groupFilter} onChange={(event) => setGroupFilter(event.target.value)}>
-                <option value="all">All groups</option>
-                {groups.map((group) => <option key={group.groupId} value={group.groupId}>{group.name}</option>)}
-              </select>
-            </div>
+        <section className="campaign-flow">
+          <div className="campaign-flow-steps" aria-label="Campaign steps">
+            {FLOW_STEPS.map((step, index) => (
+              <button
+                type="button"
+                key={step.id}
+                className={getFlowStepClass(step, index)}
+                onClick={() => goToFlowStep(step.id)}
+              >
+                <span className="campaign-step-index">
+                  {index < flowStepIndex || (step.id === 'audience' && hasRecipients) || (step.id === 'message' && hasMessage) ? (
+                    <LucideIcon name="Check" size={14} />
+                  ) : (
+                    index + 1
+                  )}
+                </span>
+                <LucideIcon name={step.icon} size={16} />
+                <span>{step.label}</span>
+              </button>
+            ))}
+          </div>
 
-            <div className="campaign-recipient-actions">
-              <button className="action-btn secondary" onClick={selectAllFiltered}><LucideIcon name="CheckSquare" size={15} /> Select Filtered</button>
-              <button className="action-btn secondary" onClick={clearRecipients}><LucideIcon name="X" size={15} /> Clear</button>
+          <div className="campaign-selection-strip">
+            <div>
+              <span>Recipients</span>
+              <strong>{selectedRecipientUids.length}</strong>
             </div>
+            <div>
+              <span>Direct</span>
+              <strong>{selectedDirectUids.length}</strong>
+            </div>
+            <div>
+              <span>Groups</span>
+              <strong>{selectedGroups.length}</strong>
+            </div>
+            <div>
+              <span>Message</span>
+              <strong>{messageLabel}</strong>
+            </div>
+          </div>
 
-            <div className="group-picker">
-              {groups.map((group) => (
-                <label key={group.groupId} className="group-chip">
-                  <input type="checkbox" checked={!!selectedGroupIds[group.groupId]} onChange={() => toggleGroup(group.groupId)} />
-                  <span>{group.name}</span>
-                  <em>{Object.values(group.members || {}).filter(Boolean).length}</em>
+          {flowStep === 'audience' && (
+            <section className="campaign-panel campaign-step-panel">
+              <div className="campaign-step-header">
+                <div>
+                  <h2>Audience</h2>
+                  <p>{selectedRecipientUids.length} recipient{selectedRecipientUids.length === 1 ? '' : 's'} selected</p>
+                </div>
+                <div className="campaign-recipient-actions">
+                  <button type="button" className="action-btn secondary" onClick={selectAllFiltered}>
+                    <LucideIcon name="CheckSquare" size={15} /> Select Filtered
+                  </button>
+                  <button type="button" className="action-btn secondary" onClick={clearRecipients} disabled={!hasRecipients}>
+                    <LucideIcon name="X" size={15} /> Clear
+                  </button>
+                </div>
+              </div>
+
+              <div className="workspace-toolbar compact-toolbar campaign-audience-controls">
+                <label className="toolbar-search">
+                  <LucideIcon name="Search" size={16} />
+                  <input placeholder="Search users" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} />
                 </label>
-              ))}
-            </div>
+                <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
+                  {roleOptions.map((role) => <option key={role} value={role}>{role === 'all' ? 'All roles' : role}</option>)}
+                </select>
+                <select value={groupFilter} onChange={(event) => setGroupFilter(event.target.value)}>
+                  <option value="all">All groups</option>
+                  {groups.map((group) => <option key={group.groupId} value={group.groupId}>{group.name}</option>)}
+                </select>
+              </div>
 
-            <div className="recipient-list">
-              {filteredUsers.map((user) => (
-                <label className="recipient-row" key={user.uid}>
-                  <input type="checkbox" checked={!!selectedUids[user.uid]} onChange={() => toggleUid(user.uid)} />
-                  <span>
+              <div className="campaign-section-label">
+                <span>Groups</span>
+                <strong>{selectedGroups.length} selected</strong>
+              </div>
+              <div className="group-picker campaign-group-picker">
+                {groups.map((group) => (
+                  <label key={group.groupId} className="group-chip">
+                    <input type="checkbox" checked={!!selectedGroupIds[group.groupId]} onChange={() => toggleGroup(group.groupId)} />
+                    <span>{group.name}</span>
+                    <em>{Object.values(group.members || {}).filter(Boolean).length}</em>
+                  </label>
+                ))}
+                {groups.length === 0 && <div className="empty-state refined compact-empty"><LucideIcon name="Users" size={28} /><h2>No groups yet.</h2></div>}
+              </div>
+
+              <div className="campaign-section-label">
+                <span>Users</span>
+                <strong>{filteredUsers.length} shown</strong>
+              </div>
+              <div className="recipient-list campaign-audience-list">
+                {filteredUsers.map((user) => (
+                  <label className="recipient-row" key={user.uid}>
+                    <input type="checkbox" checked={!!selectedUids[user.uid]} onChange={() => toggleUid(user.uid)} />
+                    <span>
+                      <strong>{userLabel(user)}</strong>
+                      <small>{user.email}</small>
+                    </span>
+                    <em>{user.role || 'customer'}</em>
+                  </label>
+                ))}
+                {filteredUsers.length === 0 && <div className="empty-state refined compact-empty"><LucideIcon name="Search" size={28} /><h2>No matching users.</h2></div>}
+              </div>
+            </section>
+          )}
+
+          {flowStep === 'message' && (
+            <section className="campaign-panel campaign-step-panel">
+              <div className="campaign-step-header">
+                <div>
+                  <h2>Message</h2>
+                  <p>{messageLabel}</p>
+                </div>
+                {mode === 'template' && activeTemplate && (
+                  <button type="button" className="action-btn secondary" onClick={copyTemplateToCustom}>
+                    <LucideIcon name="Copy" size={15} /> Copy To Custom
+                  </button>
+                )}
+              </div>
+
+              <div className="campaign-field-grid">
+                <label>
+                  Campaign Name
+                  <input className="input-field" value={campaignName} onChange={(event) => setCampaignName(event.target.value)} />
+                </label>
+
+                <div className="campaign-mode-field">
+                  <span>Send Mode</span>
+                  <div className="mode-switch">
+                    <button type="button" className={mode === 'template' ? 'active' : ''} onClick={() => setMode('template')}>Template</button>
+                    <button type="button" className={mode === 'custom' ? 'active' : ''} onClick={() => setMode('custom')}>Custom HTML</button>
+                  </div>
+                </div>
+              </div>
+
+              {mode === 'template' ? (
+                <>
+                  <label>
+                    Template
+                    <select className="select-input" value={templateId} onChange={(event) => setTemplateId(event.target.value)}>
+                      {templates.map((template) => <option key={template.id} value={template.id}>{template.label}</option>)}
+                    </select>
+                  </label>
+                  {activeTemplate && (
+                    <div className="template-variable-row campaign-vars">
+                      {(activeTemplate.variables || []).map((variable) => <code key={variable}>{`{{${variable}}}`}</code>)}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <label>
+                    Subject
+                    <input className="input-field" value={customSubject} onChange={(event) => setCustomSubject(event.target.value)} />
+                  </label>
+                  <label>
+                    HTML
+                    <textarea className="input-field code-editor campaign-html" value={customHtml} onChange={(event) => setCustomHtml(event.target.value)} spellCheck={false} />
+                  </label>
+                </>
+              )}
+
+              <div className="campaign-subject-strip">
+                <span>Subject</span>
+                <strong>{previewSubject || 'No subject'}</strong>
+              </div>
+            </section>
+          )}
+
+          {flowStep === 'preview' && (
+            <section className="campaign-panel campaign-step-panel">
+              <div className="campaign-step-header">
+                <div>
+                  <h2>Preview</h2>
+                  <p>{selectedRecipientUids.length} recipient{selectedRecipientUids.length === 1 ? '' : 's'}</p>
+                </div>
+                <button type="button" className="action-btn secondary" onClick={() => setFlowStep('message')}>
+                  <LucideIcon name="Pencil" size={15} /> Edit Message
+                </button>
+              </div>
+
+              <div className="campaign-preview-recipients">
+                {selectedPreviewUsers.map((user) => (
+                  <span key={user.uid}>
                     <strong>{userLabel(user)}</strong>
                     <small>{user.email}</small>
                   </span>
-                  <em>{user.role || 'customer'}</em>
-                </label>
-              ))}
-            </div>
-          </section>
+                ))}
+                {hiddenPreviewRecipientCount > 0 && <em>+{hiddenPreviewRecipientCount} more</em>}
+              </div>
 
-          <section className="campaign-panel">
-            <h2>Message</h2>
-            <label>
-              Campaign Name
-              <input className="input-field" value={campaignName} onChange={(event) => setCampaignName(event.target.value)} />
-            </label>
+              <div className="template-preview campaign-preview">
+                <div className="template-preview-subject">{previewSubject || 'No subject'}</div>
+                <iframe title="Campaign preview" srcDoc={previewHtml || '<p>No HTML yet.</p>'} />
+              </div>
+            </section>
+          )}
 
-            <div className="mode-switch">
-              <button className={mode === 'template' ? 'active' : ''} onClick={() => setMode('template')}>Use Template</button>
-              <button className={mode === 'custom' ? 'active' : ''} onClick={() => setMode('custom')}>Paste Custom HTML</button>
-            </div>
+          {flowStep === 'send' && (
+            <section className="campaign-panel campaign-step-panel campaign-send-step">
+              <div className="campaign-step-header">
+                <div>
+                  <h2>Review & Send</h2>
+                  <p>{hasRecipients && hasMessage ? 'Ready' : 'Needs attention'}</p>
+                </div>
+              </div>
 
-            {mode === 'template' ? (
-              <>
-                <label>
-                  Template
-                  <select className="select-input" value={templateId} onChange={(event) => setTemplateId(event.target.value)}>
-                    {templates.map((template) => <option key={template.id} value={template.id}>{template.label}</option>)}
-                  </select>
-                </label>
-                {activeTemplate && (
-                  <div className="template-variable-row campaign-vars">
-                    {(activeTemplate.variables || []).map((variable) => <code key={variable}>{`{{${variable}}}`}</code>)}
-                  </div>
-                )}
-                <button className="action-btn secondary" onClick={copyTemplateToCustom}>
-                  <LucideIcon name="Copy" size={15} /> Copy Template To Custom
+              <div className="campaign-review-grid">
+                <div className="campaign-review-card">
+                  <span>Campaign</span>
+                  <strong>{campaignName || 'Untitled campaign'}</strong>
+                </div>
+                <div className="campaign-review-card">
+                  <span>Recipients</span>
+                  <strong>{selectedRecipientUids.length}</strong>
+                </div>
+                <div className="campaign-review-card">
+                  <span>Groups</span>
+                  <strong>{selectedGroups.length ? selectedGroups.map((group) => group.name).join(', ') : 'None'}</strong>
+                </div>
+                <div className="campaign-review-card">
+                  <span>Message</span>
+                  <strong>{messageLabel}</strong>
+                </div>
+                <div className="campaign-review-card span-full">
+                  <span>Subject</span>
+                  <strong>{previewSubject || 'No subject'}</strong>
+                </div>
+              </div>
+
+              <div className="campaign-send-actions">
+                {!hasRecipients && <button type="button" className="action-btn secondary" onClick={() => setFlowStep('audience')}><LucideIcon name="Users" size={15} /> Choose Audience</button>}
+                {!hasMessage && <button type="button" className="action-btn secondary" onClick={() => setFlowStep('message')}><LucideIcon name="Mail" size={15} /> Finish Message</button>}
+                <button type="button" className="action-btn" onClick={handleSend} disabled={!hasRecipients || !hasMessage || sending}>
+                  <LucideIcon name="Send" size={16} /> {sending ? 'Sending...' : 'Send Campaign'}
                 </button>
-              </>
-            ) : (
-              <>
-                <label>
-                  Subject
-                  <input className="input-field" value={customSubject} onChange={(event) => setCustomSubject(event.target.value)} />
-                </label>
-                <label>
-                  HTML
-                  <textarea className="input-field code-editor campaign-html" value={customHtml} onChange={(event) => setCustomHtml(event.target.value)} spellCheck={false} />
-                </label>
-              </>
-            )}
+              </div>
+            </section>
+          )}
 
-            <div className="template-preview campaign-preview">
-              <div className="template-preview-subject">{previewSubject || 'No subject'}</div>
-              <iframe title="Campaign preview" srcDoc={previewHtml || '<p>No HTML yet.</p>'} />
-            </div>
-          </section>
-        </div>
+          <div className="campaign-flow-actions">
+            <button type="button" className="action-btn secondary" onClick={previousFlowStep} disabled={flowStepIndex === 0}>
+              <LucideIcon name="ChevronLeft" size={15} /> Back
+            </button>
+            {flowStep !== 'send' ? (
+              <button type="button" className="action-btn" onClick={nextFlowStep}>
+                Next <LucideIcon name="ChevronRight" size={15} />
+              </button>
+            ) : (
+              <button type="button" className="action-btn secondary" onClick={() => setFlowStep('preview')}>
+                <LucideIcon name="Eye" size={15} /> Preview Again
+              </button>
+            )}
+          </div>
+        </section>
       )}
 
       {activeTab === 'groups' && (
-        <div className="campaign-compose-grid">
+        <div className="campaign-stack">
           <form className="campaign-panel" onSubmit={saveGroup}>
             <h2>{editingGroupId ? 'Edit Group' : 'Create Group'}</h2>
             <input className="input-field" placeholder="Group name" value={groupDraft.name} onChange={(event) => setGroupDraft((prev) => ({ ...prev, name: event.target.value }))} required />
@@ -461,6 +686,7 @@ export default function EmailCampaigns() {
                     <strong>{Object.values(group.members || {}).filter(Boolean).length} members</strong>
                   </div>
                   <div className="campaign-recipient-actions">
+                    <button className="action-btn secondary" onClick={() => addGroupToCampaign(group)}><LucideIcon name="Plus" size={15} /> Use Group</button>
                     <button className="action-btn secondary" onClick={() => startEditGroup(group)}><LucideIcon name="Pencil" size={15} /> Edit</button>
                     <button className="action-btn danger" onClick={() => deleteGroup(group)}><LucideIcon name="Trash2" size={15} /> Delete</button>
                   </div>

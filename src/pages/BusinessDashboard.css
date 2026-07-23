@@ -1559,6 +1559,229 @@
   font-weight: 800;
 }
 
+.campaign-flow,
+.campaign-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.campaign-flow-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.campaign-flow-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 54px;
+  min-width: 0;
+  padding: 0.65rem;
+  background: #101010;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  color: #aaa;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.campaign-flow-step > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.campaign-flow-step.is-active {
+  background: #1b1705;
+  border-color: #ffcc00;
+  color: #ffcc00;
+}
+
+.campaign-flow-step.is-complete .campaign-step-index {
+  background: #ffcc00;
+  border-color: #ffcc00;
+  color: #111;
+}
+
+.campaign-step-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border: 1px solid #3a3a3a;
+  border-radius: 999px;
+  color: #d0d0d0;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.campaign-selection-strip,
+.campaign-review-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.campaign-selection-strip div,
+.campaign-review-card,
+.campaign-subject-strip {
+  min-width: 0;
+  padding: 0.75rem;
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+}
+
+.campaign-selection-strip span,
+.campaign-review-card span,
+.campaign-subject-strip span {
+  display: block;
+  color: #888;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.campaign-selection-strip strong,
+.campaign-review-card strong,
+.campaign-subject-strip strong {
+  display: block;
+  margin-top: 0.25rem;
+  color: #f3f3f3;
+  overflow-wrap: anywhere;
+}
+
+.campaign-step-panel {
+  gap: 1rem;
+}
+
+.campaign-step-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.campaign-step-header h2 {
+  margin-bottom: 0.25rem;
+}
+
+.campaign-step-header p {
+  margin: 0;
+  color: #aaa;
+  font-weight: 700;
+}
+
+.campaign-section-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: #888;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.campaign-section-label strong {
+  color: #ffcc00;
+}
+
+.campaign-audience-controls {
+  margin: 0;
+}
+
+.campaign-panel .toolbar-search {
+  display: flex;
+}
+
+.campaign-audience-list {
+  max-height: 620px;
+}
+
+.campaign-field-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(230px, auto);
+  gap: 0.85rem;
+  align-items: end;
+}
+
+.campaign-mode-field {
+  display: grid;
+  gap: 0.4rem;
+  color: #ddd;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.campaign-preview-recipients {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.campaign-preview-recipients span {
+  display: grid;
+  gap: 0.2rem;
+  min-width: min(240px, 100%);
+  padding: 0.65rem;
+  background: #080808;
+  border: 1px solid #242424;
+  border-radius: 8px;
+}
+
+.campaign-preview-recipients strong,
+.campaign-preview-recipients small {
+  overflow-wrap: anywhere;
+}
+
+.campaign-preview-recipients small {
+  color: #999;
+}
+
+.campaign-preview-recipients em {
+  align-self: center;
+  color: #ffcc00;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.campaign-review-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.campaign-review-card.span-full {
+  grid-column: 1 / -1;
+}
+
+.campaign-send-actions,
+.campaign-flow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.campaign-flow-actions {
+  justify-content: space-between;
+}
+
+.compact-empty {
+  width: 100%;
+  min-height: 88px;
+  padding: 1rem;
+}
+
+.compact-empty h2 {
+  font-size: 1rem;
+}
+
 .compact-toolbar {
   grid-template-columns: minmax(220px, 1fr) minmax(120px, 160px) minmax(140px, 180px);
   margin: 0;
@@ -1856,8 +2079,23 @@
   }
 
   .compact-toolbar,
+  .campaign-flow-steps,
+  .campaign-selection-strip,
+  .campaign-field-grid,
+  .campaign-review-grid,
   .campaign-history-meta {
     grid-template-columns: 1fr;
+  }
+
+  .campaign-step-header,
+  .campaign-flow-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .campaign-flow-actions .action-btn,
+  .campaign-send-actions .action-btn {
+    width: 100%;
   }
 
   .product-workspace-grid {
