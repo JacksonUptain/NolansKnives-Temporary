@@ -58,103 +58,300 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+const EMAIL_STYLE = {
+  bg: "#0a0a0a",
+  surface: "#111111",
+  raised: "#1a1a1a",
+  border: "#2b2b2b",
+  text: "#f4f4f4",
+  strong: "#ffffff",
+  muted: "#b0b0b0",
+  subtle: "#999999",
+  gold: "#ffcc00",
+  goldMuted: "#d8b949",
+  danger: "#ff5c5c",
+  success: "#4caf50",
+  font: "Arial, Helvetica, sans-serif"
+};
+
+function emailSafeText(value, fallback = "") {
+  const rendered = value === null || value === undefined || value === "" ? fallback : value;
+  return escapeHtml(rendered);
+}
+
+function emailPlainHtml(value) {
+  return emailSafeText(value).replace(/\r?\n/g, "<br/>");
+}
+
+function emailMoney(value) {
+  return `$${Number(value || 0).toFixed(2)}`;
+}
+
+function emailPath(path = "") {
+  if (/^https?:\/\//i.test(String(path))) return String(path);
+  return `${SITE_URL}${String(path).startsWith("/") ? "" : "/"}${path}`;
+}
+
+function emailParagraph(text) {
+  if (!text) return "";
+  return `<p style="margin:0 0 16px;color:${EMAIL_STYLE.text};font-family:${EMAIL_STYLE.font};font-size:16px;line-height:1.6;">${emailSafeText(text)}</p>`;
+}
+
+function emailHtmlParagraph(html) {
+  if (!html) return "";
+  return `<p style="margin:0 0 16px;color:${EMAIL_STYLE.text};font-family:${EMAIL_STYLE.font};font-size:16px;line-height:1.6;">${html}</p>`;
+}
+
+function emailButton({ label, url }) {
+  if (!label || !url) return "";
+  return `
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0 4px;">
+      <tr>
+        <td style="border-radius:6px;background:${EMAIL_STYLE.gold};">
+          <a href="${emailSafeText(url)}" style="display:inline-block;padding:13px 20px;color:#111111;font-family:${EMAIL_STYLE.font};font-size:15px;font-weight:700;line-height:1.2;text-decoration:none;border-radius:6px;">${emailSafeText(label)}</a>
+        </td>
+      </tr>
+    </table>
+  `;
+}
+
+function emailTextLink({ label, url }) {
+  if (!label || !url) return "";
+  return `<p style="margin:14px 0 0;color:${EMAIL_STYLE.muted};font-family:${EMAIL_STYLE.font};font-size:14px;line-height:1.6;"><a href="${emailSafeText(url)}" style="color:${EMAIL_STYLE.gold};font-weight:700;text-decoration:none;">${emailSafeText(label)}</a></p>`;
+}
+
+function emailDetailBlock(details = [], title = "Details") {
+  const visibleDetails = details.filter((detail) => detail && (detail.value !== null && detail.value !== undefined && detail.value !== "" || detail.valueHtml));
+  if (!visibleDetails.length) return "";
+
+  const rows = visibleDetails.map((detail, index) => `
+    <tr>
+      <td style="padding:${index === 0 ? "0" : "11px"} 0 0;color:${EMAIL_STYLE.subtle};font-family:${EMAIL_STYLE.font};font-size:12px;font-weight:700;line-height:1.4;text-transform:uppercase;vertical-align:top;width:38%;">${emailSafeText(detail.label)}</td>
+      <td style="padding:${index === 0 ? "0" : "11px"} 0 0;color:${EMAIL_STYLE.strong};font-family:${EMAIL_STYLE.font};font-size:15px;font-weight:700;line-height:1.4;text-align:right;vertical-align:top;">${detail.valueHtml || emailSafeText(detail.value)}</td>
+    </tr>
+  `).join("");
+
+  return `
+    <div style="margin:22px 0;padding:18px;background:${EMAIL_STYLE.raised};border:1px solid ${EMAIL_STYLE.border};border-radius:8px;">
+      <div style="margin:0 0 14px;color:${EMAIL_STYLE.gold};font-family:${EMAIL_STYLE.font};font-size:12px;font-weight:700;letter-spacing:0.04em;line-height:1.4;text-transform:uppercase;">${emailSafeText(title)}</div>
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+        ${rows}
+      </table>
+    </div>
+  `;
+}
+
+function emailNote(text, tone = "neutral") {
+  if (!text) return "";
+  const borderColor = tone === "success" ? EMAIL_STYLE.success : tone === "danger" ? EMAIL_STYLE.danger : EMAIL_STYLE.gold;
+  return `
+    <div style="margin:20px 0 0;padding:14px 16px;background:${EMAIL_STYLE.bg};border-left:4px solid ${borderColor};border-radius:6px;color:${EMAIL_STYLE.muted};font-family:${EMAIL_STYLE.font};font-size:14px;line-height:1.6;">
+      ${emailPlainHtml(text)}
+    </div>
+  `;
+}
+
+function buildPremiumEmail({
+  preheader = "",
+  eyebrow = "Nolan's Knives",
+  title = "Nolan's Knives",
+  greeting = "",
+  body = "",
+  details = [],
+  detailTitle = "Details",
+  cta = null,
+  secondaryCta = null,
+  note = "",
+  noteTone = "neutral",
+  footerNote = `Questions? Reply to this email or contact ${BUSINESS_EMAIL}.`
+}) {
+  const greetingHtml = greeting ? emailParagraph(`Hi ${greeting},`) : "";
+  const detailsHtml = emailDetailBlock(details, detailTitle);
+  const ctaHtml = cta ? emailButton(cta) : "";
+  const secondaryCtaHtml = secondaryCta ? emailTextLink(secondaryCta) : "";
+  const noteHtml = emailNote(note, noteTone);
+
+  return `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>${emailSafeText(title)}</title>
+  </head>
+  <body style="margin:0;padding:0;background:${EMAIL_STYLE.bg};">
+    <div style="display:none;max-height:0;max-width:0;opacity:0;overflow:hidden;color:${EMAIL_STYLE.bg};font-size:1px;line-height:1px;">${emailSafeText(preheader)}</div>
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:${EMAIL_STYLE.bg};margin:0;padding:28px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:640px;margin:0 auto;">
+            <tr>
+              <td style="padding:0 0 14px 2px;">
+                <div style="color:${EMAIL_STYLE.gold};font-family:${EMAIL_STYLE.font};font-size:13px;font-weight:800;letter-spacing:0.08em;line-height:1.2;text-transform:uppercase;">Nolan's Knives</div>
+                <div style="margin-top:5px;color:${EMAIL_STYLE.subtle};font-family:${EMAIL_STYLE.font};font-size:13px;line-height:1.4;">Custom handmade knives, built with purpose.</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="background:${EMAIL_STYLE.surface};border:1px solid ${EMAIL_STYLE.border};border-radius:10px;overflow:hidden;">
+                <div style="height:4px;background:${EMAIL_STYLE.gold};line-height:4px;font-size:4px;">&nbsp;</div>
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                  <tr>
+                    <td style="padding:28px 26px 24px;">
+                      <div style="margin:0 0 10px;color:${EMAIL_STYLE.goldMuted};font-family:${EMAIL_STYLE.font};font-size:12px;font-weight:800;letter-spacing:0.06em;line-height:1.4;text-transform:uppercase;">${emailSafeText(eyebrow)}</div>
+                      <h1 style="margin:0 0 18px;color:${EMAIL_STYLE.strong};font-family:${EMAIL_STYLE.font};font-size:28px;font-weight:800;line-height:1.18;">${emailSafeText(title)}</h1>
+                      ${greetingHtml}
+                      ${body}
+                      ${detailsHtml}
+                      ${ctaHtml}
+                      ${secondaryCtaHtml}
+                      ${noteHtml}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:18px 26px;background:${EMAIL_STYLE.bg};border-top:1px solid ${EMAIL_STYLE.border};">
+                      <p style="margin:0;color:${EMAIL_STYLE.subtle};font-family:${EMAIL_STYLE.font};font-size:13px;line-height:1.6;">${emailSafeText(footerNote)}</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 2px 0;color:${EMAIL_STYLE.subtle};font-family:${EMAIL_STYLE.font};font-size:12px;line-height:1.6;text-align:center;">
+                Nolan's Knives &bull; <a href="${emailSafeText(SITE_URL)}" style="color:${EMAIL_STYLE.gold};text-decoration:none;">nolansknives.com</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+}
+
 // Email Templates
 const emailTemplates = {
   adminInvite: (displayName, setupUrl, inviterName = "Nolan's Knives", roleLabel = "Admin") => {
-    const safeName = escapeHtml(displayName || "there");
-    const safeSetupUrl = escapeHtml(setupUrl);
-    const safeInviterName = escapeHtml(inviterName || "Nolan's Knives");
-    const safeRoleLabel = escapeHtml(roleLabel || "Admin");
+    const role = roleLabel || "Admin";
+    const inviter = inviterName || "Nolan's Knives";
 
     return {
-      subject: `You're invited to Nolan's Knives as ${roleLabel}`,
-      html: `
-        <h2>Nolan's Knives Invite</h2>
-        <p>Hi ${safeName},</p>
-        <p>${safeInviterName} invited you to Nolan's Knives with ${safeRoleLabel} access.</p>
-        <p>Use the secure link below to set your password and finish your account setup.</p>
-        <p><a href="${safeSetupUrl}" style="display: inline-block; background: #8b6f47; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Set Up Access</a></p>
-        <p>If you were not expecting this invite, you can ignore this email.</p>
-        <p>Best regards,<br/>Nolan's Knives Team</p>
-      `
+      subject: `You're invited to Nolan's Knives as ${role}`,
+      html: buildPremiumEmail({
+        preheader: `${inviter} invited you to Nolan's Knives with ${role} access.`,
+        eyebrow: "Access Invite",
+        title: "You're Invited",
+        greeting: displayName || "there",
+        body: emailParagraph(`${inviter} invited you to Nolan's Knives with ${role} access.`) +
+          emailParagraph("Use the secure setup link below to choose your password and finish your account setup."),
+        details: [
+          { label: "Access Level", value: role },
+          { label: "Invited By", value: inviter }
+        ],
+        detailTitle: "Invitation Details",
+        cta: { label: `Set Up ${role} Access`, url: setupUrl },
+        note: "If you were not expecting this invite, you can ignore this email.",
+        footerNote: "This invite link is intended only for you."
+      })
     };
   },
 
   customRequestSubmitted: (customerName, requestId, estimatedPrice) => ({
     subject: "Custom Knife Request Received - Nolan's Knives",
-    html: `
-      <h2>Thank You for Your Custom Request!</h2>
-      <p>Hi ${customerName},</p>
-      <p>We've received your custom knife request. Our team will review your specifications and get back to you within 2-3 business days.</p>
-      <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-        <p><strong>Request ID:</strong> ${requestId}</p>
-        <p><strong>Estimated Price:</strong> $${estimatedPrice.toFixed(2)}</p>
-      </div>
-      <p>In the meantime, you can track your request by logging into your account at <a href="https://nolansknives.com">nolansknives.com</a>.</p>
-      <p>Questions? Reply to this email or contact us at ${BUSINESS_EMAIL}</p>
-      <p>Best regards,<br/>Nolan's Knives Team</p>
-    `
+    html: buildPremiumEmail({
+      preheader: "We received your custom knife request.",
+      eyebrow: "Custom Request",
+      title: "Request Received",
+      greeting: customerName || "there",
+      body: emailParagraph("We've received your custom knife request. Nolan's team will review the details and follow up with the next step.") +
+        emailParagraph("You can track the request from your account while the details are being reviewed."),
+      details: [
+        { label: "Request ID", value: requestId },
+        { label: "Estimated Price", value: emailMoney(estimatedPrice) }
+      ],
+      detailTitle: "Request Summary",
+      cta: { label: "View Request", url: emailPath(`/custom-knife/confirmation/${encodeURIComponent(String(requestId || ""))}`) }
+    })
   }),
 
   customRequestPriorityPaid: (customerName, requestId, estimatedPrice, depositAmount) => ({
     subject: "Priority Custom Knife Request Received - Nolan's Knives",
-    html: `
-      <h2>Priority Request Received</h2>
-      <p>Hi ${customerName},</p>
-      <p>We've received your custom knife request and your 15% priority deposit.</p>
-      <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-        <p><strong>Request ID:</strong> ${requestId}</p>
-        <p><strong>Estimated Price:</strong> $${estimatedPrice.toFixed(2)}</p>
-        <p><strong>Deposit Paid:</strong> $${depositAmount.toFixed(2)}</p>
-      </div>
-      <p>Nolan will review your brief and send a more detailed quote. If the final quote is not accepted, the deposit can be refunded.</p>
-      <p>You can view the request and chat with Nolan's team from your account.</p>
-      <p>Best regards,<br/>Nolan's Knives Team</p>
-    `
+    html: buildPremiumEmail({
+      preheader: "Your priority deposit has been received.",
+      eyebrow: "Priority Request",
+      title: "Priority Request Received",
+      greeting: customerName || "there",
+      body: emailParagraph("We've received your custom knife request and your priority deposit.") +
+        emailParagraph("Nolan will review your brief and send a more detailed quote. If the final quote is not accepted, the deposit can be refunded."),
+      details: [
+        { label: "Request ID", value: requestId },
+        { label: "Estimated Price", value: emailMoney(estimatedPrice) },
+        { label: "Deposit Paid", value: emailMoney(depositAmount) }
+      ],
+      detailTitle: "Priority Deposit",
+      cta: { label: "View Request", url: emailPath(`/custom-knife/confirmation/${encodeURIComponent(String(requestId || ""))}`) },
+      note: "You can view the request and chat with Nolan's team from your account.",
+      noteTone: "success"
+    })
   }),
 
   customRequestPriorityPaidBusiness: (customerName, requestId, estimatedPrice, depositAmount) => ({
     subject: `Priority Custom Request Paid - ${customerName}`,
-    html: `
-      <h2>Priority Custom Request Paid</h2>
-      <p>${customerName} paid the 15% priority deposit for a custom knife request.</p>
-      <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-        <p><strong>Request ID:</strong> ${requestId}</p>
-        <p><strong>Estimated Price:</strong> $${estimatedPrice.toFixed(2)}</p>
-        <p><strong>Deposit Paid:</strong> $${depositAmount.toFixed(2)}</p>
-      </div>
-      <p>Review the request in the business dashboard and send the detailed quote when ready.</p>
-    `
+    html: buildPremiumEmail({
+      preheader: `${customerName} paid the priority deposit.`,
+      eyebrow: "Staff Alert",
+      title: "Priority Request Paid",
+      body: emailParagraph(`${customerName} paid the priority deposit for a custom knife request.`) +
+        emailParagraph("Review the request in the business dashboard and send the detailed quote when ready."),
+      details: [
+        { label: "Customer", value: customerName },
+        { label: "Request ID", value: requestId },
+        { label: "Estimated Price", value: emailMoney(estimatedPrice) },
+        { label: "Deposit Paid", value: emailMoney(depositAmount) }
+      ],
+      detailTitle: "Payment Details",
+      cta: { label: "Open Custom Requests", url: emailPath("/business/custom-requests") },
+      footerNote: "Staff alert generated by Nolan's Knives."
+    })
   }),
 
   knifePurchasedCustomer: (customerName, orderId, knifeName, amount) => ({
     subject: `Order Confirmed - ${knifeName}`,
-    html: `
-      <h2>Order Confirmed</h2>
-      <p>Hi ${customerName},</p>
-      <p>Thanks for your purchase from Nolan's Knives.</p>
-      <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-        <p><strong>Order ID:</strong> ${orderId}</p>
-        <p><strong>Knife:</strong> ${knifeName}</p>
-        <p><strong>Total Paid:</strong> $${Number(amount || 0).toFixed(2)}</p>
-      </div>
-      <p>Your knife now appears under Your Knives, where you can track status and message Nolan's team.</p>
-      <p>Best regards,<br/>Nolan's Knives Team</p>
-    `
+    html: buildPremiumEmail({
+      preheader: `Your order for ${knifeName} is confirmed.`,
+      eyebrow: "Order Confirmation",
+      title: "Order Confirmed",
+      greeting: customerName || "there",
+      body: emailParagraph("Thanks for your purchase from Nolan's Knives.") +
+        emailParagraph("Your knife now appears under Your Knives, where you can track status and message Nolan's team."),
+      details: [
+        { label: "Order ID", value: orderId },
+        { label: "Knife", value: knifeName },
+        { label: "Total Paid", value: emailMoney(amount) }
+      ],
+      detailTitle: "Order Summary",
+      cta: { label: "View Your Knives", url: emailPath("/my-knives") },
+      note: "We'll keep the order details updated as fulfillment moves forward.",
+      noteTone: "success"
+    })
   }),
 
   knifePurchasedBusiness: (customerName, orderId, knifeName, amount) => ({
     subject: `Knife Sold - ${knifeName}`,
-    html: `
-      <h2>Knife Sold</h2>
-      <p>${customerName} completed payment for a store knife.</p>
-      <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-        <p><strong>Order ID:</strong> ${orderId}</p>
-        <p><strong>Knife:</strong> ${knifeName}</p>
-        <p><strong>Total Paid:</strong> $${Number(amount || 0).toFixed(2)}</p>
-      </div>
-      <p>Open the business orders page to review fulfillment and customer details.</p>
-    `
+    html: buildPremiumEmail({
+      preheader: `${customerName} completed payment for ${knifeName}.`,
+      eyebrow: "Staff Alert",
+      title: "Knife Sold",
+      body: emailParagraph(`${customerName} completed payment for a store knife.`) +
+        emailParagraph("Open the business orders page to review fulfillment and customer details."),
+      details: [
+        { label: "Customer", value: customerName },
+        { label: "Order ID", value: orderId },
+        { label: "Knife", value: knifeName },
+        { label: "Total Paid", value: emailMoney(amount) }
+      ],
+      detailTitle: "Sale Details",
+      cta: { label: "Open Business Orders", url: emailPath("/business/orders") },
+      footerNote: "Staff alert generated by Nolan's Knives."
+    })
   }),
 
   quoteSent: (
@@ -167,148 +364,200 @@ const emailTemplates = {
     depositPaymentUrl = `${SITE_URL}/custom-knife/confirmation/${encodeURIComponent(requestId)}?deposit=1`
   ) => ({
     subject: "Your Custom Knife Quote - Nolan's Knives",
-    html: `
-      <h2>Your Custom Knife Quote</h2>
-      <p>Hi ${customerName},</p>
-      <p>We've prepared a quote for your custom knife request.</p>
-      <div style="background: #e8f5e9; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #27ae60;">
-        <p style="margin: 0; font-size: 14px; color: #666;">PRICING BREAKDOWN</p>
-        <h3 style="margin: 10px 0 0 0; color: #27ae60;">$${finalPrice.toFixed(2)}</h3>
-        <p style="margin: 10px 0 0 0; font-size: 14px;">
-          <strong>${depositAlreadyPaid ? "Deposit Recorded" : "15% Deposit Due Now"}:</strong> $${depositDue.toFixed(2)}<br/>
-          <strong>Remaining Balance:</strong> $${remainingBalance.toFixed(2)}
-        </p>
-      </div>
-      ${depositAlreadyPaid ? `
-        <p>Your priority deposit is already recorded. Nolan will continue from here and send the next payment step when it is ready.</p>
-        <p><a href="${SITE_URL}/my-knives/${encodeURIComponent(requestId)}" style="display: inline-block; background: #8b6f47; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Request</a></p>
-      ` : `
-        <p>To move forward, pay the 15% deposit using the secure link below. The remaining balance is due later in the build process.</p>
-        <p><a href="${depositPaymentUrl}" style="display: inline-block; background: #8b6f47; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Pay 15% Deposit</a></p>
-      `}
-      <p>Questions about the quote? Reply to this email.</p>
-      <p>Best regards,<br/>Nolan's Knives Team</p>
-    `
+    html: buildPremiumEmail({
+      preheader: "Your custom knife quote is ready.",
+      eyebrow: "Custom Quote",
+      title: "Your Custom Knife Quote",
+      greeting: customerName || "there",
+      body: emailParagraph("We've prepared a quote for your custom knife request.") +
+        emailParagraph(depositAlreadyPaid
+          ? "Your priority deposit is already recorded. Nolan will continue from here and send the next payment step when it is ready."
+          : "To move forward, pay the deposit using the secure link below. The remaining balance is due later in the build process."),
+      details: [
+        { label: "Request ID", value: requestId },
+        { label: "Final Quote", value: emailMoney(finalPrice) },
+        { label: depositAlreadyPaid ? "Deposit Recorded" : "Deposit Due Now", value: emailMoney(depositDue) },
+        { label: "Remaining Balance", value: emailMoney(remainingBalance) }
+      ],
+      detailTitle: "Pricing Breakdown",
+      cta: depositAlreadyPaid
+        ? { label: "View Request", url: emailPath(`/my-knives/${encodeURIComponent(String(requestId || ""))}`) }
+        : { label: "Pay Deposit", url: depositPaymentUrl },
+      note: "Questions about the quote? Reply to this email and we'll help from there.",
+      noteTone: "success"
+    })
   }),
 
   depositReceived: (customerName, requestId, depositAmount) => ({
     subject: "Deposit Received - Nolan's Knives",
-    html: `
-      <h2>Deposit Received!</h2>
-      <p>Hi ${customerName},</p>
-      <p>We've received your deposit payment of $${depositAmount.toFixed(2)} for request #${requestId}.</p>
-      <p>Your custom knife is now officially in production. We'll keep you updated on progress and ship as soon as it's complete.</p>
-      <p>You can track your order at: <a href="https://nolansknives.com/my-knives/${requestId}">https://nolansknives.com/my-knives/${requestId}</a></p>
-      <p>Best regards,<br/>Nolan's Knives Team</p>
-    `
+    html: buildPremiumEmail({
+      preheader: "Your deposit payment has been received.",
+      eyebrow: "Payment Received",
+      title: "Deposit Received",
+      greeting: customerName || "there",
+      body: emailParagraph(`We've received your deposit payment for request ${requestId}.`) +
+        emailParagraph("Your custom knife is now officially in production. We'll keep you updated as the build moves forward."),
+      details: [
+        { label: "Request ID", value: requestId },
+        { label: "Deposit Paid", value: emailMoney(depositAmount) }
+      ],
+      detailTitle: "Payment Summary",
+      cta: { label: "Track Your Order", url: emailPath(`/my-knives/${encodeURIComponent(String(requestId || ""))}`) },
+      note: "Keep an eye on Your Knives for progress updates and messages from Nolan's team.",
+      noteTone: "success"
+    })
   }),
 
   statusUpdate: (customerName, requestId, newStatus, message) => ({
     subject: `Order Update: ${newStatus} - Nolan's Knives`,
-    html: `
-      <h2>Order Update</h2>
-      <p>Hi ${customerName},</p>
-      <p>Your custom knife order (${requestId}) has been updated.</p>
-      <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-        <p><strong>Status:</strong> ${newStatus}</p>
-        ${message ? `<p><strong>Message from Nolan:</strong></p><p>${message}</p>` : ''}
-      </div>
-      <p><a href="https://nolansknives.com/my-knives/${requestId}">View Full Details</a></p>
-      <p>Best regards,<br/>Nolan's Knives Team</p>
-    `
+    html: buildPremiumEmail({
+      preheader: `Your order status is now ${newStatus}.`,
+      eyebrow: "Order Update",
+      title: "Order Update",
+      greeting: customerName || "there",
+      body: emailParagraph(`Your custom knife order ${requestId} has been updated.`),
+      details: [
+        { label: "Request ID", value: requestId },
+        { label: "Current Status", value: newStatus }
+      ],
+      detailTitle: "Current Status",
+      cta: { label: "View Full Details", url: emailPath(`/my-knives/${encodeURIComponent(String(requestId || ""))}`) },
+      note: message ? `Message from Nolan:\n${message}` : "",
+      noteTone: "neutral"
+    })
   }),
 
   unreadMessages: (customerName, requestId, messageCount, senderName = "Nolan's team") => ({
     subject: `${senderName} left you a message - Nolan's Knives`,
-    html: `
-      <h2>You Have Unread Messages</h2>
-      <p>Hi ${customerName},</p>
-      <p>${senderName} left ${messageCount} unread message${messageCount > 1 ? 's' : ''} about your knife order/request (${requestId}).</p>
-      <p><a href="https://nolansknives.com/my-knives/${requestId}" style="display: inline-block; background: #8b6f47; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Messages</a></p>
-      <p>Best regards,<br/>Nolan's Knives Team</p>
-    `
+    html: buildPremiumEmail({
+      preheader: `${senderName} left you a message.`,
+      eyebrow: "Message Waiting",
+      title: "You Have Unread Messages",
+      greeting: customerName || "there",
+      body: emailParagraph(`${senderName} left ${messageCount} unread message${messageCount > 1 ? "s" : ""} about your knife order/request.`),
+      details: [
+        { label: "Request ID", value: requestId },
+        { label: "Unread Messages", value: messageCount },
+        { label: "From", value: senderName }
+      ],
+      detailTitle: "Message Summary",
+      cta: { label: "View Messages", url: emailPath(`/my-knives/${encodeURIComponent(String(requestId || ""))}`) }
+    })
   }),
 
   unreadCustomerMessages: (customerName, requestId, messageCount) => ({
     subject: `${customerName} left you a message - Nolan's Knives`,
-    html: `
-      <h2>Unread Customer Message</h2>
-      <p>${customerName} left ${messageCount} unread message${messageCount > 1 ? 's' : ''} about ${requestId}.</p>
-      <p><a href="https://nolansknives.com/business/orders" style="display: inline-block; background: #8b6f47; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Open Business Orders</a></p>
-    `
+    html: buildPremiumEmail({
+      preheader: `${customerName} left an unread message.`,
+      eyebrow: "Staff Alert",
+      title: "Unread Customer Message",
+      body: emailParagraph(`${customerName} left ${messageCount} unread message${messageCount > 1 ? "s" : ""} about ${requestId}.`),
+      details: [
+        { label: "Customer", value: customerName },
+        { label: "Request ID", value: requestId },
+        { label: "Unread Messages", value: messageCount }
+      ],
+      detailTitle: "Message Summary",
+      cta: { label: "Open Custom Requests", url: emailPath("/business/custom-requests") },
+      footerNote: "Staff alert generated by Nolan's Knives."
+    })
   }),
 
   campaignGeneral: (displayName = "Customer", campaignName = "Nolan's Knives Update") => ({
     subject: `${campaignName} - Nolan's Knives`,
-    html: `
-      <h2>${campaignName}</h2>
-      <p>Hi ${displayName},</p>
-      <p>We wanted to send you an update from Nolan's Knives.</p>
-      <p><a href="${SITE_URL}/Store" style="display: inline-block; background: #8b6f47; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Visit the Store</a></p>
-      <p>Best regards,<br/>Nolan's Knives Team</p>
-    `
+    html: buildPremiumEmail({
+      preheader: `An update from Nolan's Knives.`,
+      eyebrow: "Nolan's Knives",
+      title: campaignName,
+      greeting: displayName || "there",
+      body: emailParagraph("We wanted to send you an update from Nolan's Knives.") +
+        emailParagraph("Take a look around the site for current builds, available knives, and custom request options."),
+      cta: { label: "Visit the Store", url: emailPath("/Store") },
+      footerNote: `You are receiving this because you have an account with Nolan's Knives. Questions? Reply to this email or contact ${BUSINESS_EMAIL}.`
+    })
   }),
 
   campaignNewInventory: (displayName = "Customer", campaignName = "New Knives Available") => ({
     subject: `${campaignName} - Nolan's Knives`,
-    html: `
-      <h2>${campaignName}</h2>
-      <p>Hi ${displayName},</p>
-      <p>New knives have been added to the store. If you've been waiting for the next batch, this is a good time to take a look.</p>
-      <p><a href="${SITE_URL}/Store" style="display: inline-block; background: #8b6f47; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Shop Available Knives</a></p>
-      <p>Best regards,<br/>Nolan's Knives Team</p>
-    `
+    html: buildPremiumEmail({
+      preheader: "New available knives have been added to the store.",
+      eyebrow: "New Inventory",
+      title: campaignName,
+      greeting: displayName || "there",
+      body: emailParagraph("New knives have been added to the store. If you've been waiting for the next batch, this is a good time to take a look.") +
+        emailParagraph("Each available knife is listed with its own photos, details, price, and status."),
+      cta: { label: "Shop Available Knives", url: emailPath("/Store") },
+      footerNote: `You are receiving this because you have an account with Nolan's Knives. Questions? Reply to this email or contact ${BUSINESS_EMAIL}.`
+    })
   }),
 
   campaignCustomKnifeFollowUp: (displayName = "Customer", campaignName = "Custom Knife Follow-Up") => ({
     subject: `${campaignName} - Nolan's Knives`,
-    html: `
-      <h2>${campaignName}</h2>
-      <p>Hi ${displayName},</p>
-      <p>If you're thinking about a custom knife, Nolan can help turn the details into a practical build plan and quote.</p>
-      <p><a href="${SITE_URL}/custom-knife-request" style="display: inline-block; background: #8b6f47; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Start a Custom Request</a></p>
-      <p>Questions? Reply to this email and we'll help from there.</p>
-      <p>Best regards,<br/>Nolan's Knives Team</p>
-    `
+    html: buildPremiumEmail({
+      preheader: "Start or resume a custom knife request.",
+      eyebrow: "Custom Work",
+      title: campaignName,
+      greeting: displayName || "there",
+      body: emailParagraph("If you're thinking about a custom knife, Nolan can help turn the details into a practical build plan and quote.") +
+        emailParagraph("Share the blade style, handle ideas, intended use, and any inspiration details. We'll help shape it from there."),
+      cta: { label: "Start a Custom Request", url: emailPath("/custom-knife-request") },
+      note: "Questions? Reply to this email and we'll help from there.",
+      footerNote: `You are receiving this because you have an account with Nolan's Knives. Questions? Reply to this email or contact ${BUSINESS_EMAIL}.`
+    })
   }),
 
   campaignCareTips: (displayName = "Customer", campaignName = "Knife Care Tips") => ({
     subject: `${campaignName} - Nolan's Knives`,
-    html: `
-      <h2>${campaignName}</h2>
-      <p>Hi ${displayName},</p>
-      <p>A few simple habits keep a handmade knife working beautifully: hand wash it, dry it completely, avoid the dishwasher, and keep the edge touched up before it gets dull.</p>
-      <p>If you have questions about caring for your knife, reply to this email.</p>
-      <p>Best regards,<br/>Nolan's Knives Team</p>
-    `
+    html: buildPremiumEmail({
+      preheader: "Simple care habits for handmade knives.",
+      eyebrow: "Knife Care",
+      title: campaignName,
+      greeting: displayName || "there",
+      body: emailParagraph("A few simple habits keep a handmade knife working beautifully. Treat it like a precision tool and it will reward you for years."),
+      details: [
+        { label: "Wash", value: "Hand wash only. Avoid the dishwasher." },
+        { label: "Dry", value: "Dry completely before putting it away." },
+        { label: "Edge", value: "Touch up the edge before it gets fully dull." },
+        { label: "Storage", value: "Keep the blade protected and off hard surfaces." }
+      ],
+      detailTitle: "Care Essentials",
+      note: "If you have questions about caring for your knife, reply to this email.",
+      footerNote: `You are receiving this because you have an account with Nolan's Knives. Questions? Reply to this email or contact ${BUSINESS_EMAIL}.`
+    })
   }),
 
   campaignAnnouncement: (displayName = "Customer", campaignName = "Nolan's Knives Announcement") => ({
     subject: `${campaignName} - Nolan's Knives`,
-    html: `
-      <h2>${campaignName}</h2>
-      <p>Hi ${displayName},</p>
-      <p>We wanted to share an update from Nolan's Knives.</p>
-      <p><a href="${SITE_URL}" style="display: inline-block; background: #8b6f47; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Visit Nolan's Knives</a></p>
-      <p>Best regards,<br/>Nolan's Knives Team</p>
-    `
+    html: buildPremiumEmail({
+      preheader: "An announcement from Nolan's Knives.",
+      eyebrow: "Announcement",
+      title: campaignName,
+      greeting: displayName || "there",
+      body: emailParagraph("We wanted to share an update from Nolan's Knives.") +
+        emailParagraph("You can visit the site for available knives, custom request details, and current account updates."),
+      cta: { label: "Visit Nolan's Knives", url: SITE_URL },
+      footerNote: `You are receiving this because you have an account with Nolan's Knives. Questions? Reply to this email or contact ${BUSINESS_EMAIL}.`
+    })
   }),
 
   orderComplete: (customerName, requestId, trackingInfo) => ({
     subject: "Your Custom Knife is Ready! - Nolan's Knives",
-    html: `
-      <h2>Your Custom Knife is Ready!</h2>
-      <p>Hi ${customerName},</p>
-      <p>Congratulations! Your custom knife has been completed and is being shipped to you.</p>
-      ${trackingInfo ? `
-      <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-        <p><strong>Tracking Number:</strong> ${trackingInfo}</p>
-      </div>
-      ` : ''}
-      <p>You'll receive tracking updates as your package moves. Expected delivery: 3-5 business days</p>
-      <p>Thank you for choosing Nolan's Knives!</p>
-      <p>Best regards,<br/>Nolan's Knives Team</p>
-    `
+    html: buildPremiumEmail({
+      preheader: "Your custom knife is complete.",
+      eyebrow: "Order Complete",
+      title: "Your Knife Is Ready",
+      greeting: customerName || "there",
+      body: emailParagraph("Your custom knife has been completed and is being prepared for delivery.") +
+        emailParagraph("You'll receive tracking updates as your package moves."),
+      details: [
+        { label: "Request ID", value: requestId },
+        { label: "Tracking Number", value: trackingInfo }
+      ],
+      detailTitle: "Shipping Details",
+      cta: { label: "View Order", url: emailPath(`/my-knives/${encodeURIComponent(String(requestId || ""))}`) },
+      note: "Thank you for choosing Nolan's Knives.",
+      noteTone: "success"
+    })
   })
 };
 

@@ -7,12 +7,62 @@ import { showConfirm } from '../../components/ConfirmDialog';
 import LucideIcon from '../../components/ui/LucideIcon';
 import '../AdminDashboard.css';
 
+const premiumEmailStarterHtml = `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{campaignName}}</title>
+  </head>
+  <body style="margin:0;padding:0;background:#0a0a0a;">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#0a0a0a;margin:0;padding:28px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:640px;margin:0 auto;">
+            <tr>
+              <td style="padding:0 0 14px 2px;">
+                <div style="color:#ffcc00;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:800;letter-spacing:0.08em;line-height:1.2;text-transform:uppercase;">Nolan's Knives</div>
+                <div style="margin-top:5px;color:#999999;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.4;">Custom handmade knives, built with purpose.</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#111111;border:1px solid #2b2b2b;border-radius:10px;overflow:hidden;">
+                <div style="height:4px;background:#ffcc00;line-height:4px;font-size:4px;">&nbsp;</div>
+                <div style="padding:28px 26px 24px;">
+                  <div style="margin:0 0 10px;color:#d8b949;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:800;letter-spacing:0.06em;line-height:1.4;text-transform:uppercase;">Nolan's Knives</div>
+                  <h1 style="margin:0 0 18px;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:28px;font-weight:800;line-height:1.18;">{{campaignName}}</h1>
+                  <p style="margin:0 0 16px;color:#f4f4f4;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6;">Hi {{firstName}},</p>
+                  <p style="margin:0 0 16px;color:#f4f4f4;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6;">Write your main message here.</p>
+                  <div style="margin:22px 0;padding:18px;background:#1a1a1a;border:1px solid #2b2b2b;border-radius:8px;">
+                    <div style="margin:0 0 14px;color:#ffcc00;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;letter-spacing:0.04em;line-height:1.4;text-transform:uppercase;">Key Details</div>
+                    <p style="margin:0;color:#f4f4f4;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;">Add request, order, product, or campaign details here.</p>
+                  </div>
+                  <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0 4px;">
+                    <tr>
+                      <td style="border-radius:6px;background:#ffcc00;">
+                        <a href="{{siteUrl}}" style="display:inline-block;padding:13px 20px;color:#111111;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;line-height:1.2;text-decoration:none;border-radius:6px;">Primary Action</a>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+                <div style="padding:18px 26px;background:#0a0a0a;border-top:1px solid #2b2b2b;">
+                  <p style="margin:0;color:#999999;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.6;">Questions? Reply to this email or contact {{businessEmail}}.</p>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+
 const emptyCustom = {
   id: '',
   label: '',
   description: '',
   subject: '',
-  html: '<h2>{{campaignName}}</h2>\n<p>Hi {{firstName}},</p>\n<p></p>',
+  html: premiumEmailStarterHtml,
   variables: 'displayName, firstName, email, campaignName, siteUrl, businessEmail'
 };
 
