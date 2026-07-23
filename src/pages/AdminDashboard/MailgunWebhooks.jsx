@@ -7,14 +7,49 @@ import LucideIcon from '../../components/ui/LucideIcon';
 import '../AdminDashboard.css';
 
 const fallbackEvents = [
-  { key: 'accepted', label: 'Accepted' },
-  { key: 'delivered', label: 'Delivered messages' },
-  { key: 'opened', label: 'Opens' },
-  { key: 'clicked', label: 'Clicked' },
-  { key: 'permanent_fail', label: 'Permanent failure' },
-  { key: 'temporary_fail', label: 'Temporary failure' },
-  { key: 'unsubscribed', label: 'Unsubscribes' },
-  { key: 'complained', label: 'Spam complaints' }
+  { key: 'accepted', label: 'Accepted', plain: 'Accepted', description: 'Mailgun accepted the email for delivery.', websiteUse: 'Adds accepted counts and confirms Mailgun received the send.' },
+  { key: 'delivered', label: 'Delivered messages', plain: 'Delivered messages', description: 'The message reached the recipient mail server.', websiteUse: 'Adds delivered counts and updates delivery history.' },
+  { key: 'opened', label: 'Opens', plain: 'Opens', description: 'A recipient opened the email.', websiteUse: 'Adds campaign open counts and recipient engagement.' },
+  { key: 'clicked', label: 'Clicked', plain: 'Clicked', description: 'A recipient clicked a link.', websiteUse: 'Adds campaign click counts and recipient engagement.' },
+  { key: 'permanent_fail', label: 'Permanent failure', plain: 'Permanent failure', description: 'The address permanently failed.', websiteUse: 'Suppresses future marketing to that address.' },
+  { key: 'temporary_fail', label: 'Temporary failure', plain: 'Temporary failure', description: 'Delivery failed temporarily.', websiteUse: 'Adds temporary failure counts without suppressing the user.' },
+  { key: 'unsubscribed', label: 'Unsubscribes', plain: 'Unsubscribes', description: 'A recipient unsubscribed.', websiteUse: 'Turns off marketing subscription for that user.' },
+  { key: 'complained', label: 'Spam complaints', plain: 'Spam complaints', description: 'A recipient marked email as spam.', websiteUse: 'Suppresses future marketing to protect deliverability.' }
+];
+
+const webhookPresets = [
+  {
+    id: 'all',
+    name: 'All Events Hook',
+    badge: 'Recommended',
+    description: 'Best default for Nolan\'s Knives. Tracks delivery, engagement, failures, unsubscribes, and spam complaints in one place.',
+    mailgunDescription: 'All events hook',
+    events: ['accepted', 'delivered', 'opened', 'clicked', 'permanent_fail', 'temporary_fail', 'unsubscribed', 'complained']
+  },
+  {
+    id: 'delivery',
+    name: 'Delivery Health',
+    badge: 'Deliverability',
+    description: 'Use this if you only care whether emails are accepted, delivered, or failing.',
+    mailgunDescription: 'Delivery health hook',
+    events: ['accepted', 'delivered', 'permanent_fail', 'temporary_fail']
+  },
+  {
+    id: 'engagement',
+    name: 'Campaign Engagement',
+    badge: 'Marketing',
+    description: 'Use this to track opens and clicks for email campaigns and template performance.',
+    mailgunDescription: 'Campaign engagement hook',
+    events: ['opened', 'clicked']
+  },
+  {
+    id: 'suppression',
+    name: 'Suppression Safety',
+    badge: 'Compliance',
+    description: 'Use this to keep unsubscribes, complaints, and permanent failures out of future marketing sends.',
+    mailgunDescription: 'Suppression safety hook',
+    events: ['permanent_fail', 'unsubscribed', 'complained']
+  }
 ];
 
 const statItems = [
@@ -40,9 +75,17 @@ function eventLabel(event) {
   return event || 'unknown';
 }
 
+function normalizeEvents(events = []) {
+  const byKey = fallbackEvents.reduce((acc, event) => ({ ...acc, [event.key]: event }), {});
+  return events.map((event) => ({ ...byKey[event.key], ...event, plain: event.plain || event.label })).filter((event) => event.key);
+}
+
 export default function MailgunWebhooks() {
   const [status, setStatus] = useState(null);
   const [recentEvents, setRecentEvents] = useState([]);
+  const [selectedPresetId, setSelectedPresetId] = useState('all');
+  const [testResult, setTestResult] = useState(null);
+  const [testingReceiver, setTestingReceiver] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -73,23 +116,52 @@ export default function MailgunWebhooks() {
     return () => unsub();
   }, [loadStatus]);
 
-  const events = status?.events?.length ? status.events : fallbackEvents;
+  const events = normalizeEvents(status?.events?.length ? status.events : fallbackEvents);
   const counts = status?.status?.counts || {};
   const latest = status?.status?.latest || null;
   const webhookUrl = status?.webhookUrl || '';
+  const selectedPreset = webhookPresets.find((preset) => preset.id === selectedPresetId) || webhookPresets[0];
+  const selectedEventSet = new Set(selectedPreset.events);
+  const selectedEvents = events.filter((event) => selectedEventSet.has(event.key));
 
   const eventColumns = useMemo(() => {
     const midpoint = Math.ceil(events.length / 2);
     return [events.slice(0, midpoint), events.slice(midpoint)];
   }, [events]);
 
-  const copyUrl = async () => {
+  const setupSummary = useMemo(() => [
+    `Description: ${selectedPreset.mailgunDescription}`,
+    `HTTP post URL: ${webhookUrl}`,
+    `Domain: ${status?.domain || 'nolansknives.com'}`,
+    `Events: ${selectedEvents.map((event) => event.plain || event.label).join(', ')}`
+  ].join('\n'), [selectedPreset, selectedEvents, status?.domain, webhookUrl]);
+
+  const copyText = async (value, successMessage) => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      showToast(successMessage, 'success');
+    } catch (_err) {
+      showToast('Could not copy to clipboard.', 'error');
+    }
+  };
+
+  const testReceiver = async () => {
     if (!webhookUrl) return;
     try {
-      await navigator.clipboard.writeText(webhookUrl);
-      showToast('Webhook URL copied.', 'success');
-    } catch (_err) {
-      showToast('Could not copy URL.', 'error');
+      setTestingReceiver(true);
+      setTestResult(null);
+      const response = await fetch(webhookUrl);
+      if (!response.ok) throw new Error(`Receiver returned ${response.status}`);
+      const result = await response.json();
+      setTestResult({ ok: true, message: result?.ok ? 'Receiver is reachable.' : 'Receiver responded.' });
+      showToast('Webhook receiver is reachable.', 'success');
+    } catch (err) {
+      const message = err?.message || 'Webhook receiver test failed.';
+      setTestResult({ ok: false, message });
+      showToast(message, 'error');
+    } finally {
+      setTestingReceiver(false);
     }
   };
 
@@ -109,53 +181,180 @@ export default function MailgunWebhooks() {
 
       {error && <div className="alert-error">{error}</div>}
 
+      <section className="webhook-panel webhook-guide-panel">
+        <div className="webhook-panel-header">
+          <div>
+            <p className="workspace-eyebrow">Guided Setup</p>
+            <h2>Choose What Mailgun Should Send Here</h2>
+          </div>
+          <span className={`status-badge status-${status?.signingConfigured ? 'active' : 'warning'}`}>
+            {status?.signingConfigured ? 'Signature verified' : 'Signing key missing'}
+          </span>
+        </div>
+
+        <div className="webhook-explainer">
+          <LucideIcon name="Info" size={18} />
+          <p>The HTTP post URL is the receiver. Mailgun posts event data to that URL, then this website reads the event type and updates delivery counts, campaign history, user suppression, opens, clicks, and recent activity.</p>
+        </div>
+
+        <div className="webhook-preset-grid">
+          {webhookPresets.map((preset) => (
+            <button
+              type="button"
+              key={preset.id}
+              className={`webhook-preset-card ${selectedPreset.id === preset.id ? 'active' : ''}`}
+              onClick={() => {
+                setSelectedPresetId(preset.id);
+                setTestResult(null);
+              }}
+            >
+              <span>{preset.badge}</span>
+              <strong>{preset.name}</strong>
+              <small>{preset.description}</small>
+            </button>
+          ))}
+        </div>
+      </section>
+
       <div className="webhook-setup-grid">
-        <section className="webhook-panel">
+        <section className="webhook-panel webhook-builder-panel">
           <div className="webhook-panel-header">
             <div>
-              <p className="workspace-eyebrow">Setup</p>
-              <h2>Domain-Level Webhook</h2>
+              <p className="workspace-eyebrow">Mailgun Fields</p>
+              <h2>{selectedPreset.name}</h2>
             </div>
-            <span className={`status-badge status-${status?.signingConfigured ? 'active' : 'warning'}`}>
-              {status?.signingConfigured ? 'Signature verified' : 'Signing key missing'}
-            </span>
+            <button type="button" className="action-btn secondary" onClick={() => copyText(setupSummary, 'Setup copied.')}>
+              <LucideIcon name="ClipboardCopy" size={15} /> Copy Setup
+            </button>
           </div>
 
-          <label>
-            Description
-            <input className="input-field" value="All events hook" readOnly />
-          </label>
+          <div className="webhook-step-list">
+            <article className="webhook-step-card">
+              <div className="webhook-step-number">1</div>
+              <div>
+                <h3>Description</h3>
+                <p>Paste this into Mailgun's Description field.</p>
+                <div className="copy-input-row">
+                  <input className="input-field" value={selectedPreset.mailgunDescription} readOnly />
+                  <button type="button" className="action-btn secondary" onClick={() => copyText(selectedPreset.mailgunDescription, 'Description copied.')}>
+                    <LucideIcon name="Copy" size={15} /> Copy
+                  </button>
+                </div>
+              </div>
+            </article>
 
-          <label>
-            HTTP post URL
-            <div className="copy-input-row">
-              <input className="input-field" value={webhookUrl} readOnly />
-              <button type="button" className="action-btn" onClick={copyUrl}>
-                <LucideIcon name="Copy" size={15} /> Copy
-              </button>
+            <article className="webhook-step-card">
+              <div className="webhook-step-number">2</div>
+              <div>
+                <h3>HTTP post URL</h3>
+                <p>This is what goes in the Mailgun HTTP post URL field.</p>
+                <div className="copy-input-row">
+                  <input className="input-field webhook-url-input" value={webhookUrl} readOnly />
+                  <button type="button" className="action-btn" onClick={() => copyText(webhookUrl, 'Webhook URL copied.')}>
+                    <LucideIcon name="Copy" size={15} /> Copy
+                  </button>
+                </div>
+                <div className="webhook-url-actions">
+                  <button type="button" className="action-btn secondary" onClick={testReceiver} disabled={testingReceiver || !webhookUrl}>
+                    <LucideIcon name="RadioTower" size={15} /> {testingReceiver ? 'Testing...' : 'Test Receiver'}
+                  </button>
+                  {testResult && (
+                    <span className={`webhook-test-result ${testResult.ok ? 'ok' : 'bad'}`}>
+                      {testResult.message}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </article>
+
+            <article className="webhook-step-card">
+              <div className="webhook-step-number">3</div>
+              <div>
+                <h3>Events</h3>
+                <p>Check these event boxes in Mailgun for this setup.</p>
+                <div className="webhook-selected-events">
+                  {selectedEvents.map((event) => (
+                    <span key={event.key}><LucideIcon name="Check" size={13} /> {event.label}</span>
+                  ))}
+                </div>
+              </div>
+            </article>
+
+            <article className="webhook-step-card">
+              <div className="webhook-step-number">4</div>
+              <div>
+                <h3>Domain</h3>
+                <p>Apply the webhook to this Mailgun domain.</p>
+                <input className="input-field" value={status?.domain || 'nolansknives.com'} readOnly />
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section className="webhook-panel webhook-mailgun-preview">
+          <div className="webhook-panel-header">
+            <div>
+              <p className="workspace-eyebrow">Mailgun Preview</p>
+              <h2>What To Select</h2>
             </div>
-          </label>
-
-          <label>
-            Domain
-            <input className="input-field" value={status?.domain || 'nolansknives.com'} readOnly />
-          </label>
+          </div>
 
           <div className="webhook-events-box">
             <strong>Events</strong>
-            <label className="webhook-check select-all"><input type="checkbox" checked readOnly /> Select all</label>
+            <label className="webhook-check select-all">
+              <input type="checkbox" checked={selectedPreset.events.length === events.length} readOnly />
+              Select all
+            </label>
             <div className="webhook-event-columns">
               {eventColumns.map((column, columnIndex) => (
                 <div key={columnIndex}>
                   {column.map((event) => (
-                    <label className="webhook-check" key={event.key}>
-                      <input type="checkbox" checked readOnly />
+                    <label className={`webhook-check ${selectedEventSet.has(event.key) ? 'checked' : 'muted'}`} key={event.key}>
+                      <input type="checkbox" checked={selectedEventSet.has(event.key)} readOnly />
                       {event.label}
                     </label>
                   ))}
                 </div>
               ))}
             </div>
+          </div>
+
+          <div className="webhook-event-meaning-list">
+            {selectedEvents.map((event) => (
+              <article key={event.key}>
+                <strong>{event.label}</strong>
+                <p>{event.description}</p>
+                <small>{event.websiteUse}</small>
+              </article>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <div className="webhook-setup-grid">
+        <section className="webhook-panel webhook-how-it-works">
+          <div className="webhook-panel-header">
+            <div>
+              <p className="workspace-eyebrow">Plain English</p>
+              <h2>What Happens After Mailgun Posts</h2>
+            </div>
+          </div>
+          <div className="webhook-outcome-grid">
+            <article>
+              <LucideIcon name="BarChart3" size={18} />
+              <strong>Campaign stats update</strong>
+              <p>Opens, clicks, delivered messages, and failures roll into campaign history.</p>
+            </article>
+            <article>
+              <LucideIcon name="ShieldAlert" size={18} />
+              <strong>Bad addresses get protected</strong>
+              <p>Permanent failures, unsubscribes, and spam complaints suppress future marketing sends.</p>
+            </article>
+            <article>
+              <LucideIcon name="Activity" size={18} />
+              <strong>Recent events are logged</strong>
+              <p>The table below shows what Mailgun sent, who it was for, and whether the signature was accepted.</p>
+            </article>
           </div>
         </section>
 
@@ -182,8 +381,37 @@ export default function MailgunWebhooks() {
             <strong>{latest ? `${eventLabel(latest.event)} ${latest.severity ? `(${latest.severity})` : ''}` : 'None yet'}</strong>
             <small>{latest ? `${latest.recipient || 'No recipient'} - ${formatDate(latest.receivedAt || latest.eventAt)}` : 'Waiting for Mailgun to post events.'}</small>
           </div>
+
+          <div className="webhook-security-note">
+            <LucideIcon name={status?.signingConfigured ? 'ShieldCheck' : 'ShieldAlert'} size={18} />
+            <p>{status?.signingConfigured ? 'Webhook signatures are being verified before events are recorded.' : 'Events can be received, but signature verification needs the Mailgun signing key configured in Firebase.'}</p>
+          </div>
         </section>
       </div>
+
+      <section className="webhook-panel webhook-walkthrough-panel">
+        <div className="webhook-panel-header">
+          <div>
+            <p className="workspace-eyebrow">Walkthrough</p>
+            <h2>Adding It In Mailgun</h2>
+          </div>
+        </div>
+
+        <div className="webhook-walkthrough-grid">
+          {[
+            ['Open Mailgun', 'Go to Sending > Webhooks for the domain.'],
+            ['Create domain-level webhook', 'Choose the domain-level webhook option from the screen you showed.'],
+            ['Paste the fields', 'Use the Description, HTTP post URL, selected Events, and Domain shown above.'],
+            ['Test and save', 'Click Mailgun Test, then Create webhook. Come back here and refresh to see the event.']
+          ].map(([title, copy], index) => (
+            <article key={title}>
+              <span>{index + 1}</span>
+              <strong>{title}</strong>
+              <p>{copy}</p>
+            </article>
+          ))}
+        </div>
+      </section>
 
       <section className="webhook-panel webhook-events-table-panel">
         <div className="webhook-panel-header">

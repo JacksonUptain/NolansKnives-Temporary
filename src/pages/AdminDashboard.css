@@ -725,6 +725,7 @@
   grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
   gap: 1rem;
   align-items: start;
+  margin-top: 1rem;
 }
 
 .webhook-panel {
@@ -749,6 +750,85 @@
   font-size: 1.2rem;
 }
 
+.webhook-guide-panel {
+  margin-bottom: 0;
+}
+
+.webhook-explainer,
+.webhook-security-note {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  padding: 0.85rem;
+  background: #080808;
+  border: 1px solid #262626;
+  border-radius: 8px;
+  color: #bdbdbd;
+}
+
+.webhook-explainer svg,
+.webhook-security-note svg {
+  flex: 0 0 auto;
+  color: #ffcc00;
+}
+
+.webhook-explainer p,
+.webhook-security-note p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.webhook-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.webhook-preset-card {
+  display: grid;
+  gap: 0.45rem;
+  min-height: 156px;
+  padding: 0.9rem;
+  text-align: left;
+  background: #080808;
+  border: 1px solid #262626;
+  border-radius: 8px;
+  color: #ddd;
+  cursor: pointer;
+}
+
+.webhook-preset-card.active {
+  border-color: #ffcc00;
+  background: #161300;
+  box-shadow: 0 0 0 1px rgba(255, 204, 0, 0.16);
+}
+
+.webhook-preset-card span {
+  justify-self: start;
+  padding: 0.2rem 0.45rem;
+  background: rgba(255, 204, 0, 0.12);
+  border: 1px solid rgba(255, 204, 0, 0.34);
+  border-radius: 999px;
+  color: #ffcc00;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.webhook-preset-card strong {
+  color: #f4f4f4;
+  font-size: 1.05rem;
+}
+
+.webhook-preset-card small {
+  color: #aaa;
+  line-height: 1.45;
+}
+
+.webhook-builder-panel {
+  align-content: start;
+}
+
 .webhook-panel label {
   display: grid;
   gap: 0.4rem;
@@ -761,6 +841,91 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.5rem;
+}
+
+.webhook-url-input {
+  font-family: var(--nk-font-mono, monospace);
+  font-size: 0.84rem;
+}
+
+.webhook-step-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.webhook-step-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 0.85rem;
+  background: #080808;
+  border: 1px solid #262626;
+  border-radius: 8px;
+}
+
+.webhook-step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: #ffcc00;
+  border-radius: 999px;
+  color: #111;
+  font-weight: 900;
+}
+
+.webhook-step-card h3 {
+  margin: 0 0 0.2rem;
+  color: #f4f4f4;
+  font-size: 1rem;
+}
+
+.webhook-step-card p {
+  margin: 0 0 0.65rem;
+  color: #aaa;
+  line-height: 1.45;
+}
+
+.webhook-url-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.6rem;
+}
+
+.webhook-test-result {
+  color: #aaa;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.webhook-test-result.ok {
+  color: #90ee90;
+}
+
+.webhook-test-result.bad {
+  color: #ff9a9a;
+}
+
+.webhook-selected-events {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.webhook-selected-events span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.55rem;
+  background: rgba(255, 204, 0, 0.1);
+  border: 1px solid rgba(255, 204, 0, 0.3);
+  border-radius: 999px;
+  color: #ffcc00;
+  font-size: 0.82rem;
+  font-weight: 900;
 }
 
 .webhook-events-box {
@@ -803,8 +968,83 @@
   accent-color: #1f5fb8;
 }
 
+.webhook-check.checked input {
+  accent-color: #ffcc00;
+}
+
+.webhook-check.muted {
+  color: #777;
+}
+
 .webhook-check.select-all {
   color: #f4f4f4;
+}
+
+.webhook-event-meaning-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.webhook-event-meaning-list article,
+.webhook-outcome-grid article,
+.webhook-walkthrough-grid article {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.8rem;
+  background: #080808;
+  border: 1px solid #262626;
+  border-radius: 8px;
+}
+
+.webhook-event-meaning-list strong,
+.webhook-outcome-grid strong,
+.webhook-walkthrough-grid strong {
+  color: #f4f4f4;
+}
+
+.webhook-event-meaning-list p,
+.webhook-outcome-grid p,
+.webhook-walkthrough-grid p {
+  margin: 0;
+  color: #aaa;
+  line-height: 1.45;
+}
+
+.webhook-event-meaning-list small {
+  color: #d8b949;
+  line-height: 1.4;
+}
+
+.webhook-outcome-grid,
+.webhook-walkthrough-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.webhook-outcome-grid svg {
+  color: #ffcc00;
+}
+
+.webhook-walkthrough-panel {
+  margin-top: 1rem;
+}
+
+.webhook-walkthrough-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.webhook-walkthrough-grid article span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #ffcc00;
+  border-radius: 999px;
+  color: #111;
+  font-weight: 900;
 }
 
 .webhook-stats {
@@ -1046,7 +1286,10 @@
 	  .template-editor-header,
 	  .template-form-grid,
 	  .html-editor-grid,
+	  .webhook-preset-grid,
 	  .webhook-setup-grid,
+	  .webhook-outcome-grid,
+	  .webhook-walkthrough-grid,
 	  .copy-input-row,
 	  .webhook-event-columns {
 	    grid-template-columns: 1fr;
