@@ -224,6 +224,11 @@
   border: 1px solid rgba(245, 158, 11, 0.42);
 }
 
+.admin-dashboard-page .self-user-badge {
+  margin-left: 0.55rem;
+  vertical-align: middle;
+}
+
 .admin-dashboard-page .select-input,
 .admin-dashboard-page .input-field {
   background: #0f0f0f;

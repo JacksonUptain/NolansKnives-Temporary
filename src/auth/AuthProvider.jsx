@@ -1,20 +1,26 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import {
   GoogleAuthProvider,
+  browserLocalPersistence,
+  browserSessionPersistence,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   sendEmailVerification,
   sendPasswordResetEmail,
+  setPersistence,
   signInWithEmailAndPassword,
+  signInWithCustomToken,
   signInWithPopup,
   signOut,
   updateProfile
 } from "firebase/auth";
 import { get, ref, serverTimestamp, update } from "firebase/database";
 import { auth, db } from "../pages/firebase";
+import { createImpersonationSession } from "../services/impersonationService";
 import { ROLES, STATUS, isActiveStatus } from "./roleHelpers";
 
 const AuthContext = createContext(null);
+const IMPERSONATION_SESSION_KEY = "nk.impersonationSession";
 
 function friendlyAuthError(error) {
   const code = error?.code || "";
@@ -48,11 +54,47 @@ async function upsertUserProfile(firebaseUser, fallbackDisplayName = "") {
   await update(userRef, profile);
 }
 
+function readStoredImpersonation() {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.sessionStorage.getItem(IMPERSONATION_SESSION_KEY);
+    if (!raw) return null;
+
+    const session = JSON.parse(raw);
+    if (!session?.restoreToken || !session?.target?.uid || !session?.admin?.uid) {
+      window.sessionStorage.removeItem(IMPERSONATION_SESSION_KEY);
+      return null;
+    }
+
+    if (session.expiresAt && Date.now() > Number(session.expiresAt)) {
+      window.sessionStorage.removeItem(IMPERSONATION_SESSION_KEY);
+      return null;
+    }
+
+    return session;
+  } catch {
+    window.sessionStorage.removeItem(IMPERSONATION_SESSION_KEY);
+    return null;
+  }
+}
+
+function writeStoredImpersonation(session) {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.setItem(IMPERSONATION_SESSION_KEY, JSON.stringify(session));
+}
+
+function clearStoredImpersonation() {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.removeItem(IMPERSONATION_SESSION_KEY);
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [claimsRole, setClaimsRole] = useState(null);
   const [profile, setProfile] = useState(null);
   const [initializing, setInitializing] = useState(true);
+  const [impersonation, setImpersonation] = useState(() => readStoredImpersonation());
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -93,16 +135,36 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (!user || !profile) return;
 
-    if (!isActiveStatus(profile.status)) {
+    if (!isActiveStatus(profile.status) && !impersonation) {
       signOut(auth).catch(() => null);
     }
-  }, [user, profile]);
+  }, [user, profile, impersonation]);
+
+  useEffect(() => {
+    if (!impersonation?.expiresAt) return undefined;
+
+    const remainingMs = Number(impersonation.expiresAt) - Date.now();
+    if (remainingMs <= 0) {
+      clearStoredImpersonation();
+      setImpersonation(null);
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      clearStoredImpersonation();
+      setImpersonation(null);
+    }, remainingMs);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [impersonation?.expiresAt]);
 
   const value = useMemo(
     () => ({
       user,
       profile,
       role: claimsRole || profile?.role || ROLES.CUSTOMER,
+      impersonation,
+      isImpersonating: !!impersonation,
       initializing,
       isAuthenticated: !!user,
       isVerifiedEmail: !!user?.emailVerified,
@@ -149,9 +211,64 @@ export function AuthProvider({ children }) {
         await update(ref(db, `users/${auth.currentUser.uid}`), safeUpdates);
         setProfile((prev) => ({ ...prev, ...safeUpdates }));
       },
-      signOutUser: () => signOut(auth)
+      startImpersonation: async (target, reason = "Admin dashboard impersonation") => {
+        const targetUid = typeof target === "string" ? target : target?.uid;
+        if (!auth.currentUser) throw new Error("No signed-in admin.");
+        if (!targetUid) throw new Error("Choose a user to impersonate.");
+        if (impersonation) throw new Error("Quit the current impersonation before starting another.");
+
+        const response = await createImpersonationSession(targetUid, reason);
+        const session = {
+          admin: response.admin || {
+            uid: auth.currentUser.uid,
+            email: auth.currentUser.email || profile?.email || "",
+            displayName: auth.currentUser.displayName || profile?.displayName || "Admin",
+            role: claimsRole || profile?.role || ROLES.ADMIN
+          },
+          target: response.target || {
+            uid: targetUid,
+            email: target?.email || "",
+            displayName: target?.displayName || "User",
+            role: target?.role || ROLES.CUSTOMER
+          },
+          restoreToken: response.restoreToken,
+          startedAt: Date.now(),
+          expiresAt: response.expiresAt || Date.now() + ((response.expiresIn || 3600) * 1000)
+        };
+
+        try {
+          writeStoredImpersonation(session);
+          setImpersonation(session);
+          await setPersistence(auth, browserSessionPersistence);
+          const result = await signInWithCustomToken(auth, response.customToken);
+          await result.user.getIdToken(true);
+          return response;
+        } catch (error) {
+          clearStoredImpersonation();
+          setImpersonation(null);
+          await setPersistence(auth, browserLocalPersistence).catch(() => null);
+          throw error;
+        }
+      },
+      quitImpersonation: async () => {
+        const activeSession = impersonation || readStoredImpersonation();
+        if (!activeSession?.restoreToken) throw new Error("No active impersonation session.");
+
+        await setPersistence(auth, browserLocalPersistence);
+        const result = await signInWithCustomToken(auth, activeSession.restoreToken);
+        await result.user.getIdToken(true);
+        clearStoredImpersonation();
+        setImpersonation(null);
+        return result.user;
+      },
+      signOutUser: async () => {
+        clearStoredImpersonation();
+        setImpersonation(null);
+        await setPersistence(auth, browserLocalPersistence).catch(() => null);
+        return signOut(auth);
+      }
     }),
-    [user, claimsRole, profile, initializing]
+    [user, claimsRole, profile, initializing, impersonation]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

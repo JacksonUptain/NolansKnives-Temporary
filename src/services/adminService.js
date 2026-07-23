@@ -1,10 +1,11 @@
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../pages/firebase";
+import { callHttpFunction } from "./httpFunctions";
 
 const call = (name) => httpsCallable(functions, name);
 
 export async function setUserRole(uid, role) {
-  return (await call("setUserRole")({ uid, role })).data;
+  return callHttpFunction("setUserRoleHttp", { uid, role });
 }
 
 export async function setUserBlocked(uid, blocked) {

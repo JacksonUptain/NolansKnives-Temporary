@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ref, onValue } from 'firebase/database';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../auth/AuthProvider';
 import { db } from '../firebase';
 import { inviteAdminUser, setUserRole, setUserBlocked } from '../../services/adminService';
 import { showToast } from '../../components/Toast';
@@ -11,11 +13,14 @@ import '../AdminDashboard.css';
 const ROLE_OPTIONS = ['customer', 'business', 'admin'];
 
 export default function Users() {
+  const { user, isImpersonating, startImpersonation } = useAuth();
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [roleDrafts, setRoleDrafts] = useState({});
   const [savingUid, setSavingUid] = useState('');
+  const [impersonatingUid, setImpersonatingUid] = useState('');
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteForm, setInviteForm] = useState({ displayName: '', email: '', role: 'admin' });
   const [inviting, setInviting] = useState(false);
@@ -37,7 +42,14 @@ export default function Users() {
     return () => unsub();
   }, []);
 
+  const currentUid = user?.uid || '';
+
   const handleSaveRole = async (uid, currentRole, email) => {
+    if (uid === currentUid) {
+      showToast('You cannot change your own role.', 'error');
+      return;
+    }
+
     const nextRole = roleDrafts[uid] || currentRole || 'customer';
     if (nextRole === currentRole) return showToast('No role change made.', 'info');
 
@@ -56,6 +68,11 @@ export default function Users() {
   };
 
   const handleToggleBlocked = async (uid, isBlocked, email) => {
+    if (uid === currentUid) {
+      showToast('You cannot block yourself.', 'error');
+      return;
+    }
+
     const action = isBlocked ? 'unblock' : 'block';
     await showConfirm(
       `${action.charAt(0).toUpperCase() + action.slice(1)} User`,
@@ -68,6 +85,45 @@ export default function Users() {
         } catch (err) {
           setError(err?.message || `Failed to ${action} user`);
           showToast(err?.message || `Failed to ${action} user`, 'error');
+        }
+      }
+    );
+  };
+
+  const getLandingPathForRole = (role) => {
+    if (role === 'admin') return '/admin';
+    if (role === 'business') return '/business';
+    return '/my-account';
+  };
+
+  const handleImpersonate = async (targetUser) => {
+    if (targetUser.uid === currentUid) {
+      showToast('You cannot impersonate yourself.', 'error');
+      return;
+    }
+
+    if (isImpersonating) {
+      showToast('Quit the current impersonation before starting another.', 'error');
+      return;
+    }
+
+    const label = targetUser.displayName || targetUser.email || targetUser.uid;
+    await showConfirm(
+      'Impersonate User',
+      `You will temporarily view the website as ${label}. Use the banner at the top of the site to quit impersonating.`,
+      async () => {
+        try {
+          setError(null);
+          setImpersonatingUid(targetUser.uid);
+          await startImpersonation(targetUser, `Admin dashboard impersonation of ${targetUser.email || targetUser.uid}`);
+          showToast(`Now impersonating ${label}.`, 'success');
+          navigate(getLandingPathForRole(targetUser.role || 'customer'));
+        } catch (err) {
+          const message = err?.message || 'Failed to start impersonation.';
+          setError(message);
+          showToast(message, 'error');
+        } finally {
+          setImpersonatingUid('');
         }
       }
     );
@@ -194,31 +250,49 @@ export default function Users() {
           </thead>
           <tbody>
             {users.length === 0 && <tr><td colSpan={5} className="table-empty">No users found.</td></tr>}
-            {users.map((u) => (
-              <tr key={u.uid}>
-                <td>{u.displayName || '—'}</td>
-                <td className="table-email">{u.email || '—'}</td>
-                <td>
-                  <select className="select-input" value={roleDrafts[u.uid] ?? u.role ?? 'customer'} onChange={(e) => setRoleDrafts((prev) => ({ ...prev, [u.uid]: e.target.value }))}>
-                    {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
-                  </select>
-                </td>
-                <td>
-                  <span className={`status-badge status-${u.status === 'blocked' ? 'blocked' : 'active'}`}>
-                    {u.status === 'blocked' ? 'Blocked' : 'Active'}
-                  </span>
-                </td>
-                <td className="action-cell">
-                  <button className="action-btn" disabled={savingUid === u.uid} onClick={() => handleSaveRole(u.uid, u.role, u.email)}>
-                    <LucideIcon name="Save" size={15} /> {savingUid === u.uid ? 'Saving...' : 'Save'}
-                  </button>
-                  <button className="action-btn danger" disabled={savingUid === u.uid} onClick={() => handleToggleBlocked(u.uid, u.status === 'blocked', u.email)}>
-                    <LucideIcon name={u.status === 'blocked' ? 'ShieldCheck' : 'Ban'} size={15} />
-                    {savingUid === u.uid ? 'Working...' : u.status === 'blocked' ? 'Unblock' : 'Block'}
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {users.map((u) => {
+              const isSelf = u.uid === currentUid;
+              const rowBusy = savingUid === u.uid || impersonatingUid === u.uid;
+
+              return (
+                <tr key={u.uid}>
+                  <td>
+                    <span>{u.displayName || '—'}</span>
+                    {isSelf && <span className="status-badge status-warning self-user-badge">You</span>}
+                  </td>
+                  <td className="table-email">{u.email || '—'}</td>
+                  <td>
+                    <select
+                      className="select-input"
+                      value={roleDrafts[u.uid] ?? u.role ?? 'customer'}
+                      onChange={(e) => setRoleDrafts((prev) => ({ ...prev, [u.uid]: e.target.value }))}
+                      disabled={isSelf}
+                      title={isSelf ? 'You cannot change your own role.' : 'Change role'}
+                    >
+                      {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  </td>
+                  <td>
+                    <span className={`status-badge status-${u.status === 'blocked' ? 'blocked' : 'active'}`}>
+                      {u.status === 'blocked' ? 'Blocked' : 'Active'}
+                    </span>
+                  </td>
+                  <td className="action-cell">
+                    <button className="action-btn" disabled={isSelf || rowBusy} onClick={() => handleSaveRole(u.uid, u.role, u.email)}>
+                      <LucideIcon name="Save" size={15} /> {savingUid === u.uid ? 'Saving...' : 'Save'}
+                    </button>
+                    <button className="action-btn secondary" disabled={isSelf || rowBusy || isImpersonating} onClick={() => handleImpersonate(u)}>
+                      <LucideIcon name={impersonatingUid === u.uid ? 'Loader2' : 'Eye'} size={15} className={impersonatingUid === u.uid ? 'nk-icon spin' : 'nk-icon'} />
+                      {impersonatingUid === u.uid ? 'Starting...' : 'Impersonate'}
+                    </button>
+                    <button className="action-btn danger" disabled={isSelf || rowBusy} onClick={() => handleToggleBlocked(u.uid, u.status === 'blocked', u.email)}>
+                      <LucideIcon name={u.status === 'blocked' ? 'ShieldCheck' : 'Ban'} size={15} />
+                      {savingUid === u.uid ? 'Working...' : u.status === 'blocked' ? 'Unblock' : 'Block'}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

@@ -709,6 +709,19 @@ function applyCors(req, res) {
   res.set("Access-Control-Max-Age", "3600");
 }
 
+function sendHttpError(res, error, fallbackMessage = "Request failed.") {
+  const code = error?.code || "internal";
+  const message = error?.message || fallbackMessage;
+  const status =
+    code === "unauthenticated" ? 401 :
+    code === "permission-denied" ? 403 :
+    code === "not-found" ? 404 :
+    code === "failed-precondition" || code === "invalid-argument" ? 400 :
+    500;
+
+  return res.status(status).json({ error: code, message });
+}
+
 function publicFunctionUrl(functionName) {
   const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || "nolansknives";
   return `https://${FUNCTION_REGION}-${projectId}.cloudfunctions.net/${functionName}`;
@@ -2718,12 +2731,8 @@ exports.inviteAdminUser = onCall({ invoker: "public", cors: true }, async (reque
   }
 });
 
-exports.setUserRole = onCall({ invoker: "public" }, async (request) => {
-  if (!request.auth) throw new HttpsError("unauthenticated", "User must be signed in.");
-
-  const adminUid = request.auth.uid;
-  const { uid, role } = request.data;
-
+async function setUserRoleAsAdmin(adminUid, uid, requestedRole) {
+  const role = String(requestedRole || "").trim().toLowerCase();
   if (!uid || !role) {
     throw new HttpsError("invalid-argument", "uid and role are required.");
   }
@@ -2738,8 +2747,17 @@ exports.setUserRole = onCall({ invoker: "public" }, async (request) => {
     throw new HttpsError("permission-denied", "Only admins can change roles.");
   }
 
+  if (adminUid === uid) {
+    throw new HttpsError("failed-precondition", "You cannot change your own role.");
+  }
+
+  const targetUser = await auth.getUser(uid);
+
   // Set custom claims
-  await auth.setCustomUserClaims(uid, { role });
+  await auth.setCustomUserClaims(uid, {
+    ...(targetUser.customClaims || {}),
+    role
+  });
 
   // Update database profile
   await db.ref(`users/${uid}`).update({
@@ -2751,6 +2769,26 @@ exports.setUserRole = onCall({ invoker: "public" }, async (request) => {
   await logAuditAction("role_changed", adminUid, "admin", uid, { newRole: role });
 
   return { success: true, role };
+}
+
+exports.setUserRole = onCall({ invoker: "public", cors: true }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "User must be signed in.");
+
+  return setUserRoleAsAdmin(request.auth.uid, request.data?.uid, request.data?.role);
+});
+
+exports.setUserRoleHttp = onRequest({ invoker: "public" }, async (req, res) => {
+  applyCors(req, res);
+  if (req.method === "OPTIONS") return res.status(204).send("");
+  if (req.method !== "POST") return res.status(405).json({ error: "method-not-allowed" });
+
+  try {
+    const authToken = await requireAuthFromRequest(req);
+    const result = await setUserRoleAsAdmin(authToken.uid, req.body?.uid, req.body?.role);
+    return res.status(200).json(result);
+  } catch (error) {
+    return sendHttpError(res, error, "Failed to set user role.");
+  }
 });
 
 exports.setUserBlocked = onCall({ invoker: "public" }, async (request) => {
@@ -3236,14 +3274,19 @@ exports.updateOrderShippingAddress = onCall({ invoker: "public" }, async (reques
 // ADMIN IMPERSONATION
 // ============================================================================
 
-exports.createImpersonationSession = onCall({ invoker: "public" }, async (request) => {
-  if (!request.auth) throw new HttpsError("unauthenticated", "User must be signed in.");
+async function createImpersonationSessionAsAdmin(adminUid, authToken = {}, payload = {}) {
+  const { targetUid } = payload;
+  const reason = String(payload?.reason || "Admin dashboard impersonation").trim();
+  if (!targetUid) {
+    throw new HttpsError("invalid-argument", "targetUid is required.");
+  }
 
-  const adminUid = request.auth.uid;
-  const { targetUid, reason } = request.data;
+  if (targetUid === adminUid) {
+    throw new HttpsError("failed-precondition", "You cannot impersonate yourself.");
+  }
 
-  if (!targetUid || !reason) {
-    throw new HttpsError("invalid-argument", "targetUid and reason are required.");
+  if (authToken?.impersonated) {
+    throw new HttpsError("failed-precondition", "Quit the current impersonation before starting another one.");
   }
 
   // Verify admin
@@ -3252,20 +3295,79 @@ exports.createImpersonationSession = onCall({ invoker: "public" }, async (reques
     throw new HttpsError("permission-denied", "Only admins can impersonate.");
   }
 
-  // Create short-lived custom token
+  const [adminUser, targetUser, adminProfile, targetProfile] = await Promise.all([
+    auth.getUser(adminUid),
+    auth.getUser(targetUid),
+    getUserProfile(adminUid),
+    getUserProfile(targetUid)
+  ]);
+
+  const adminRole = adminUser.customClaims?.role || adminProfile?.role || "admin";
+  const targetRole = targetUser.customClaims?.role || targetProfile?.role || "customer";
+  const startedAt = Date.now();
+  const expiresAt = startedAt + 3600000;
+
+  // Create short-lived custom tokens for entering and leaving impersonation.
   const token = await auth.createCustomToken(targetUid, {
+    role: targetRole,
     impersonated: true,
     impersonatedBy: adminUid,
-    impersonationExpiresAt: Date.now() + 3600000 // 1 hour
+    impersonationStartedAt: startedAt,
+    impersonationExpiresAt: expiresAt
+  });
+
+  const restoreToken = await auth.createCustomToken(adminUid, {
+    role: adminRole,
+    impersonationRestore: true,
+    restoredFromUid: targetUid
   });
 
   // Log audit
   await logAuditAction("impersonation_started", adminUid, "admin", targetUid, {
     reason,
-    expiresAt: Date.now() + 3600000
+    targetRole,
+    expiresAt
   });
 
-  return { customToken: token, expiresIn: 3600 };
+  return {
+    customToken: token,
+    restoreToken,
+    expiresIn: 3600,
+    expiresAt,
+    admin: {
+      uid: adminUid,
+      email: adminUser.email || adminProfile?.email || "",
+      displayName: adminUser.displayName || adminProfile?.displayName || "Admin",
+      role: adminRole
+    },
+    target: {
+      uid: targetUid,
+      email: targetUser.email || targetProfile?.email || "",
+      displayName: targetUser.displayName || targetProfile?.displayName || "User",
+      role: targetRole,
+      status: targetProfile?.status || "active"
+    }
+  };
+}
+
+exports.createImpersonationSession = onCall({ invoker: "public", cors: true }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "User must be signed in.");
+
+  return createImpersonationSessionAsAdmin(request.auth.uid, request.auth.token || {}, request.data || {});
+});
+
+exports.createImpersonationSessionHttp = onRequest({ invoker: "public" }, async (req, res) => {
+  applyCors(req, res);
+  if (req.method === "OPTIONS") return res.status(204).send("");
+  if (req.method !== "POST") return res.status(405).json({ error: "method-not-allowed" });
+
+  try {
+    const authToken = await requireAuthFromRequest(req);
+    const result = await createImpersonationSessionAsAdmin(authToken.uid, authToken, req.body || {});
+    return res.status(200).json(result);
+  } catch (error) {
+    return sendHttpError(res, error, "Failed to create impersonation session.");
+  }
 });
 
 // ============================================================================
