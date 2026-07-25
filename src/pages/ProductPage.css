@@ -530,16 +530,28 @@
 
 @media (max-width: 760px) {
   .product-page {
-    padding: 18px 12px 52px;
+    padding: 14px 12px 42px;
   }
 
   .product-hero-detail {
-    gap: 22px;
+    gap: 16px;
+    margin-bottom: 32px;
   }
 
   .product-hero-copy h1 {
-    font-size: clamp(2.5rem, 11vw, 3.8rem);
-    line-height: 1.35;
+    font-size: clamp(2.1rem, 9vw, 2.7rem);
+    line-height: 1.08;
+  }
+
+  .product-lede {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .product-purchase-panel {
+    gap: 12px;
+    margin-top: 2px;
+    padding: 14px;
   }
 
   .product-purchase-panel,
@@ -564,6 +576,36 @@
 
   .product-detail-gallery .pg-main {
     aspect-ratio: auto;
+  }
+
+  .product-story-section {
+    gap: 1rem;
+    padding: 2rem 0;
+  }
+
+  .product-story-section h2,
+  .product-next-step h2 {
+    margin-top: 0;
+    font-size: 1.7rem;
+  }
+
+  .product-detail-grid {
+    gap: 10px;
+    margin-bottom: 2rem;
+  }
+
+  .product-detail-panel {
+    min-height: 0;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .product-image-strip {
+    margin-bottom: 2rem;
+  }
+
+  .product-next-step {
+    padding: 16px;
   }
 
   .product-spec-row {

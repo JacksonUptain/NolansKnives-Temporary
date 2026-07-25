@@ -134,16 +134,19 @@ export default function SiteHeader() {
           </div>
         </div>
       )}
-      <header className={`nk-header ${isHomePage ? "nk-header-home" : ""} ${isHomePage && scrolled ? "scrolled" : ""} ${isImpersonating ? "nk-header-impersonating" : ""}`}>
+      <header className={`nk-header ${isHomePage ? "nk-header-home" : ""} ${isHomePage && scrolled ? "scrolled" : ""} ${isImpersonating ? "nk-header-impersonating" : ""} ${mobileNavOpen ? "menu-open" : ""}`}>
         <div className="nk-header-inner">
           <Link to="/" className="nk-brand">Nolan&apos;s Knives</Link>
 
           <button
             type="button"
             className="nk-nav-toggle"
-            onClick={() => setMobileNavOpen((value) => !value)}
+            onClick={() => {
+              setOpen(false);
+              setMobileNavOpen((value) => !value);
+            }}
             aria-expanded={mobileNavOpen}
-            aria-label="Toggle navigation"
+            aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
           >
             <LucideIcon name={mobileNavOpen ? "X" : "menu"} />
           </button>
@@ -171,10 +174,41 @@ export default function SiteHeader() {
                 <span>Admin</span>
               </Link>
             )}
+            <div className="nk-mobile-account">
+              {!isAuthenticated ? (
+                <Link to="/account" className="nk-mobile-account-action">
+                  <LucideIcon name="LogIn" />
+                  <span>Sign in</span>
+                </Link>
+              ) : (
+                <>
+                  <div className="nk-mobile-account-summary">
+                    <span className="nk-account-avatar" aria-hidden="true">
+                      {displayName.charAt(0).toUpperCase()}
+                    </span>
+                    <span>
+                      <small>Signed in</small>
+                      <strong>{profile?.displayName || displayName}</strong>
+                    </span>
+                  </div>
+                  <div className="nk-mobile-account-actions">
+                    <Link to="/my-account" className="nk-mobile-account-action">
+                      <LucideIcon name="LayoutDashboard" />
+                      <span>Account</span>
+                    </Link>
+                    <Link to="/my-knives" className="nk-mobile-account-action">
+                      <LucideIcon name="knives" />
+                      <span>Your knives</span>
+                    </Link>
+                    <button type="button" className="nk-mobile-account-action signout" onClick={handleSignOut}>
+                      <LucideIcon name="signout" />
+                      <span>Sign out</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </nav>
-          {mobileNavOpen && (
-            <button className="nk-nav-scrim" type="button" aria-label="Close navigation" onClick={() => setMobileNavOpen(false)} />
-          )}
 
           <div className="nk-account-wrap" ref={dropdownRef}>
             {!isAuthenticated && <Link to="/account" className="nk-account-btn">Sign In</Link>}

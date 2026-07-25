@@ -280,8 +280,8 @@ export function validateSeoConfig(config) {
 }
 
 export function replaceSeoBlock(html, head) {
-  const commentPattern = /<!-- SEO:START -->[\s\S]*?<!-- SEO:END -->/;
-  const elementPattern = /<meta[^>]*data-seo-boundary=["']start["'][^>]*>[\s\S]*?<meta[^>]*data-seo-boundary=["']end["'][^>]*>/;
+  const commentPattern = /[ \t]*<!-- SEO:START -->[\s\S]*?<!-- SEO:END -->/;
+  const elementPattern = /[ \t]*<meta[^>]*data-seo-boundary=["']start["'][^>]*>[\s\S]*?<meta[^>]*data-seo-boundary=["']end["'][^>]*>/;
   const pattern = commentPattern.test(html) ? commentPattern : elementPattern;
   const block = [
     '    <meta data-seo-boundary="start" />',

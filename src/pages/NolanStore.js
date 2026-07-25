@@ -1,14 +1,11 @@
 import './Product.css';
 import Skeleton from '../components/ui/Skeleton';
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ref, onValue } from "firebase/database";
 import { db } from './firebase';
-import { formatKnifeStatus, getPublicKnifeStatus } from './knifeStatus';
+import { getPublicKnifeStatus } from './knifeStatus';
 import LucideIcon from '../components/ui/LucideIcon';
-import { useAuth } from '../auth/AuthProvider';
-import { savePurchaseIntent } from '../services/purchaseIntent';
-import { showToast } from '../components/Toast';
 
 function normalizeImages(src) {
   const images = Array.isArray(src)
@@ -21,23 +18,6 @@ function normalizeImages(src) {
 function isSiteIconImage(src) {
   const value = String(src || '').toLowerCase();
   return value.includes('favicon') || value.includes('.ico') || value.includes('%2ffavicon');
-}
-
-function formatCurrency(value) {
-  return `$${Number(value || 0).toFixed(2)}`;
-}
-
-function productAvailabilityCopy(product) {
-  if (product.publicStatus === 'available') return 'Available now';
-  if (product.publicStatus === 'pending') return 'Currently reserved';
-  return 'Sold piece';
-}
-
-function shortDescription(product) {
-  const description = String(product?.description || '').trim();
-  if (!description) return "A finished Nolan's Knives piece with its materials, proportions, and edge ready for review.";
-  if (description.length <= 210) return description;
-  return `${description.slice(0, 207).trim()}...`;
 }
 
 function RotatingProductMedia({ product, className = '' }) {
@@ -67,12 +47,19 @@ function RotatingProductMedia({ product, className = '' }) {
   return (
     <div className={`store-rotating-media ${className}`}>
       {images.map((image, imageIndex) => (
-        <img
-          key={`${image}-${imageIndex}`}
-          src={image}
-          alt={`${product.name || 'Knife'} ${imageIndex + 1}`}
-          className={imageIndex === index ? 'active' : ''}
-        />
+        <Fragment key={`${image}-${imageIndex}`}>
+          <img
+            src={image}
+            alt=""
+            aria-hidden="true"
+            className={`store-media-backdrop ${imageIndex === index ? 'active' : ''}`}
+          />
+          <img
+            src={image}
+            alt={`${product.name || 'Knife'} ${imageIndex + 1}`}
+            className={`store-media-primary ${imageIndex === index ? 'active' : ''}`}
+          />
+        </Fragment>
       ))}
       {images.length > 1 && (
         <div className="store-media-dots" aria-hidden="true">
@@ -87,13 +74,11 @@ function RotatingProductMedia({ product, className = '' }) {
 
 function NolanStore() {
   const navigate = useNavigate();
-  const { isAuthenticated, isActiveUser } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [sortMode, setSortMode] = useState("featured");
   const [showSold, setShowSold] = useState(false);
-  const [storeError, setStoreError] = useState("");
 
   useEffect(() => {
     const productsRef = ref(db, 'Products');
@@ -153,33 +138,6 @@ function NolanStore() {
   const hasAvailableProducts = publicProducts.some((product) => product.publicStatus === 'available');
   const featuredProduct = filteredProducts[0] || null;
 
-  const handleBuyNow = (product) => {
-    setStoreError("");
-
-    if (product.publicStatus !== "available") {
-      const message = `${product.name || "This knife"} is currently ${formatKnifeStatus(product.publicStatus)}.`;
-      setStoreError(message);
-      showToast(message, 'warning');
-      return;
-    }
-
-    if (!isAuthenticated) {
-      savePurchaseIntent({ knifeId: product.id, returnTo: "/store" });
-      showToast('Sign in to continue checkout.', 'info');
-      navigate("/account", { state: { from: `/checkout/${product.id}` } });
-      return;
-    }
-
-    if (!isActiveUser) {
-      const message = "Your account is not active yet. Please contact Nolan's Knives before checkout.";
-      setStoreError(message);
-      showToast(message, 'warning');
-      return;
-    }
-
-    navigate(`/checkout/${product.id}`);
-  };
-
   const scrollToCollection = () => {
     document.getElementById('store-collection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -212,21 +170,11 @@ function NolanStore() {
               <RotatingProductMedia product={featuredProduct} className="featured-media" />
               <div className="store-feature-copy">
                 <h2>{featuredProduct.name || "Untitled Knife"}</h2>
-                <p>{shortDescription(featuredProduct)}</p>
                 <div className="store-feature-footer">
-                  <div>
-                    <span>{productAvailabilityCopy(featuredProduct)}</span>
-                    <strong>{formatCurrency(featuredProduct.price)}</strong>
-                  </div>
                   <div className="store-feature-actions">
                     <button className="store-primary-action" type="button" onClick={() => navigate(`/product/${featuredProduct.id}`)}>
                       View details <LucideIcon name="ArrowRight" size={16} />
                     </button>
-                    {featuredProduct.publicStatus === "available" && (
-                      <button className="store-quiet-action" type="button" onClick={() => handleBuyNow(featuredProduct)}>
-                        Buy now
-                      </button>
-                    )}
                   </div>
                 </div>
               </div>
@@ -263,15 +211,8 @@ function NolanStore() {
         </label>
       </section>
 
-      {storeError && (
-        <div className="store-inline-error" role="alert">
-          <LucideIcon name="AlertCircle" size={16} />
-          {storeError}
-        </div>
-      )}
-
       <section className="store-collection-heading" id="store-collection">
-        <h2>Choose the piece that fits your hand.</h2>
+        <h2>Available knives</h2>
       </section>
 
       {loading ? (
@@ -286,28 +227,17 @@ function NolanStore() {
         </div>
       ) : (
         <section className="store-showcase-list" aria-label="Available knives">
-          {filteredProducts.map((product, index) => (
-            <article className={`store-showcase ${index % 2 ? 'reverse' : ''}`} key={product.id}>
+          {filteredProducts.map((product) => (
+            <article className="store-showcase" key={product.id}>
               <RotatingProductMedia product={product} />
 
               <div className="store-showcase-copy">
-                <p className="store-status-line">{productAvailabilityCopy(product)}</p>
                 <h2>{product.name || "Untitled Knife"}</h2>
-                <p>{shortDescription(product)}</p>
-
-                <div className="showcase-purchase-row">
-                  <strong>{formatCurrency(product.price)}</strong>
-                </div>
 
                 <div className="showcase-actions">
                   <button className="store-primary-action" type="button" onClick={() => navigate(`/product/${product.id}`)}>
                     View details <LucideIcon name="ArrowRight" size={16} />
                   </button>
-                  {product.publicStatus === "available" && (
-                    <button className="store-secondary-action" type="button" onClick={() => handleBuyNow(product)}>
-                      Buy now
-                    </button>
-                  )}
                 </div>
               </div>
             </article>

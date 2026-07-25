@@ -93,7 +93,8 @@
 @media (max-width: 760px) {
   .nk-footer-inner {
     grid-template-columns: 1fr;
-    gap: var(--nk-space-10);
+    gap: 1.75rem;
+    padding: 2.5rem 0;
   }
 
   .nk-footer-links {
@@ -113,6 +114,15 @@
   }
 
   .nk-footer-links {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem 1rem;
+  }
+
+  .nk-footer-brand h2 {
+    font-size: 1.65rem;
+  }
+
+  .nk-footer-bottom {
+    padding: 1rem 0;
   }
 }

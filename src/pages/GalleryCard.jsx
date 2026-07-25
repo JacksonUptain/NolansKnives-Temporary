@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import LucideIcon from "../components/ui/LucideIcon";
-import { formatKnifeStatus } from "./knifeStatus";
 
 function normalizeImages(src) {
   if (Array.isArray(src)) return src.filter(Boolean);
@@ -8,14 +7,7 @@ function normalizeImages(src) {
   return [];
 }
 
-function trimDescription(value) {
-  const description = String(value || "").trim();
-  if (!description) return "A completed Nolan's Knives build with materials and finish selected for the piece.";
-  if (description.length <= 190) return description;
-  return `${description.slice(0, 187).trim()}...`;
-}
-
-export default function GalleryCard({ product, featured = false, onRequest, onView }) {
+export default function GalleryCard({ product, featured = false, onView }) {
   const images = useMemo(() => normalizeImages(product?.src), [product?.src]);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -36,12 +28,19 @@ export default function GalleryCard({ product, featured = false, onRequest, onVi
       <div className="gallery-card-media">
         {images.length > 0 ? (
           images.map((image, index) => (
-            <img
-              key={`${image}-${index}`}
-              src={image}
-              alt={`${product.name || "Nolan knife"} angle ${index + 1}`}
-              className={index === activeIndex ? "active" : ""}
-            />
+            <Fragment key={`${image}-${index}`}>
+              <img
+                src={image}
+                alt=""
+                aria-hidden="true"
+                className={`gallery-card-backdrop ${index === activeIndex ? "active" : ""}`}
+              />
+              <img
+                src={image}
+                alt={`${product.name || "Nolan knife"} angle ${index + 1}`}
+                className={`gallery-card-primary ${index === activeIndex ? "active" : ""}`}
+              />
+            </Fragment>
           ))
         ) : (
           <div className="gallery-media-placeholder">
@@ -59,11 +58,7 @@ export default function GalleryCard({ product, featured = false, onRequest, onVi
       </div>
 
       <div className="gallery-card-copy">
-        <div className="gallery-card-topline">
-          <span>{formatKnifeStatus(product.publicStatus || "available")}</span>
-        </div>
         <h2>{product.name || "Finished Piece"}</h2>
-        <p>{trimDescription(product.description)}</p>
 
         <div className="gallery-card-actions">
           {onView && (
@@ -71,9 +66,6 @@ export default function GalleryCard({ product, featured = false, onRequest, onVi
               View details <LucideIcon name="ArrowRight" size={15} />
             </button>
           )}
-          <button type="button" className="gallery-text-action muted" onClick={onRequest}>
-            Request something similar
-          </button>
         </div>
       </div>
     </article>

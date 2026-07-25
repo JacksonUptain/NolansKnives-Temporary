@@ -153,7 +153,10 @@ export default function Gallery() {
             <>
               <div className="gallery-feature-media">
                 {featuredImages[0] ? (
-                  <img src={featuredImages[0]} alt={featuredProduct.name || "Nolan knife"} />
+                  <>
+                    <img className="gallery-feature-backdrop" src={featuredImages[0]} alt="" aria-hidden="true" />
+                    <img className="gallery-feature-primary" src={featuredImages[0]} alt={featuredProduct.name || "Nolan knife"} />
+                  </>
                 ) : (
                   <div className="gallery-media-placeholder">
                     <LucideIcon name="Image" size={32} />
@@ -162,7 +165,6 @@ export default function Gallery() {
               </div>
               <div className="gallery-feature-copy">
                 <h2>{featuredProduct.name || "Finished Piece"}</h2>
-                <p>{featuredProduct.description || "A completed Nolan's Knives build with details worth revisiting."}</p>
                 <button className="gallery-text-action" type="button" onClick={() => openDetails(featuredProduct)}>
                   View details <LucideIcon name="ArrowRight" size={15} />
                 </button>
@@ -210,7 +212,7 @@ export default function Gallery() {
       ) : (
         <section className="gallery-section" aria-label="Gallery pieces">
           <div className="gallery-section-heading">
-            <h2>Past builds and featured pieces.</h2>
+            <h2>Past work</h2>
           </div>
 
           <div className="gallery-showcase-grid">
@@ -219,7 +221,6 @@ export default function Gallery() {
                 key={product.id}
                 product={product}
                 featured={index === 0 && collectionItems.length <= 2}
-                onRequest={() => navigate("/custom-knife-request")}
                 onView={() => openDetails(product)}
               />
             ))}

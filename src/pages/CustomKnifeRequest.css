@@ -984,7 +984,18 @@
   }
 
   .request-hero {
-    padding-top: 24px;
+    gap: 12px;
+    padding: 18px 0 24px;
+  }
+
+  .request-hero h1 {
+    font-size: clamp(2.05rem, 9vw, 2.7rem);
+    line-height: 1.05;
+  }
+
+  .request-lede {
+    font-size: 0.98rem;
+    line-height: 1.5;
   }
 
   .confirmation-meta {
@@ -1023,7 +1034,7 @@
   }
 
   .request-main {
-    padding: 18px;
+    padding: 14px;
   }
 
   .options-grid,
