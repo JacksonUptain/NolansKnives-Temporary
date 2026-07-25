@@ -35,6 +35,12 @@ html {
   background: var(--nk-black);
 }
 
+.home-hero-carousel .carousel-item {
+  background-image: var(--home-hero-image);
+  background-position: center;
+  background-size: cover;
+}
+
 .home-hero-carousel .carousel-item::before,
 .home-hero-carousel .carousel-item::after {
   position: absolute;
@@ -57,9 +63,9 @@ html {
 .home-hero-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
-  transform: scale(1.015);
+  background: rgba(0, 0, 0, 0.24);
   animation: home-image-settle 8s ease-out both;
 }
 
@@ -240,18 +246,20 @@ html {
 .stacked-card-image {
   width: 100% !important;
   max-width: none !important;
-  height: clamp(320px, 42vw, 560px) !important;
+  height: auto !important;
   max-height: none !important;
+  aspect-ratio: 16 / 10;
   margin: 0 !important;
   border: 1px solid var(--nk-border);
   border-radius: var(--nk-radius-2xl);
-  object-fit: cover;
+  object-fit: contain;
+  background: var(--nk-bg-deep);
   box-shadow: var(--nk-shadow-lg);
 }
 
 @keyframes home-image-settle {
-  from { transform: scale(1.06); }
-  to { transform: scale(1.015); }
+  from { opacity: 0.9; }
+  to { opacity: 1; }
 }
 
 @media (max-width: 900px) {
@@ -301,10 +309,6 @@ html {
     background:
       linear-gradient(0deg, rgba(0, 0, 0, 0.93) 0%, rgba(0, 0, 0, 0.62) 48%, rgba(0, 0, 0, 0.16) 78%),
       linear-gradient(90deg, rgba(0, 0, 0, 0.32), transparent);
-  }
-
-  .home-hero-image {
-    object-position: 56% center;
   }
 
   .home-hero-carousel .carousel-caption {
@@ -357,8 +361,8 @@ html {
   }
 
   .stacked-card-image {
-    height: 72vw !important;
-    min-height: 260px;
+    height: auto !important;
+    min-height: 0;
   }
 }
 

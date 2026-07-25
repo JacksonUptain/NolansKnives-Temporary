@@ -9,5 +9,6 @@ test -f "$project_dir/build/index.html" || {
 }
 
 mkdir -p "$project_dir/dist/server" "$project_dir/dist/client"
+find "$project_dir/dist/client" -mindepth 1 -delete
 cp -R "$project_dir/build"/. "$project_dir/dist/client"/
 cp "$project_dir/hosting/sites-worker.js" "$project_dir/dist/server/index.js"

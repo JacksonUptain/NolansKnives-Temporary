@@ -16,7 +16,11 @@ function TimedCarousel({ items }) {
             touch
         >
             {items.map((item, index) => (
-                <CarouselItem key={item.id || `${item.name}-${index}`} interval={item.interval}>
+                <CarouselItem
+                    key={item.id || `${item.name}-${index}`}
+                    interval={item.interval}
+                    style={{ '--home-hero-image': `url("${item.src}")` }}
+                >
                     <img
                         className="home-hero-image"
                         src={item.src}

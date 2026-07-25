@@ -469,7 +469,7 @@ const emailTemplates = {
       title: "Priority Request Received",
       greeting: customerName || "there",
       body: emailParagraph("We've received your custom knife request and your priority deposit.") +
-        emailParagraph("Nolan will review your brief and send a more detailed quote. If the final quote is not accepted, the deposit can be refunded."),
+        emailParagraph("Nolan will review your brief and send a more detailed quote. If you accept it, the deposit is credited toward the final price. If the final quote is not accepted, the deposit can be refunded."),
       details: [
         { label: "Request ID", value: requestId },
         { label: "Estimated Price", value: emailMoney(estimatedPrice) },

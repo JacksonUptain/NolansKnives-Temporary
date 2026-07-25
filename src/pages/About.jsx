@@ -61,6 +61,28 @@ export default function About() {
           <p>
             If you approve the quote, your account keeps the request, payment stages, build status, messages, and delivery information together.
           </p>
+          <div className="custom-deposit-explainer">
+            <h3>The 15% deposit</h3>
+            <ol>
+              <li>
+                <strong>The request form calculates an estimate.</strong>
+                <span>The optional priority deposit is 15% of that estimate.</span>
+              </li>
+              <li>
+                <strong>You can submit with or without paying it.</strong>
+                <span>Paying moves the request into priority review and opens customer messages. Submitting without it does not charge you.</span>
+              </li>
+              <li>
+                <strong>Nolan sends the final quote after review.</strong>
+                <span>If you already paid the priority deposit, that payment is credited toward the final price. If you did not, the deposit to accept the quote is 15% of the final price.</span>
+              </li>
+              <li>
+                <strong>The remaining balance is paid later.</strong>
+                <span>The account shows the amount already paid and the balance due as the build moves toward completion.</span>
+              </li>
+            </ol>
+            <p className="custom-deposit-note">A priority deposit can be refunded if the final quote is not accepted.</p>
+          </div>
           <button className="public-info-text-link" type="button" onClick={() => navigate("/contact")}>
             Contact Nolan <LucideIcon name="ArrowUpRight" size={16} />
           </button>

@@ -50,7 +50,7 @@ const PRIORITY_DEPOSIT_COPY = {
   completeTitle: 'Deposit Received',
   intro: 'Pay the 15% deposit to move this custom request into priority review.',
   panelTitle: 'Priority review deposit',
-  panelBody: 'Nolan will review your request and send a final quote. If it is not the right fit, the priority deposit can be refunded.',
+  panelBody: 'Nolan will review your request and send a final quote. If you accept it, this payment is credited toward the final price. If you do not, the priority deposit can be refunded.',
   toast: 'Deposit received. Your request is now in Your Knives.',
   completeBody: 'Deposit received. Your request is with Nolan, and messages are available in Your Knives.'
 };

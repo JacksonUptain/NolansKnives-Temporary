@@ -60,10 +60,12 @@
 
 .detail-image {
   width: 100%;
+  aspect-ratio: 16 / 10;
   border-radius: 8px;
   margin-bottom: 1.5rem;
   max-height: 400px;
-  object-fit: cover;
+  object-fit: contain;
+  background: #080808;
 }
 
 .detail-info {

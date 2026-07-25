@@ -764,14 +764,14 @@ function CustomKnifeRequest() {
                     {renderReviewRow('15% priority deposit', `$${depositAmount.toFixed(2)}`)}
                     <div className="review-notes">
                       <span>Note</span>
-                      <p>The deposit is 15% of this estimate. It gives your request priority review, opens messages for the build, and remains refundable if the final quote is not the right fit.</p>
+                      <p>The deposit is 15% of this estimate. It gives your request priority review, opens messages, and is credited toward the final price if you accept Nolan&apos;s quote. It can be refunded if you do not accept the final quote.</p>
                     </div>
                   </section>
                 </div>
 
                 <div className="final-note">
                   <LucideIcon name="BadgeDollarSign" size={19} />
-                  <p>Pay the deposit for priority review and build messages, or submit a standard request and Nolan will reach out if he can quote it.</p>
+                  <p>Pay the 15% deposit for priority review and messages, or submit without payment for standard review. Any paid deposit is applied to the final price.</p>
                 </div>
               </div>
             )}

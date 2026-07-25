@@ -96,14 +96,14 @@
 }
 
 .public-info-hero-media {
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 16 / 10;
 }
 
 .public-info-hero-media img,
 .public-info-story-media img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .public-info-values {
@@ -156,7 +156,71 @@
 }
 
 .public-info-story-media {
-  aspect-ratio: 5 / 4;
+  aspect-ratio: 16 / 10;
+}
+
+.custom-deposit-explainer {
+  margin: var(--nk-space-7) 0;
+  padding: clamp(1.1rem, 2.5vw, 1.6rem);
+  border: 1px solid var(--nk-border);
+  border-radius: var(--nk-radius-lg);
+  background: var(--nk-surface);
+}
+
+.custom-deposit-explainer h3 {
+  margin: 0 0 var(--nk-space-5);
+  color: var(--nk-text-strong);
+  font-size: 1.35rem;
+}
+
+.custom-deposit-explainer ol {
+  display: grid;
+  gap: var(--nk-space-5);
+  margin: 0;
+  padding: 0;
+  counter-reset: deposit-step;
+  list-style: none;
+}
+
+.custom-deposit-explainer li {
+  position: relative;
+  display: grid;
+  gap: var(--nk-space-1);
+  min-height: 2rem;
+  padding-left: 2.65rem;
+  counter-increment: deposit-step;
+}
+
+.custom-deposit-explainer li::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border: 1px solid var(--nk-border-strong);
+  border-radius: 50%;
+  color: var(--nk-gold);
+  content: counter(deposit-step);
+  font-size: var(--nk-text-sm);
+  font-weight: var(--nk-weight-heavy);
+}
+
+.custom-deposit-explainer strong {
+  color: var(--nk-text-strong);
+}
+
+.custom-deposit-explainer span,
+.custom-deposit-explainer .custom-deposit-note {
+  color: var(--nk-text-muted);
+  line-height: var(--nk-leading-relaxed);
+}
+
+.custom-deposit-explainer .custom-deposit-note {
+  margin: var(--nk-space-5) 0 0;
+  padding-top: var(--nk-space-5);
+  border-top: 1px solid var(--nk-border-soft);
 }
 
 .public-info-text-link,

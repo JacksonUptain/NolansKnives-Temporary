@@ -95,7 +95,7 @@
 .store-media-placeholder {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 11;
+  aspect-ratio: 16 / 10;
   overflow: hidden;
   border: 1px solid #232323;
   border-radius: 8px;
@@ -118,15 +118,14 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   opacity: 0;
-  transform: scale(1.025);
-  transition: opacity 700ms ease, transform 1200ms ease;
+  transform: none;
+  transition: opacity 700ms ease;
 }
 
 .store-rotating-media img.active {
   opacity: 1;
-  transform: scale(1);
 }
 
 .store-media-placeholder {
