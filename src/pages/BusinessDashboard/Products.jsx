@@ -153,7 +153,6 @@ export default function Products() {
     <div className="business-workspace business-products-page">
       <div className="workspace-hero">
         <div>
-          <p className="workspace-eyebrow">Catalog</p>
           <h1>Products</h1>
           <p>Manage public visibility, availability, pricing, and product storytelling from one place.</p>
         </div>

@@ -209,7 +209,6 @@ function ProductPage() {
     return (
       <main className="product-page">
         <section className="product-state-card" role="alert">
-          <p className="product-kicker">Nolan's Knives</p>
           <h1>Product Not Available</h1>
           <p>{error || 'This product could not be found.'}</p>
           <button className="product-primary-button" type="button" onClick={() => navigate('/Store')}>
@@ -229,7 +228,6 @@ function ProductPage() {
 
       <section className="product-hero-detail">
         <div className="product-hero-copy">
-          <p className="product-kicker">Nolan's Knives</p>
           <h1>{product.name || 'Untitled Knife'}</h1>
           <p className="product-lede">
             {descriptionBlocks[0]}
@@ -281,7 +279,6 @@ function ProductPage() {
 
       <section className="product-story-section">
         <div>
-          <p className="product-kicker">Overview</p>
           <h2>Materials, finish, and feel.</h2>
         </div>
         <div className="product-story-copy">
@@ -344,7 +341,6 @@ function ProductPage() {
 
       <section className="product-next-step">
         <div>
-          <p className="product-kicker">Need Something Different?</p>
           <h2>Start a custom request instead.</h2>
         </div>
         <button className="product-secondary-button" type="button" onClick={() => navigate('/custom-knife-request')}>

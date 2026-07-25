@@ -29,7 +29,7 @@
 .preview-mode h2 {
   margin: 0.15rem 0 0.4rem;
   color: #ffcc00;
-  font-size: clamp(2rem, 4vw, 3.1rem);
+  font-size: clamp(1.9rem, 3vw, 2.7rem);
   font-weight: 800;
   line-height: 1;
   text-transform: uppercase;
@@ -46,7 +46,7 @@
 
 .editor-form {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.75fr);
+  grid-template-columns: 1fr;
   gap: 1rem;
   align-items: start;
 }
@@ -74,17 +74,12 @@
   text-transform: uppercase;
 }
 
-.form-section:first-child {
-  grid-column: 1;
-}
-
-.form-section:nth-child(2),
-.form-section:nth-child(3) {
-  grid-column: 2;
+.form-section[hidden] {
+  display: none;
 }
 
 .form-section.action-buttons {
-  grid-column: 1 / -1;
+  grid-column: 1;
   position: sticky;
   bottom: 0;
   z-index: 4;
@@ -94,6 +89,68 @@
   background: rgba(12, 12, 12, 0.92);
   border-color: rgba(255, 204, 0, 0.2);
   backdrop-filter: blur(14px);
+}
+
+.product-editor-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.product-editor-tabs button {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 0.1rem 0.55rem;
+  align-items: center;
+  min-height: 66px;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #303030;
+  border-radius: 8px;
+  background: #141414;
+  color: #aaa;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+}
+
+.product-editor-tabs button:hover {
+  border-color: rgba(255, 204, 0, 0.36);
+  transform: translateY(-1px);
+}
+
+.product-editor-tabs button.active {
+  border-color: #ffcc00;
+  background: rgba(255, 204, 0, 0.08);
+  color: #ffcc00;
+  box-shadow: 0 0 0 2px rgba(255, 204, 0, 0.08);
+}
+
+.product-editor-tabs button > svg {
+  grid-row: 1 / span 2;
+}
+
+.product-editor-tabs button span {
+  color: #f4f4f4;
+  font-weight: 800;
+}
+
+.product-editor-tabs button small {
+  color: #777;
+}
+
+.editor-save-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-right: auto;
+  color: #8de18d;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.editor-save-state.is-dirty {
+  color: #ffc857;
 }
 
 .form-group {
@@ -494,6 +551,10 @@
 
   .form-section {
     padding: 1rem;
+  }
+
+  .product-editor-tabs {
+    grid-template-columns: 1fr;
   }
 
   .image-gallery {

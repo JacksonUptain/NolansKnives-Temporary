@@ -8,14 +8,17 @@ import { showToast } from "./Toast";
 
 const navLinks = [
   { name: "Home", href: "/Home", icon: "home" },
+  { name: "Shop", href: "/Store", icon: "store" },
   { name: "Gallery", href: "/Gallery", icon: "gallery" },
-  { name: "Store", href: "/Store", icon: "store" },
-  { name: "Custom Knife", href: "/custom-knife-request", icon: "request" }
+  { name: "Custom", href: "/custom-knife-request", icon: "request" },
+  { name: "About", href: "/about", icon: "UserRound" },
+  { name: "Contact", href: "/contact", icon: "Mail" }
 ];
 
 const customerLinks = [
+  { label: "Account Overview", href: "/my-account", icon: "LayoutDashboard" },
   { label: "My Knives", href: "/my-knives", icon: "knives" },
-  { label: "My Account", href: "/my-account", icon: "account" },
+  { label: "Orders & Messages", href: "/my-knives", icon: "MessageSquare" },
   { label: "Request Custom Knife", href: "/custom-knife-request", icon: "request" }
 ];
 
@@ -41,6 +44,21 @@ export default function SiteHeader() {
     setOpen(false);
     setMobileNavOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (!mobileNavOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") setMobileNavOpen(false);
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [mobileNavOpen]);
 
   useEffect(() => {
     if (!isHomePage) {
@@ -127,18 +145,22 @@ export default function SiteHeader() {
             aria-expanded={mobileNavOpen}
             aria-label="Toggle navigation"
           >
-            <LucideIcon name="menu" />
+            <LucideIcon name={mobileNavOpen ? "X" : "menu"} />
           </button>
 
           <nav className={`nk-nav-links ${mobileNavOpen ? "is-open" : ""}`} aria-label="Primary navigation">
             {navLinks.map((link) => (
-              <Link key={link.href} to={link.href} className="nk-nav-link">
+              <Link
+                key={link.href}
+                to={link.href}
+                className={`nk-nav-link ${location.pathname === link.href || (link.href === "/Home" && location.pathname === "/") ? "is-active" : ""}`}
+              >
                 <LucideIcon name={link.icon} />
                 <span>{link.name}</span>
               </Link>
             ))}
             {hasAtLeastBusiness(role) && (
-              <Link to="/business" className="nk-nav-link nk-nav-dashboard">
+              <Link to="/business" className="nk-nav-link nk-nav-dashboard" aria-label="Open business workspace">
                 <LucideIcon name="Building2" />
                 <span>Business</span>
               </Link>
@@ -150,6 +172,9 @@ export default function SiteHeader() {
               </Link>
             )}
           </nav>
+          {mobileNavOpen && (
+            <button className="nk-nav-scrim" type="button" aria-label="Close navigation" onClick={() => setMobileNavOpen(false)} />
+          )}
 
           <div className="nk-account-wrap" ref={dropdownRef}>
             {!isAuthenticated && <Link to="/account" className="nk-account-btn">Sign In</Link>}

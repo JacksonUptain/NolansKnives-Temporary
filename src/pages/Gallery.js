@@ -132,7 +132,6 @@ export default function Gallery() {
     <main className="gallery-page">
       <section className="gallery-hero">
         <div className="gallery-hero-copy">
-          <p className="gallery-kicker">Nolan's Knives</p>
           <h1>Gallery</h1>
           <p>
             Finished pieces, past work, and build details gathered for inspiration.
@@ -162,7 +161,6 @@ export default function Gallery() {
                 )}
               </div>
               <div className="gallery-feature-copy">
-                <p className="gallery-kicker">Featured Work</p>
                 <h2>{featuredProduct.name || "Finished Piece"}</h2>
                 <p>{featuredProduct.description || "A completed Nolan's Knives build with details worth revisiting."}</p>
                 <button className="gallery-text-action" type="button" onClick={() => openDetails(featuredProduct)}>
@@ -212,7 +210,6 @@ export default function Gallery() {
       ) : (
         <section className="gallery-section" aria-label="Gallery pieces">
           <div className="gallery-section-heading">
-            <p className="gallery-kicker">Finished Work</p>
             <h2>Past builds and featured pieces.</h2>
           </div>
 
@@ -275,7 +272,7 @@ export default function Gallery() {
             </div>
 
             <div className="gallery-detail-copy">
-              <p className="gallery-kicker">{formatKnifeStatus(selectedProduct.publicStatus || "available")}</p>
+              <p className="gallery-detail-status">{formatKnifeStatus(selectedProduct.publicStatus || "available")}</p>
               <h2 id="gallery-detail-title">{selectedProduct.name || "Finished Piece"}</h2>
               <div className="gallery-detail-meta">
                 <div>

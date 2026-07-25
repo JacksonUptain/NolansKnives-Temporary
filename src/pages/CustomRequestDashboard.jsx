@@ -177,7 +177,29 @@ function getEmailActivityRows(request = {}) {
     .sort((a, b) => Number(b.lastEventAt || b.sentAt || 0) - Number(a.lastEventAt || a.sentAt || 0));
 }
 
-function CustomRequestDashboard() {
+const REQUEST_VIEW_CONFIG = {
+  all: {
+    title: 'Custom Requests',
+    description: 'Review customer build briefs, prepare quotes, and keep each request moving.',
+    statuses: null,
+    defaultFilter: 'all'
+  },
+  quotes: {
+    title: 'Quotes',
+    description: 'Focus on requests that need a quote, customer approval, or a quote follow-up.',
+    statuses: ['priority_review', 'pending_review', 'needs_review', 'quote_sent', 'pending_acceptance'],
+    defaultFilter: 'all'
+  },
+  production: {
+    title: 'Production',
+    description: 'Keep accepted builds moving through production, final payment, and ready-to-ship stages.',
+    statuses: ['quote_accepted', 'in_production', 'awaiting_final_payment', 'paid_in_full', 'ready_to_ship'],
+    defaultFilter: 'all'
+  }
+};
+
+function CustomRequestDashboard({ view = 'all' }) {
+  const viewConfig = REQUEST_VIEW_CONFIG[view] || REQUEST_VIEW_CONFIG.all;
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -189,6 +211,10 @@ function CustomRequestDashboard() {
   const [finalPaymentDrafts, setFinalPaymentDrafts] = useState({});
   const [savingRequestId, setSavingRequestId] = useState('');
   const [savingAction, setSavingAction] = useState('');
+
+  useEffect(() => {
+    setFilterStatus(viewConfig.defaultFilter);
+  }, [view, viewConfig.defaultFilter]);
 
   useEffect(() => {
     const requestsRef = ref(db, 'customRequests');
@@ -220,10 +246,11 @@ function CustomRequestDashboard() {
         request.customerEmail?.toLowerCase().includes(normalizedSearch) ||
         request.id?.toLowerCase().includes(normalizedSearch) ||
         request.knifeType?.toLowerCase().includes(normalizedSearch);
+      const matchesView = !viewConfig.statuses || viewConfig.statuses.includes(request.status);
       const matchesFilter = filterStatus === 'all' || request.status === filterStatus;
-      return matchesSearch && matchesFilter;
+      return matchesSearch && matchesView && matchesFilter;
     });
-  }, [requests, searchTerm, filterStatus]);
+  }, [requests, searchTerm, filterStatus, viewConfig.statuses]);
 
   const selectedRequest = filteredRequests.find((request) => request.id === selectedRequestId) || filteredRequests[0] || null;
   const selectedEmailActivity = useMemo(() => getEmailActivityRows(selectedRequest), [selectedRequest]);
@@ -390,9 +417,8 @@ function CustomRequestDashboard() {
     <div className="custom-request-dashboard">
       <div className="workspace-hero">
         <div>
-          <p className="workspace-eyebrow">Custom work</p>
-          <h1>Custom Requests</h1>
-          <p>Review customer build briefs, prepare quotes, and keep each request moving.</p>
+          <h1>{viewConfig.title}</h1>
+          <p>{viewConfig.description}</p>
         </div>
       </div>
 
@@ -417,7 +443,7 @@ function CustomRequestDashboard() {
         </label>
 
         <select value={filterStatus} onChange={(event) => setFilterStatus(event.target.value)} aria-label="Filter custom requests">
-          {REQUEST_STATUSES.map((status) => (
+          {REQUEST_STATUSES.filter((status) => status === 'all' || !viewConfig.statuses || viewConfig.statuses.includes(status)).map((status) => (
             <option key={status} value={status}>{status === 'all' ? 'All requests' : labelize(status)}</option>
           ))}
         </select>

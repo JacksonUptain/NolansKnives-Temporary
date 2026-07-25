@@ -1166,7 +1166,6 @@ export default function Analytics() {
     <div className="business-workspace analytics-page">
       <div className="workspace-hero analytics-hero">
         <div>
-          <p className="workspace-eyebrow">Analytics</p>
           <h1>Business Analytics</h1>
           <p>Revenue, orders, inventory, custom work, customers, email performance, conversations, and data health in one focused workspace.</p>
         </div>
@@ -1242,8 +1241,8 @@ export default function Analytics() {
       <section className="analytics-section-panel">
         <div className="analytics-section-header">
           <div>
-            <p className="workspace-eyebrow">{analytics.rangeLabel}</p>
             <h2>{activeSection.title}</h2>
+            <p className="analytics-range-label">{analytics.rangeLabel}</p>
             <p>{activeSection.description}</p>
           </div>
           <span>{formatNumber(visibleMetrics.length)} visible stats</span>

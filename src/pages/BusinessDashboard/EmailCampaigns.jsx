@@ -417,7 +417,6 @@ export default function EmailCampaigns() {
     <div className="business-workspace email-campaign-page">
       <div className="workspace-hero">
         <div>
-          <p className="workspace-eyebrow">Email</p>
           <h1>Campaigns</h1>
           <p>Select customers, groups, or individual users, then send a reusable template or pasted HTML email.</p>
         </div>

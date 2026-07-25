@@ -61,20 +61,10 @@
   animation: product-rise 440ms ease both;
 }
 
-.product-kicker {
-  margin: 0;
-  color: var(--product-gold);
-  font-size: 0.78rem;
-  font-weight: 850;
-  letter-spacing: 0.12em;
-  line-height: 1.35;
-  text-transform: uppercase;
-}
-
 .product-hero-copy h1 {
   margin: 0;
   color: var(--product-gold);
-  font-size: clamp(2.8rem, 6vw, 5.6rem);
+  font-size: clamp(2.6rem, 5vw, 4.7rem);
   font-weight: 850;
   letter-spacing: 0;
   line-height: 1.35;
@@ -164,7 +154,7 @@
 .product-price-block strong {
   grid-column: 1 / span 1;
   color: #fff;
-  font-size: clamp(2.3rem, 4.4vw, 4.3rem);
+  font-size: clamp(2.1rem, 3.5vw, 3.5rem);
   line-height: 1.35;
   padding-bottom: 0.04em;
   overflow-wrap: anywhere;
@@ -363,7 +353,7 @@
 .product-next-step h2 {
   margin: 8px 0 0;
   color: #fff;
-  font-size: clamp(2rem, 4.6vw, 5rem);
+  font-size: clamp(1.9rem, 3.6vw, 3.8rem);
   font-weight: 850;
   letter-spacing: 0;
   line-height: 1.2;
@@ -500,13 +490,13 @@
 .product-state-card h1 {
   margin: 0;
   color: var(--product-gold);
-  font-size: clamp(2.4rem, 7vw, 6rem);
+  font-size: clamp(2.2rem, 5.5vw, 4.8rem);
   line-height: 1.2;
   padding-bottom: 0.04em;
   text-transform: uppercase;
 }
 
-.product-state-card p:not(.product-kicker) {
+.product-state-card p {
   max-width: 520px;
   margin: 0;
   color: #bbb;
@@ -547,7 +537,7 @@
   }
 
   .product-hero-copy h1 {
-    font-size: clamp(2.7rem, 14vw, 4.8rem);
+    font-size: clamp(2.5rem, 11vw, 3.8rem);
     line-height: 1.35;
   }
 

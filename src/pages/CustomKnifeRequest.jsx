@@ -474,7 +474,6 @@ function CustomKnifeRequest() {
             <LucideIcon name="ArrowLeft" size={16} />
             Store
           </button>
-          <p className="request-eyebrow">Nolan's Knives</p>
           <h1>Request a Custom Knife</h1>
           <p className="request-lede">
             Tell Nolan what you want made. Choose a starting shape, share the details that matter, and receive a final quote after review.

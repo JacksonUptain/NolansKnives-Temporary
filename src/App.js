@@ -1,7 +1,8 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./auth/AuthProvider";
 import SiteHeader from "./components/SiteHeader";
+import SiteFooter from "./components/SiteFooter";
 import Toast from "./components/Toast";
 import ConfirmDialog from "./components/ConfirmDialog";
 
@@ -20,6 +21,9 @@ import ProductPage from "./pages/ProductPage";
 import CustomKnifeRequest from "./pages/CustomKnifeRequest";
 import CustomRequestConfirmation from "./pages/CustomRequestConfirmation";
 import CustomFinalPayment from "./pages/CustomFinalPayment";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import NotFound from "./pages/NotFound";
 
 // Route guards
 import RequireAuth from "./auth/RequireAuth";
@@ -31,20 +35,24 @@ import RequireAdmin from "./auth/RequireAdmin";
 import BusinessDashboardShell from "./pages/BusinessDashboard/BusinessDashboardShell";
 import AdminDashboardShell from "./pages/AdminDashboard/AdminDashboardShell";
 
-function App() {
+function AppRoutes() {
+  const location = useLocation();
+  const isWorkspace = location.pathname.startsWith("/business") || location.pathname.startsWith("/admin");
+
   return (
-    <Router>
-      <AuthProvider>
-        <SiteHeader />
-        <Toast />
-        <ConfirmDialog />
-        <div className="page-transition">
-          <Routes>
+    <>
+      {!isWorkspace && <SiteHeader />}
+      <Toast />
+      <ConfirmDialog />
+      <div className="page-transition">
+        <Routes>
           {/* Public pages */}
           <Route path="/" element={<Home />} />
           <Route path="/Home" element={<Home />} />
           <Route path="/Gallery" element={<Gallery />} />
           <Route path="/Store" element={<Store />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="/product/:productId" element={<ProductPage />} />
           <Route path="/custom-knife-request" element={<CustomKnifeRequest />} />
           <Route path="/custom-knife/confirmation/:requestId" element={<CustomRequestConfirmation />} />
@@ -133,8 +141,19 @@ function App() {
               </RequireAuth>
             }
           />
-          </Routes>
-        </div>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </div>
+      {!isWorkspace && <SiteFooter />}
+    </>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AuthProvider>
+        <AppRoutes />
       </AuthProvider>
     </Router>
   );

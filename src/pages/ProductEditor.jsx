@@ -39,6 +39,8 @@ function ProductEditor() {
   const [success, setSuccess] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(null);
   const [previewMode, setPreviewMode] = useState(false);
+  const [activeTab, setActiveTab] = useState('details');
+  const [dirty, setDirty] = useState(false);
   const [imageOrder, setImageOrder] = useState([]);
   const [draggedIndex, setDraggedIndex] = useState(null);
 
@@ -66,6 +68,7 @@ function ProductEditor() {
           stock: data.stock || 1
         });
         setImageOrder(normalizedSrc);
+        setDirty(false);
       } else {
         setError('Product not found');
       }
@@ -78,6 +81,29 @@ function ProductEditor() {
 
   const handleFieldChange = (field, value) => {
     setProduct(prev => ({ ...prev, [field]: value }));
+    setDirty(true);
+  };
+
+  useEffect(() => {
+    const warnIfUnsaved = (event) => {
+      if (!dirty) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warnIfUnsaved);
+    return () => window.removeEventListener('beforeunload', warnIfUnsaved);
+  }, [dirty]);
+
+  const leaveEditor = async () => {
+    if (!dirty) {
+      navigate('/business/products');
+      return;
+    }
+    await showConfirm(
+      'Leave without saving?',
+      'Your unsaved product changes will be lost.',
+      async () => navigate('/business/products')
+    );
   };
 
   const handleImageUpload = async (e) => {
@@ -113,6 +139,7 @@ function ProductEditor() {
         src: [...(prev.src || []), ...newImageUrls]
       }));
       setImageOrder(prev => [...prev, ...newImageUrls]);
+      setDirty(true);
       setSuccess(`${files.length} image(s) uploaded successfully`);
       showToast(`${files.length} image${files.length === 1 ? '' : 's'} added.`, 'success');
     } catch (err) {
@@ -140,6 +167,7 @@ function ProductEditor() {
       const newOrder = imageOrder.filter((_, i) => i !== index);
       setProduct(prev => ({ ...prev, src: newImages }));
       setImageOrder(newOrder);
+      setDirty(true);
       setSuccess('Image removed');
       showToast('Image removed.', 'success');
     } catch (err) {
@@ -167,6 +195,7 @@ function ProductEditor() {
 
     setProduct(prev => ({ ...prev, src: newImages }));
     setImageOrder(newImages);
+    setDirty(true);
     setDraggedIndex(null);
     setSuccess('Image order updated');
     showToast('Image order updated.', 'success');
@@ -222,6 +251,7 @@ function ProductEditor() {
         setTimeout(() => navigate(`/business/products/${newId}`), 1500);
       }
 
+      setDirty(false);
       if (publish) {
         setTimeout(() => navigate('/business/products'), 1500);
       }
@@ -300,11 +330,10 @@ function ProductEditor() {
       <div className="product-editor">
         <div className="product-editor-header">
           <div>
-            <p className="workspace-eyebrow">Catalog editor</p>
             <h1>{productId ? 'Edit Product' : 'Create New Product'}</h1>
             <p>{productId ? 'Update pricing, availability, images, and storefront placement.' : 'Create a polished product record ready for the store or gallery.'}</p>
           </div>
-          <button className="btn-secondary" onClick={() => navigate('/business/products')} disabled={saving}>
+          <button className="btn-secondary" onClick={leaveEditor} disabled={saving}>
             <LucideIcon name="ArrowLeft" size={16} /> Products
           </button>
         </div>
@@ -313,9 +342,27 @@ function ProductEditor() {
         {success && <div className="alert-success">{success}</div>}
         {uploadingImage && <div className="alert-info">{uploadingImage}</div>}
 
+        <nav className="product-editor-tabs" aria-label="Product editor sections">
+          <button type="button" className={activeTab === 'details' ? 'active' : ''} onClick={() => setActiveTab('details')}>
+            <LucideIcon name="FileText" size={17} />
+            <span>Details</span>
+            <small>{product.name && product.price ? 'Ready' : 'Required'}</small>
+          </button>
+          <button type="button" className={activeTab === 'images' ? 'active' : ''} onClick={() => setActiveTab('images')}>
+            <LucideIcon name="Images" size={17} />
+            <span>Images</span>
+            <small>{normalizeImages(product.src).length} added</small>
+          </button>
+          <button type="button" className={activeTab === 'publishing' ? 'active' : ''} onClick={() => setActiveTab('publishing')}>
+            <LucideIcon name="Store" size={17} />
+            <span>Availability</span>
+            <small>{product.published ? 'Published' : 'Draft'}</small>
+          </button>
+        </nav>
+
         <div className="editor-form">
           {/* Basic Info */}
-          <div className="form-section">
+          <div className="form-section" hidden={activeTab !== 'details'}>
             <h3>Product Information</h3>
 
             <div className="form-group">
@@ -382,7 +429,7 @@ function ProductEditor() {
           </div>
 
           {/* Images */}
-          <div className="form-section">
+          <div className="form-section" hidden={activeTab !== 'images'}>
             <h3>Product Images</h3>
 
             <div className="image-upload">
@@ -433,7 +480,7 @@ function ProductEditor() {
           </div>
 
           {/* Status */}
-          <div className="form-section">
+          <div className="form-section" hidden={activeTab !== 'publishing'}>
             <h3>Availability & Status</h3>
 
             <div className="form-group">
@@ -474,6 +521,10 @@ function ProductEditor() {
 
           {/* Actions */}
           <div className="form-section action-buttons">
+            <span className={`editor-save-state ${dirty ? 'is-dirty' : ''}`}>
+              <LucideIcon name={dirty ? 'Circle' : 'CircleCheck'} size={15} />
+              {dirty ? 'Unsaved changes' : 'All changes saved'}
+            </span>
             <button
               className="btn-secondary"
               onClick={() => setPreviewMode(true)}

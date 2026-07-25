@@ -73,6 +73,15 @@ Nolan's Knives should feel:
 - Practical and work-focused in admin/business areas.
 - Clear and direct in customer workflows.
 
+## Brand Facts And Copy Guardrails
+
+- Nolan's Knives is based in Huntsville, Alabama.
+- Nolan is a self-taught bladesmith who is focused on learning and improving his work.
+- Keep public copy grounded in Nolan's actual work, current product records, and information Nolan has supplied.
+- Do not invent locations, awards, guarantees, material claims, production methods, timelines, or personal details.
+- Avoid decorative marketing "eyebrows," numbered editorial labels, and generic AI-style slogans when the actual page title or product content is clearer.
+- Homepage stacked cards should remain a recognizable part of the Nolan's Knives experience. Improve their readability and responsive behavior without removing the stacked interaction on larger screens.
+
 The site is not a soft lifestyle brand, not a beige artisan brochure, and not a colorful SaaS dashboard. It should feel like a custom knife shop with a serious craft standard.
 
 ## Design Principles
@@ -246,7 +255,7 @@ Do not add marketing-only hero sections when the user is trying to shop, request
 
 Admin and business dashboard pages should generally use:
 
-1. Workspace hero with eyebrow, title, concise supporting copy, and one primary action.
+1. Workspace title, concise supporting copy, and one primary action.
 2. Stats row when relevant.
 3. Tabs or sidebar navigation for major modes.
 4. Toolbar for search/filter/sort.

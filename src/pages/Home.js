@@ -8,18 +8,18 @@ import TimedCarousel from "./TimedCarousel"
 import StackedCards from "./StackedCards"
 import AutoScrollToTop from './autoScrollToTop';
 
-const items = [{name: "QUALITY", interval: 4500, src: "https://raw.githubusercontent.com/nolansknives/website-database/refs/heads/main/images/knife2.jpg", caption: " "},
-  {name: "DURABILITY", interval: 3000, src: "https://raw.githubusercontent.com/nolansknives/website-database/refs/heads/main/images/knife4.jpg", caption: " "},
-  {name: "ARTISTRY", interval: 3000, src: "https://raw.githubusercontent.com/nolansknives/website-database/refs/heads/main/images/knife7.jpg", caption: " "}];
+const items = [
+  {name: "QUALITY", interval: 4500, src: "https://raw.githubusercontent.com/nolansknives/website-database/refs/heads/main/images/knife2.jpg", caption: "Handmade knives shaped for purpose, built one at a time, and made to last."},
+  {name: "DURABILITY", interval: 4000, src: "https://raw.githubusercontent.com/nolansknives/website-database/refs/heads/main/images/knife4.jpg", caption: "Made for the hand, the task, and years of honest use."},
+  {name: "ARTISTRY", interval: 4000, src: "https://raw.githubusercontent.com/nolansknives/website-database/refs/heads/main/images/knife7.jpg", caption: "One-of-a-kind details shaped by fire, steel, and patience."}
+];
 
 const fallbackCards = [
-  {title: "Nolan's Knives", text: "Each knife is forged with precision and passion, whether it’s built for everyday use, outdoor adventure, or display as a one-of-a-kind piece", hrefText: "Go to Store", href: "/Store", src: "/images/knife6.jpg"},
-  {title: "Nolan's Brand", text: "With a focus on traditional techniques blended with modern innovation, Nolan’s Knives delivers tools that are not only sharp and reliable, but also showcase unique designs and materials", hrefText: "View Previous Works", href:"/Gallery", src: "/images/knife5.jpg"},
-  {title: "Nolan's Workshop", text: "Every blade is made to be trusted in the hand and admired for a lifetime", hrefText: "View the Store", href:"/Store", src: "/images/knife2.jpg"},
-  {title: "Nolan's Channel", text: `"I am a 16 year old self taught blacksmith, who loves the art of blade smithing and strives to always learn more and make better knives"`, hrefText: "Learn More", href: "https://www.youtube.com/@NolansKnives", src: "/images/YouTubeLogo.png"},
-  {title: "Nolan's Instagram", text: "Follow Nolan's Knives on Instagram!", hrefText: "Learn More", href: "https://www.instagram.com/nolansknives/", src: "/images/nolans_logo.jpg"},
-  {title: "Nolan's Gallery", text: "Browse finished work, experiments, and past builds from the shop.", hrefText: "View Gallery", href: "/Gallery", src: "/images/knife8.jpg"},
-]
+  {title: "Available Work", text: "Finished handmade knives with clear photography, pricing, materials, and availability.", hrefText: "Shop available knives", href: "/Store", src: "https://raw.githubusercontent.com/nolansknives/website-database/refs/heads/main/images/knife6.jpg"},
+  {title: "Built Around You", text: "Choose the purpose, profile, steel, handle, finish, and personal details. Nolan turns the brief into a practical quote and build plan.", hrefText: "Start a custom request", href:"/custom-knife-request", src: "https://raw.githubusercontent.com/nolansknives/website-database/refs/heads/main/images/knife5.jpg"},
+  {title: "Past Work", text: "Browse finished pieces, workshop experiments, and past builds for inspiration.", hrefText: "Explore the gallery", href:"/Gallery", src: "https://raw.githubusercontent.com/nolansknives/website-database/refs/heads/main/images/knife8.jpg"},
+  {title: "Meet the Maker", text: "A self-taught bladesmith focused on learning, improving, and making every knife better than the last.", hrefText: "About Nolan", href: "/about", src: "https://raw.githubusercontent.com/nolansknives/website-database/refs/heads/main/images/knife4.jpg"}
+];
 
 export default function Home() {
   const [cards, setCards] = useState(fallbackCards);

@@ -2,38 +2,49 @@
 
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>http://nolansknives.com/</loc>
-    <lastmod>2026-05-31</lastmod>
+    <loc>https://nolansknives.com/</loc>
+    <lastmod>2026-07-24</lastmod>
     <changefreq>daily</changefreq>
     
   </url>
 
 
   <url>
-    <loc>http://nolansknives.com/home</loc>
-    <lastmod>2026-05-31</lastmod>
+    <loc>https://nolansknives.com/home</loc>
+    <lastmod>2026-07-24</lastmod>
     <changefreq>daily</changefreq>
     
   </url>
   <!-- Add more pages like these -->
   <url>
-    <loc>http://nolansknives.com/store</loc>
-    <lastmod>2026-05-31</lastmod>
+    <loc>https://nolansknives.com/store</loc>
+    <lastmod>2026-07-24</lastmod>
     <changefreq>daily</changefreq>
    
   </url>
 
   <url>
-    <loc>http://nolansknives.com/gallery</loc>
-    <lastmod>2026-05-31</lastmod>
+    <loc>https://nolansknives.com/gallery</loc>
+    <lastmod>2026-07-24</lastmod>
     <changefreq>daily</changefreq>
     
   </url>
 
   <url>
-    <loc>http://nolansknives.com/goal</loc>
-    <lastmod>2026-05-31</lastmod>
-    <changefreq>daily</changefreq>
-    
+    <loc>https://nolansknives.com/custom-knife-request</loc>
+    <lastmod>2026-07-24</lastmod>
+    <changefreq>weekly</changefreq>
+  </url>
+
+  <url>
+    <loc>https://nolansknives.com/about</loc>
+    <lastmod>2026-07-24</lastmod>
+    <changefreq>monthly</changefreq>
+  </url>
+
+  <url>
+    <loc>https://nolansknives.com/contact</loc>
+    <lastmod>2026-07-24</lastmod>
+    <changefreq>monthly</changefreq>
   </url>
 </urlset>

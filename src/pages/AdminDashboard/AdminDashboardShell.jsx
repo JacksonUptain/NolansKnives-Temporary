@@ -1,5 +1,5 @@
-import React from 'react';
-import { NavLink, Routes, Route, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { NavLink, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Overview from './Overview';
 import Users from './Users';
 import AuditLogs from './AuditLogs';
@@ -11,14 +11,48 @@ import LucideIcon from '../../components/ui/LucideIcon';
 
 export default function AdminDashboardShell() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!mobileOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setMobileOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [mobileOpen]);
 
   return (
     <div className="admin-dashboard-shell">
-      <aside className="ad-sidebar">
-        <div className="ad-brand" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-          Site Admin
+      <header className="admin-mobile-header">
+        <button type="button" onClick={() => setMobileOpen(true)} aria-label="Open admin navigation"><LucideIcon name="Menu" size={20} /></button>
+        <div><span>Administration</span><strong>Nolan&apos;s Knives</strong></div>
+        <button type="button" onClick={() => navigate('/')} aria-label="Exit to public site"><LucideIcon name="ExternalLink" size={19} /></button>
+      </header>
+
+      {mobileOpen && <button className="admin-nav-scrim" type="button" aria-label="Close admin navigation" onClick={() => setMobileOpen(false)} />}
+
+      <aside className={`ad-sidebar ${mobileOpen ? 'is-open' : ''}`}>
+        <div className="ad-sidebar-heading">
+          <button type="button" className="ad-brand" onClick={() => navigate('/')}>
+            <span>Site Admin</span>
+            <small>Security & system tools</small>
+          </button>
+          <button type="button" className="admin-close-button" onClick={() => setMobileOpen(false)} aria-label="Close admin navigation">
+            <LucideIcon name="X" size={20} />
+          </button>
         </div>
-        <nav>
+        <nav aria-label="Administration">
           <ul>
             <li>
               <NavLink to="/admin" end className={({ isActive }) => isActive ? 'active' : ''}>
@@ -53,7 +87,7 @@ export default function AdminDashboardShell() {
           </ul>
         </nav>
 
-        <div className="ad-sidebar-footer" style={{ marginTop: 'auto', padding: '1.5rem' }}>
+        <div className="ad-sidebar-footer">
           <button className="bd-back-btn" onClick={() => navigate('/')}>
             <LucideIcon name="ArrowLeft" size={16} /> Exit to Site
           </button>

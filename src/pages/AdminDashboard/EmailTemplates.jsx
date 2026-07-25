@@ -337,8 +337,8 @@ export default function EmailTemplates() {
           <section className="template-editor-panel">
             <div className="template-editor-header">
               <div>
-                <p className="workspace-eyebrow">{selected.custom ? 'Custom' : 'System'}</p>
                 <h2>{selected.label}</h2>
+                <small>{selected.custom ? 'Custom template' : 'System template'}</small>
                 <p>{selected.description || 'No description yet.'}</p>
                 <small>Last saved: {formatDate(selected.updatedAt)}</small>
               </div>

@@ -92,7 +92,7 @@ function NolanStore() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [sortMode, setSortMode] = useState("featured");
-  const [showSold, setShowSold] = useState(true);
+  const [showSold, setShowSold] = useState(false);
   const [storeError, setStoreError] = useState("");
 
   useEffect(() => {
@@ -150,7 +150,8 @@ function NolanStore() {
     return sorted;
   }, [publicProducts, query, sortMode, showSold]);
 
-  const featuredProduct = filteredProducts[0] || publicProducts[0] || null;
+  const hasAvailableProducts = publicProducts.some((product) => product.publicStatus === 'available');
+  const featuredProduct = filteredProducts[0] || null;
 
   const handleBuyNow = (product) => {
     setStoreError("");
@@ -187,14 +188,15 @@ function NolanStore() {
     <main className="store-container">
       <section className="store-hero">
         <div className="store-hero-copy">
-          <p className="store-kicker">Nolan's Knives</p>
-          <h1>Available Work</h1>
+          <h1>{hasAvailableProducts ? 'Available Work' : 'New Work Coming Soon'}</h1>
           <p>
-            Finished handmade knives with clear photos, pricing, and details.
+            {hasAvailableProducts
+              ? 'Finished handmade knives with clear photos, pricing, and details.'
+              : 'There are no finished knives available to purchase right now. Browse past work or request a custom knife.'}
           </p>
           <div className="store-hero-actions">
-            <button className="store-primary-action" type="button" onClick={scrollToCollection}>
-              Shop knives <LucideIcon name="ArrowDown" size={16} />
+            <button className="store-primary-action" type="button" onClick={hasAvailableProducts ? scrollToCollection : () => navigate('/Gallery')}>
+              {hasAvailableProducts ? 'Shop knives' : 'View past work'} <LucideIcon name={hasAvailableProducts ? 'ArrowDown' : 'ArrowRight'} size={16} />
             </button>
             <button className="store-secondary-action" type="button" onClick={() => navigate('/custom-knife-request')}>
               Request custom
@@ -209,7 +211,6 @@ function NolanStore() {
             <>
               <RotatingProductMedia product={featuredProduct} className="featured-media" />
               <div className="store-feature-copy">
-                <p className="store-kicker">Featured Piece</p>
                 <h2>{featuredProduct.name || "Untitled Knife"}</h2>
                 <p>{shortDescription(featuredProduct)}</p>
                 <div className="store-feature-footer">
@@ -232,7 +233,7 @@ function NolanStore() {
             </>
           ) : (
             <div className="store-state-card hero-empty">
-              <h2>No knives listed</h2>
+              <h2>No knives available right now</h2>
               <p>New finished pieces will appear here when they are ready.</p>
             </div>
           )}
@@ -270,7 +271,6 @@ function NolanStore() {
       )}
 
       <section className="store-collection-heading" id="store-collection">
-        <p className="store-kicker">The Knives</p>
         <h2>Choose the piece that fits your hand.</h2>
       </section>
 

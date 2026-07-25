@@ -42,7 +42,7 @@ export default function Toast() {
       {toasts.map(toast => (
         <div key={toast.id} className={`toast toast-${toast.type}`}>
           <p>{toast.message}</p>
-          <button onClick={() => removeToast(toast.id)}>×</button>
+          <button type="button" onClick={() => removeToast(toast.id)} aria-label="Dismiss notification">×</button>
         </div>
       ))}
     </div>

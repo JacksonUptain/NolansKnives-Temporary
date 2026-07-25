@@ -1,25 +1,56 @@
 .admin-dashboard-shell {
   display: flex;
-  min-height: calc(100vh - 80px);
+  min-height: 100svh;
   background: #0a0a0a;
 }
 
 .ad-sidebar {
-  width: 260px;
+  position: sticky;
+  top: 0;
+  width: 280px;
+  height: 100svh;
+  flex: 0 0 280px;
   background: #111;
   border-right: 1px solid #222;
-  padding: 1.5rem 0;
+  padding: 1rem 0;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
 }
 
 .ad-brand {
-  padding: 0 1.5rem 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 100%;
+  padding: 0.75rem 1.25rem 1.1rem;
+  border: 0;
+  background: transparent;
   color: #ffcc00;
   font-weight: 700;
   font-size: 1.25rem;
+  text-align: left;
   text-transform: uppercase;
   letter-spacing: 1px;
+  cursor: pointer;
+}
+
+.ad-brand small {
+  color: #777;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+}
+
+.ad-sidebar-heading {
+  display: flex;
+  align-items: flex-start;
+}
+
+.admin-close-button,
+.admin-mobile-header,
+.admin-nav-scrim {
+  display: none;
 }
 
 .ad-sidebar nav ul {
@@ -53,8 +84,13 @@
 
 .ad-main {
   flex: 1;
+  min-width: 0;
   padding: 2rem;
-  overflow-y: auto;
+}
+
+.ad-sidebar-footer {
+  margin-top: auto;
+  padding: 1rem 1.25rem 0;
 }
 
 .admin-dashboard-page {
@@ -629,15 +665,6 @@
 .template-editor-header h2 {
   margin: 0 0 0.25rem;
   color: #ffcc00;
-}
-
-.workspace-eyebrow {
-  margin: 0 0 0.35rem;
-  color: #d8b949;
-  font-size: 0.76rem;
-  font-weight: 800;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
 }
 
 .template-variable-row {
@@ -1276,6 +1303,114 @@
   .audit-log-card,
   .audit-log-meta {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 980px) {
+  .admin-dashboard-shell {
+    display: block;
+    padding-top: 64px;
+  }
+
+  .ad-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 80;
+    width: min(88vw, 320px);
+    height: 100dvh;
+    padding: 0.75rem 0;
+    border-right: 1px solid #303030;
+    box-shadow: 24px 0 70px rgba(0, 0, 0, 0.5);
+    transform: translateX(-105%);
+    transition: transform var(--nk-transition-base);
+  }
+
+  .ad-sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  .admin-close-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin: 0.35rem 0.75rem 0 0;
+    border: 1px solid #333;
+    border-radius: 8px;
+    background: #171717;
+    color: #eee;
+    cursor: pointer;
+  }
+
+  .admin-mobile-header {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 50;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    align-items: center;
+    gap: 0.8rem;
+    min-height: 64px;
+    padding: 0.55rem 1rem;
+    border-bottom: 1px solid #282828;
+    background: rgba(12, 12, 12, 0.96);
+    backdrop-filter: blur(16px);
+  }
+
+  .admin-mobile-header > button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid #333;
+    border-radius: 8px;
+    background: #171717;
+    color: #f4f4f4;
+    cursor: pointer;
+  }
+
+  .admin-mobile-header > div {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .admin-mobile-header span {
+    color: #777;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .admin-mobile-header strong {
+    overflow: hidden;
+    color: #ffcc00;
+    font-size: 0.92rem;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .admin-nav-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: block;
+    border: 0;
+    background: rgba(0, 0, 0, 0.68);
+  }
+
+  .ad-main {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 430px) {
+  .ad-main {
+    padding: 0.75rem;
   }
 }
 

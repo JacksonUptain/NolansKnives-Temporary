@@ -192,7 +192,6 @@ export default function MailgunWebhooks() {
       <section className="webhook-panel webhook-guide-panel">
         <div className="webhook-panel-header">
           <div>
-            <p className="workspace-eyebrow">Guided Setup</p>
             <h2>Choose What Mailgun Should Send Here</h2>
           </div>
           <span className={`status-badge status-${status?.signingConfigured ? 'active' : 'warning'}`}>
@@ -228,7 +227,6 @@ export default function MailgunWebhooks() {
         <section className="webhook-panel webhook-builder-panel">
           <div className="webhook-panel-header">
             <div>
-              <p className="workspace-eyebrow">Mailgun Fields</p>
               <h2>{selectedPreset.name}</h2>
             </div>
             <button type="button" className="action-btn secondary" onClick={() => copyText(setupSummary, 'Setup copied.')}>
@@ -302,7 +300,6 @@ export default function MailgunWebhooks() {
         <section className="webhook-panel webhook-mailgun-preview">
           <div className="webhook-panel-header">
             <div>
-              <p className="workspace-eyebrow">Mailgun Preview</p>
               <h2>What To Select</h2>
             </div>
           </div>
@@ -343,7 +340,6 @@ export default function MailgunWebhooks() {
         <section className="webhook-panel webhook-how-it-works">
           <div className="webhook-panel-header">
             <div>
-              <p className="workspace-eyebrow">Plain English</p>
               <h2>What Happens After Mailgun Posts</h2>
             </div>
           </div>
@@ -369,7 +365,6 @@ export default function MailgunWebhooks() {
         <section className="webhook-panel">
           <div className="webhook-panel-header">
             <div>
-              <p className="workspace-eyebrow">Status</p>
               <h2>Event Activity</h2>
             </div>
             <LucideIcon name="Activity" size={22} />
@@ -400,7 +395,6 @@ export default function MailgunWebhooks() {
       <section className="webhook-panel webhook-walkthrough-panel">
         <div className="webhook-panel-header">
           <div>
-            <p className="workspace-eyebrow">Walkthrough</p>
             <h2>Adding It In Mailgun</h2>
           </div>
         </div>
@@ -424,7 +418,6 @@ export default function MailgunWebhooks() {
       <section className="webhook-panel webhook-events-table-panel">
         <div className="webhook-panel-header">
           <div>
-            <p className="workspace-eyebrow">Recent</p>
             <h2>Webhook Events</h2>
           </div>
         </div>

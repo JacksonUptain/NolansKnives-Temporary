@@ -246,7 +246,7 @@ export default function MyKnives() {
                 const image = isOrder ? firstImage(knife) : "";
 
                 return (
-                  <button key={item.key} className={`purchase-card purchase-card-button ${isSelected ? "selected" : ""}`} onClick={() => setSelectedKey(item.key)}>
+                  <article key={item.key} className={`purchase-card purchase-card-button ${isSelected ? "selected" : ""}`} onClick={() => setSelectedKey(item.key)}>
                     {image ? (
                       <div className="purchase-image">
                         <img src={image} alt={knife.name || "Knife"} />
@@ -299,7 +299,7 @@ export default function MyKnives() {
                         <LucideIcon name="MessageSquare" size={14} /> <span>{isOrder || request.chatEnabled ? "Chat" : "Details"}</span>
                       </button>
                     </div>
-                  </button>
+                  </article>
                 );
               })}
             </div>

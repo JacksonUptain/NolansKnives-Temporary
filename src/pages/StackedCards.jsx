@@ -12,7 +12,7 @@ function StackedCards({ items }) {
 
     return (
    
-        <div className="stacked-cards-wrapper">
+        <section className="stacked-cards-wrapper" aria-label="Explore Nolan's Knives">
             {items.map((item, index) => (
                 (() => {
                     const isExternal = /^https?:\/\//i.test(item.href || '');
@@ -22,34 +22,27 @@ function StackedCards({ items }) {
 
                     return (
                 <Card
-                    key={index}
+                    key={item.id || `${item.title}-${index}`}
                     className="stacked-card"
-                    style={{
-                            position: 'sticky',
-                            top: `${(index + 1) * 40}px`,
-                            border: '3px solid',
-                            borderRadius: '12px',
-                            borderColor: `hsl(45, 100%, ${40 + index * 7}%)` 
-                        }}
+                    style={{ "--stack-index": index }}
                 >
                     <div className="stacked-card-text">
                         <h2>{item.title}</h2>
                         <p>{item.text}</p>
-                        <Button variant="outline-light" className="stacked-card-button" {...buttonProps}> {item.hrefText} </Button>
+                        <Button variant="outline-light" className="stacked-card-button" {...buttonProps}>{item.hrefText}</Button>
                     </div>
                     {item.src && (
                         <Image
                             src={item.src}
                             alt={item.title}
                             className="stacked-card-image"
-                            style={{opacity: "1 !important"}}
                         />
                     )}
                 </Card>
                     );
                 })()
             ))}
-        </div>
+        </section>
 
 
          

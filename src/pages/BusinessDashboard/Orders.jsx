@@ -184,7 +184,7 @@ function messageLabel(message, currentUid) {
   return 'Customer';
 }
 
-export default function Orders() {
+export default function Orders({ view = 'orders' }) {
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [productsById, setProductsById] = useState({});
@@ -194,7 +194,7 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('all');
-  const [fulfillmentFilter, setFulfillmentFilter] = useState('all');
+  const [fulfillmentFilter, setFulfillmentFilter] = useState(view === 'fulfillment' ? 'unfulfilled' : 'all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState('');
   const [statusDrafts, setStatusDrafts] = useState({});
@@ -204,6 +204,10 @@ export default function Orders() {
   const [markingRead, setMarkingRead] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
+
+  useEffect(() => {
+    setFulfillmentFilter(view === 'fulfillment' ? 'unfulfilled' : 'all');
+  }, [view]);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -475,9 +479,10 @@ export default function Orders() {
     <div className="business-workspace business-orders-page">
       <div className="workspace-hero">
         <div>
-          <p className="workspace-eyebrow">Fulfillment</p>
-          <h1>Orders</h1>
-          <p>See the complete order, product, customer, payment, shipping, and conversation history in one place.</p>
+          <h1>{view === 'fulfillment' ? 'Fulfillment' : 'Orders'}</h1>
+          <p>{view === 'fulfillment'
+            ? 'Move paid orders from preparation to shipment and delivery with tracking kept in one place.'
+            : 'See the complete order, product, customer, payment, shipping, and conversation history in one place.'}</p>
         </div>
       </div>
 

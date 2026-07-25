@@ -31,6 +31,12 @@
 }
 
 .toast button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
   background: none;
   border: none;
   color: #999;

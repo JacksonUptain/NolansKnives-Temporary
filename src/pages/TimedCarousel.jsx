@@ -1,58 +1,37 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Carousel, CarouselItem, CarouselCaption } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 import "./main.css";
 
 function TimedCarousel({ items }) {
     const hasItems = Boolean(items && items.length > 0);
 
-    useEffect(() => {
-        if (!hasItems) return;
-        const handleScroll = () => {
-            const indicator = document.getElementById("indicator");
-            if (indicator) {
-                if (window.scrollY > 50) {
-                    indicator.style.opacity = "0";
-                    indicator.style.pointerEvents = "none";
-                } else {
-                    indicator.style.opacity = "1";
-                    indicator.style.pointerEvents = "auto";
-                }
-            }
-        };
-
-        handleScroll();
-        window.addEventListener("scroll", handleScroll, { passive: true });
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, [hasItems]);
-
     if (!hasItems) return null;
 
     return (
         <Carousel
-            style={{
-                backgroundColor: "black",
-                position: "sticky",
-                top: "0px",
-                height: "100vh",
-            }}
+            className="home-hero-carousel"
+            fade
+            pause="hover"
+            touch
         >
             {items.map((item, index) => (
-                <CarouselItem key={index} interval={item.interval}>
+                <CarouselItem key={item.id || `${item.name}-${index}`} interval={item.interval}>
                     <img
-                        className="d-block w-100"
+                        className="home-hero-image"
                         src={item.src}
                         alt={item.name}
-                        style={{ height: '100vh', objectFit: 'cover' }}
                     />
                     <CarouselCaption>
-                        <h3>{item.name}</h3>
-                    </CarouselCaption>
-                    <div className="scroll-indicator" id="indicator">
-                        <div className="mouse">
-                            <div className="wheel"></div>
+                        <h1>{item.name || "Nolan's Knives"}</h1>
+                        <p className="home-hero-summary">
+                          {item.caption?.trim() || "View available knives or submit a custom request for Nolan to review."}
+                        </p>
+                        <div className="home-hero-actions">
+                          <Link to="/Store" className="home-hero-primary">Shop available knives</Link>
+                          <Link to="/custom-knife-request" className="home-hero-secondary">Request a custom knife</Link>
                         </div>
-                        <p>SCROLL</p>
-                    </div>
+                    </CarouselCaption>
                 </CarouselItem>
             ))}
         </Carousel>

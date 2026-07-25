@@ -37,10 +37,10 @@
       "$productId": {
         ".write": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin'",
         "sold": {
-          ".write": "auth.token.role === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'admin'"
+          ".write": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business'"
         },
         "saleStatus": {
-          ".write": "auth.token.role === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'admin'"
+          ".write": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business'"
         }
       }
     },

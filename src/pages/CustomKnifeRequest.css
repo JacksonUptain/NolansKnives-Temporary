@@ -67,7 +67,6 @@
   transform: translateX(-2px);
 }
 
-.request-eyebrow,
 .step-heading span {
   margin: 0;
   color: var(--request-gold);
@@ -82,7 +81,7 @@
   margin: 0;
   color: var(--request-gold);
   font-family: "Oswald", var(--font-family-sans, Arial, sans-serif);
-  font-size: clamp(2.8rem, 6vw, 5rem);
+  font-size: clamp(2.6rem, 5vw, 4.2rem);
   font-weight: 800;
   line-height: 1;
   letter-spacing: 0;
@@ -304,7 +303,7 @@
 .step-heading h2 {
   margin: 0;
   color: #ffffff;
-  font-size: clamp(1.55rem, 3vw, 2.35rem);
+  font-size: clamp(1.5rem, 2.5vw, 2.05rem);
   font-weight: 750;
   letter-spacing: 0;
   line-height: 1.08;
@@ -817,7 +816,7 @@
   margin: 0;
   color: var(--request-gold, #ffcc00);
   font-family: "Oswald", var(--font-family-sans, Arial, sans-serif);
-  font-size: clamp(2.4rem, 6vw, 4.2rem);
+  font-size: clamp(2.2rem, 5vw, 3.5rem);
   font-weight: 800;
   line-height: 1;
 }
