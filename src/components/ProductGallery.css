@@ -7,7 +7,7 @@
 .pg-main {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: auto;
   background: #111;
   border-radius: 8px;
   overflow: hidden;
@@ -19,8 +19,7 @@
 
 .pg-main-img {
   width: 100%;
-  height: 100%;
-  object-fit: contain;
+  height: auto;
 }
 
 .pg-prev, .pg-next {
@@ -48,7 +47,7 @@
 
 .pg-thumb {
   width: 104px;
-  height: 66px;
+  height: auto;
   background: #111;
   border: 2px solid #2b2b2b;
   border-radius: 6px;
@@ -56,7 +55,7 @@
   cursor: pointer;
 }
 
-.pg-thumb img { width: 100%; height: 100%; object-fit: contain; }
+.pg-thumb img { display: block; width: 100%; height: auto; }
 
 .pg-thumb.active { border-color: #ffcc00; box-shadow: 0 0 0 2px rgba(255,204,0,0.12); }
 

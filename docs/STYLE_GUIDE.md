@@ -81,7 +81,7 @@ Nolan's Knives should feel:
 - Do not invent locations, awards, guarantees, material claims, production methods, timelines, or personal details.
 - Avoid decorative marketing "eyebrows," numbered editorial labels, and generic AI-style slogans when the actual page title or product content is clearer.
 - Homepage stacked cards should remain a recognizable part of the Nolan's Knives experience. Improve their readability and responsive behavior without removing the stacked interaction on larger screens.
-- Frame knife photography in a wide 16:10 ratio by default and use `object-fit: contain` on a dark background. Never crop away a blade tip or handle to fill a portrait or square container.
+- Let primary knife photography keep its natural aspect ratio at the full available width. Avoid fixed-ratio frames and letterboxing; small thumbnails may use a wide crop, but primary images must keep the full blade tip and handle visible.
 - The optional priority deposit is 15% of the request estimate. It enables priority review and messages, is credited toward an accepted final quote, and can be refunded if the final quote is declined. A request can also be submitted without payment for standard review.
 
 The site is not a soft lifestyle brand, not a beige artisan brochure, and not a colorful SaaS dashboard. It should feel like a custom knife shop with a serious craft standard.

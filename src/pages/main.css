@@ -29,16 +29,10 @@ html {
 .home-hero-carousel,
 .home-hero-carousel .carousel-inner,
 .home-hero-carousel .carousel-item {
-  height: 100svh;
-  min-height: 620px;
-  max-height: 980px;
+  height: auto;
+  min-height: 0;
+  max-height: none;
   background: var(--nk-black);
-}
-
-.home-hero-carousel .carousel-item {
-  background-image: var(--home-hero-image);
-  background-position: center;
-  background-size: cover;
 }
 
 .home-hero-carousel .carousel-item::before,
@@ -61,11 +55,9 @@ html {
 }
 
 .home-hero-image {
+  display: block;
   width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center;
-  background: rgba(0, 0, 0, 0.24);
+  height: auto;
   animation: home-image-settle 8s ease-out both;
 }
 
@@ -248,12 +240,11 @@ html {
   max-width: none !important;
   height: auto !important;
   max-height: none !important;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: auto;
   margin: 0 !important;
   border: 1px solid var(--nk-border);
   border-radius: var(--nk-radius-2xl);
-  object-fit: contain;
-  background: var(--nk-bg-deep);
+  object-fit: initial;
   box-shadow: var(--nk-shadow-lg);
 }
 
@@ -266,13 +257,18 @@ html {
   .home-hero-carousel,
   .home-hero-carousel .carousel-inner,
   .home-hero-carousel .carousel-item {
-    min-height: 680px;
-    height: 100svh;
+    min-height: 0;
+    height: auto;
   }
 
   .home-hero-carousel .carousel-caption {
-    bottom: 5.5rem;
-    width: min(82vw, 660px);
+    position: relative;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    width: 100%;
+    padding: clamp(1.6rem, 5vw, 2.6rem) clamp(20px, 5vw, 40px) 5rem;
+    background: var(--nk-black);
   }
 
   .stacked-card {
@@ -300,9 +296,9 @@ html {
   .home-hero-carousel,
   .home-hero-carousel .carousel-inner,
   .home-hero-carousel .carousel-item {
-    min-height: 640px;
-    height: 100svh;
-    max-height: 860px;
+    min-height: 0;
+    height: auto;
+    max-height: none;
   }
 
   .home-hero-carousel .carousel-item::before {
@@ -312,10 +308,11 @@ html {
   }
 
   .home-hero-carousel .carousel-caption {
-    right: 20px;
-    bottom: 4.6rem;
-    left: 20px;
-    width: auto;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    width: 100%;
+    padding: 1.5rem 20px 4.75rem;
   }
 
   .home-hero-carousel .carousel-caption h1 {
@@ -370,12 +367,12 @@ html {
   .home-hero-carousel,
   .home-hero-carousel .carousel-inner,
   .home-hero-carousel .carousel-item {
-    min-height: 560px;
-    height: 100svh;
+    min-height: 0;
+    height: auto;
   }
 
   .home-hero-carousel .carousel-caption {
-    bottom: 4rem;
+    bottom: auto;
   }
 
   .home-hero-carousel .carousel-caption h1 {

@@ -283,7 +283,7 @@
 .image-item {
   position: relative;
   overflow: hidden;
-  min-height: 140px;
+  min-height: 0;
   border: 1px solid #2b2b2b;
   border-radius: 8px;
   background: #0d0d0d;
@@ -299,8 +299,7 @@
 
 .image-item img {
   width: 100%;
-  height: 160px;
-  object-fit: contain;
+  height: auto;
   display: block;
 }
 
@@ -478,8 +477,8 @@
 
 .preview-image img {
   width: min(100%, 520px);
+  height: auto;
   max-height: 460px;
-  object-fit: contain;
   border-radius: 8px;
   border: 1px solid #303030;
 }
