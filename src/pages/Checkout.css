@@ -48,6 +48,7 @@
 }
 
 .checkout-knife-image {
+  height: clamp(220px, 32vw, 380px);
   margin-bottom: 1rem;
   border-radius: 8px;
   overflow: hidden;
@@ -55,8 +56,10 @@
 
 .checkout-knife-image img {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
+  object-fit: cover;
+  object-position: center;
 }
 
 .summary-details h4 {

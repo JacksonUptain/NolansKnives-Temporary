@@ -156,9 +156,11 @@
 
 .product-card-image {
   width: 100%;
-  height: auto;
+  height: clamp(190px, 22vw, 290px);
   aspect-ratio: auto;
   background: #111;
+  object-fit: cover;
+  object-position: center;
   display: block;
 }
 
@@ -472,6 +474,7 @@
 
 .image-item {
   position: relative;
+  height: clamp(150px, 18vw, 220px);
   aspect-ratio: auto;
   border: 1px solid #2b2b2b;
   border-radius: 8px;
@@ -493,7 +496,9 @@
 
 .image-item img {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
   display: block;
 }
 

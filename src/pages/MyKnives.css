@@ -153,6 +153,7 @@
 }
 
 .purchase-image {
+  height: clamp(190px, 24vw, 300px);
   aspect-ratio: auto;
   overflow: hidden;
   background: #0a0a0a;
@@ -161,7 +162,9 @@
 .purchase-image img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .request-image-placeholder {

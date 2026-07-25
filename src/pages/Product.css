@@ -95,6 +95,7 @@
 .store-media-placeholder {
   position: relative;
   width: 100%;
+  height: clamp(240px, 28vw, 420px);
   aspect-ratio: auto;
   overflow: hidden;
   border: 1px solid #232323;
@@ -105,7 +106,7 @@
 
 .store-feature-panel .store-rotating-media,
 .store-feature-panel .store-media-placeholder {
-  height: auto;
+  height: clamp(260px, 25vw, 390px);
   min-height: 0;
   aspect-ratio: auto;
   border: none;
@@ -117,14 +118,15 @@
   position: absolute;
   inset: 0;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
   opacity: 0;
   transform: none;
   transition: opacity 700ms ease;
 }
 
 .store-rotating-media img.active {
-  position: relative;
   opacity: 1;
 }
 
@@ -474,6 +476,7 @@
 
   .store-feature-panel .store-rotating-media,
   .store-feature-panel .store-media-placeholder {
+    height: clamp(220px, 58vw, 360px);
     min-height: 0;
     aspect-ratio: auto;
   }

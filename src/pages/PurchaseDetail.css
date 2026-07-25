@@ -60,12 +60,28 @@
 
 .detail-image {
   width: 100%;
-  height: auto;
+  height: clamp(240px, 36vw, 440px);
   aspect-ratio: auto;
   border-radius: 8px;
   margin-bottom: 1.5rem;
   max-height: 400px;
   background: #080808;
+  object-fit: cover;
+  object-position: center;
+}
+
+.image-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.detail-gallery-image {
+  width: 100%;
+  height: clamp(120px, 16vw, 180px);
+  border-radius: 8px;
+  object-fit: cover;
+  object-position: center;
 }
 
 .detail-info {

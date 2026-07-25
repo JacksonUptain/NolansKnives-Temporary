@@ -305,7 +305,7 @@
 
 .product-detail-gallery .pg-thumb {
   width: 100%;
-  height: auto;
+  height: clamp(56px, 8vw, 74px);
   aspect-ratio: auto;
   border-width: 1px;
   border-color: #2b2b2b;
@@ -459,8 +459,10 @@
 
 .product-image-strip img {
   width: 100%;
-  height: auto;
+  height: clamp(210px, 24vw, 340px);
   aspect-ratio: auto;
+  object-fit: cover;
+  object-position: center;
   border: 1px solid #242424;
   border-radius: 8px;
   background: #0b0b0b;

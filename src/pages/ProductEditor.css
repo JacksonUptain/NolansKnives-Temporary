@@ -284,6 +284,7 @@
   position: relative;
   overflow: hidden;
   min-height: 0;
+  height: clamp(150px, 18vw, 220px);
   border: 1px solid #2b2b2b;
   border-radius: 8px;
   background: #0d0d0d;
@@ -299,7 +300,9 @@
 
 .image-item img {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
   display: block;
 }
 
@@ -477,8 +480,10 @@
 
 .preview-image img {
   width: min(100%, 520px);
-  height: auto;
+  height: clamp(240px, 38vw, 420px);
   max-height: 460px;
+  object-fit: cover;
+  object-position: center;
   border-radius: 8px;
   border: 1px solid #303030;
 }
@@ -560,8 +565,12 @@
     grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
   }
 
-  .image-item img {
+  .image-item {
     height: 132px;
+  }
+
+  .image-item img {
+    height: 100%;
   }
 }
 

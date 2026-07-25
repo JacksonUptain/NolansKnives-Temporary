@@ -57,7 +57,9 @@ html {
 .home-hero-image {
   display: block;
   width: 100%;
-  height: auto;
+  height: clamp(520px, 56vw, 860px);
+  object-fit: cover;
+  object-position: center;
   animation: home-image-settle 8s ease-out both;
 }
 
@@ -238,13 +240,14 @@ html {
 .stacked-card-image {
   width: 100% !important;
   max-width: none !important;
-  height: auto !important;
+  height: clamp(240px, 26vw, 420px) !important;
   max-height: none !important;
   aspect-ratio: auto;
   margin: 0 !important;
   border: 1px solid var(--nk-border);
   border-radius: var(--nk-radius-2xl);
-  object-fit: initial;
+  object-fit: cover;
+  object-position: center;
   box-shadow: var(--nk-shadow-lg);
 }
 
@@ -271,6 +274,10 @@ html {
     background: var(--nk-black);
   }
 
+  .home-hero-image {
+    height: clamp(300px, 56vw, 500px);
+  }
+
   .stacked-card {
     position: static !important;
     grid-template-columns: 1fr;
@@ -288,7 +295,7 @@ html {
   }
 
   .stacked-card-image {
-    height: min(62vw, 520px) !important;
+    height: clamp(240px, 42vw, 360px) !important;
   }
 }
 
@@ -313,6 +320,10 @@ html {
     left: auto;
     width: 100%;
     padding: 1.5rem 20px 4.75rem;
+  }
+
+  .home-hero-image {
+    height: clamp(220px, 58vw, 330px);
   }
 
   .home-hero-carousel .carousel-caption h1 {
@@ -358,7 +369,7 @@ html {
   }
 
   .stacked-card-image {
-    height: auto !important;
+    height: clamp(210px, 56vw, 340px) !important;
     min-height: 0;
   }
 }

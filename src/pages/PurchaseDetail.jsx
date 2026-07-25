@@ -298,7 +298,7 @@ export default function PurchaseDetail() {
               {knife.src && knife.src.length > 0 ? (
                 <div className="image-gallery">
                   {knife.src.map((src, i) => (
-                    <img key={i} src={src} alt={`${knife.name || 'Knife'} angle ${i + 1}`} style={{maxWidth: 200, marginRight: 12}} />
+                    <img className="detail-gallery-image" key={i} src={src} alt={`${knife.name || 'Knife'} angle ${i + 1}`} />
                   ))}
                 </div>
               ) : (

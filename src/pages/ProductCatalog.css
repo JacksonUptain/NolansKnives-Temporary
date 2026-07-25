@@ -165,7 +165,7 @@
 
 .product-image {
   width: 100%;
-  height: auto;
+  height: clamp(190px, 22vw, 290px);
   aspect-ratio: auto;
   background: #111;
   display: flex;
@@ -177,7 +177,9 @@
 .product-image img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .product-image-placeholder {
@@ -371,6 +373,8 @@
 .image-cell img {
   display: block;
   background: #080808;
+  object-fit: cover;
+  object-position: center;
 }
 
 .image-cell .no-image {
