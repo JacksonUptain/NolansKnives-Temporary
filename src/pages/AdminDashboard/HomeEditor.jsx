@@ -11,7 +11,7 @@ const emptyCard = {
   title: '',
   text: '',
   hrefText: 'Learn More',
-  href: '/Store',
+  href: '/store',
   src: '',
   sortOrder: '',
   isVisible: true
@@ -161,7 +161,7 @@ export default function HomeEditor() {
         title: newCard.title.trim(),
         text: newCard.text.trim(),
         hrefText: newCard.hrefText.trim() || 'Learn More',
-        href: newCard.href.trim() || '/Store',
+        href: newCard.href.trim() || '/store',
         src: toImageArray(newCard.src),
         sortOrder: Number(newCard.sortOrder || cards.length),
         isVisible: newCard.isVisible !== false,
@@ -218,7 +218,7 @@ export default function HomeEditor() {
         title: draft.title ?? card.title ?? '',
         text: draft.text ?? card.text ?? '',
         hrefText: draft.hrefText ?? card.hrefText ?? 'Learn More',
-        href: draft.href ?? card.href ?? '/Store',
+        href: draft.href ?? card.href ?? '/store',
         src: toImageArray(draft.src ?? card.src ?? ''),
         sortOrder: Number(draft.sortOrder ?? card.sortOrder ?? 0),
         isVisible: draft.isVisible ?? card.isVisible ?? true,
@@ -315,7 +315,7 @@ export default function HomeEditor() {
           <h1>Home Editor</h1>
           <p>Manage the home page carousel, cards, images, copy, and button destinations.</p>
         </div>
-        <a className="action-btn secondary" href="/Home" target="_blank" rel="noreferrer">
+        <a className="action-btn secondary" href="/" target="_blank" rel="noreferrer">
           <LucideIcon name="ExternalLink" size={16} /> View Home
         </a>
       </div>

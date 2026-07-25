@@ -1,0 +1,143 @@
+{
+  "generatedFrom": "seo/seo.config.json",
+  "$schema": "./seo.config.schema.json",
+  "version": 1,
+  "site": {
+    "name": "Nolan's Knives",
+    "baseUrl": "https://nolansknives.com",
+    "language": "en-US",
+    "locale": "en_US",
+    "defaultImage": "/og.png",
+    "defaultImageWidth": 1734,
+    "defaultImageHeight": 907,
+    "defaultImageAlt": "Nolan's Knives in Huntsville, Alabama",
+    "email": "nolansknives0@gmail.com",
+    "location": {
+      "city": "Huntsville",
+      "region": "Alabama",
+      "country": "US"
+    },
+    "description": "Handmade knives, past builds, and custom knife requests from Nolan's Knives in Huntsville, Alabama."
+  },
+  "pages": [
+    {
+      "id": "home",
+      "path": "/",
+      "title": "Handmade Knives in Huntsville, AL | Nolan's Knives",
+      "description": "Explore available handmade knives, past builds, and custom knife requests from Nolan's Knives, a self-taught bladesmith based in Huntsville, Alabama.",
+      "schemaType": "WebPage",
+      "index": true,
+      "sitemap": {
+        "include": true,
+        "changeFrequency": "weekly",
+        "priority": 1
+      }
+    },
+    {
+      "id": "store",
+      "path": "/store",
+      "title": "Available Handmade Knives | Nolan's Knives",
+      "description": "View finished handmade knives currently available from Nolan's Knives, with clear photos, specifications, pricing, and availability for each piece.",
+      "schemaType": "CollectionPage",
+      "index": true,
+      "sitemap": {
+        "include": true,
+        "changeFrequency": "daily",
+        "priority": 0.9
+      }
+    },
+    {
+      "id": "gallery",
+      "path": "/gallery",
+      "title": "Custom Knife Gallery | Nolan's Knives",
+      "description": "Browse completed knives and past builds from Nolan's Knives in Huntsville, Alabama, including blade profiles, handle materials, finishes, and details.",
+      "schemaType": "CollectionPage",
+      "index": true,
+      "sitemap": {
+        "include": true,
+        "changeFrequency": "monthly",
+        "priority": 0.8
+      }
+    },
+    {
+      "id": "custom-request",
+      "path": "/custom-knife-request",
+      "title": "Request a Custom Knife | Nolan's Knives",
+      "description": "Submit a custom knife request to Nolan with your intended use, design preferences, materials, budget, timing, and delivery preference for review.",
+      "schemaType": "WebPage",
+      "index": true,
+      "sitemap": {
+        "include": true,
+        "changeFrequency": "monthly",
+        "priority": 0.9
+      }
+    },
+    {
+      "id": "about",
+      "path": "/about",
+      "title": "About Nolan's Knives | Huntsville, Alabama",
+      "description": "Learn about Nolan, a self-taught bladesmith in Huntsville, Alabama, and how custom requests, quotes, deposits, build updates, and delivery work.",
+      "schemaType": "AboutPage",
+      "index": true,
+      "sitemap": {
+        "include": true,
+        "changeFrequency": "yearly",
+        "priority": 0.7
+      }
+    },
+    {
+      "id": "contact",
+      "path": "/contact",
+      "title": "Contact Nolan's Knives | Huntsville, Alabama",
+      "description": "Contact Nolan's Knives about available knives, custom requests, or an existing order. Customers can also sign in for messages and order updates.",
+      "schemaType": "ContactPage",
+      "index": true,
+      "sitemap": {
+        "include": true,
+        "changeFrequency": "yearly",
+        "priority": 0.7
+      }
+    },
+    {
+      "id": "knife-detail",
+      "pathPattern": "/product/:productId",
+      "title": "Knife Details | Nolan's Knives",
+      "description": "View photos, specifications, availability, and purchase details for a finished knife from Nolan's Knives in Huntsville, Alabama.",
+      "schemaType": "ItemPage",
+      "index": true,
+      "sitemap": {
+        "include": false
+      }
+    }
+  ],
+  "aliases": [
+    {
+      "from": "/home",
+      "to": "/"
+    },
+    {
+      "from": "/Home",
+      "to": "/"
+    },
+    {
+      "from": "/Store",
+      "to": "/store"
+    },
+    {
+      "from": "/Gallery",
+      "to": "/gallery"
+    }
+  ],
+  "noindexPatterns": [
+    "/account",
+    "/account/*",
+    "/checkout/*",
+    "/my-account",
+    "/my-knives",
+    "/my-knives/*",
+    "/custom-knife/confirmation/*",
+    "/business/*",
+    "/admin/*",
+    "/unauthorized"
+  ]
+}

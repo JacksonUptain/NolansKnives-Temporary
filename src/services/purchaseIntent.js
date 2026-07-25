@@ -1,7 +1,7 @@
 const STORAGE_KEY = "nk_purchase_intent";
 const MAX_INTENT_AGE_MS = 60 * 60 * 1000;
 
-export function savePurchaseIntent({ knifeId, returnTo = "/Store" }) {
+export function savePurchaseIntent({ knifeId, returnTo = "/store" }) {
   if (!knifeId) return;
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ knifeId, returnTo, savedAt: Date.now() }));
 }

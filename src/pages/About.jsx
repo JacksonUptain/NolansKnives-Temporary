@@ -18,7 +18,7 @@ export default function About() {
             Nolan is a self-taught bladesmith based in Huntsville, Alabama. He continues to study the craft and applies what he learns to each new knife.
           </p>
           <div className="public-info-actions">
-            <button className="public-info-primary" type="button" onClick={() => navigate("/Gallery")}>
+            <button className="public-info-primary" type="button" onClick={() => navigate("/gallery")}>
               View the gallery <LucideIcon name="ArrowRight" size={17} />
             </button>
             <button className="public-info-secondary" type="button" onClick={() => navigate("/custom-knife-request")}>

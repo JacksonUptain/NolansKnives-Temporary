@@ -33,7 +33,7 @@ function Product({ product, expanded }) {
     }
 
     if (!isAuthenticated) {
-      savePurchaseIntent({ knifeId: product.id, returnTo: "/Store" });
+      savePurchaseIntent({ knifeId: product.id, returnTo: "/store" });
       showToast("Sign in to continue checkout.", "info");
       navigate("/account", { state: { from: `/checkout/${product.id}` } });
       return;

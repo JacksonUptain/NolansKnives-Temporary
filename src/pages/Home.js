@@ -15,9 +15,9 @@ const items = [
 ];
 
 const fallbackCards = [
-  {title: "Available Work", text: "Finished handmade knives with clear photography, pricing, materials, and availability.", hrefText: "Shop available knives", href: "/Store", src: "https://raw.githubusercontent.com/nolansknives/website-database/refs/heads/main/images/knife6.jpg"},
+  {title: "Available Work", text: "Finished handmade knives with clear photography, pricing, materials, and availability.", hrefText: "Shop available knives", href: "/store", src: "https://raw.githubusercontent.com/nolansknives/website-database/refs/heads/main/images/knife6.jpg"},
   {title: "Built Around You", text: "Choose the purpose, profile, steel, handle, finish, and personal details. Nolan turns the brief into a practical quote and build plan.", hrefText: "Start a custom request", href:"/custom-knife-request", src: "https://raw.githubusercontent.com/nolansknives/website-database/refs/heads/main/images/knife5.jpg"},
-  {title: "Past Work", text: "Browse finished pieces, workshop experiments, and past builds for inspiration.", hrefText: "Explore the gallery", href:"/Gallery", src: "https://raw.githubusercontent.com/nolansknives/website-database/refs/heads/main/images/knife8.jpg"},
+  {title: "Past Work", text: "Browse finished pieces, workshop experiments, and past builds for inspiration.", hrefText: "Explore the gallery", href:"/gallery", src: "https://raw.githubusercontent.com/nolansknives/website-database/refs/heads/main/images/knife8.jpg"},
   {title: "Meet the Maker", text: "A self-taught bladesmith focused on learning, improving, and making every knife better than the last.", hrefText: "About Nolan", href: "/about", src: "https://raw.githubusercontent.com/nolansknives/website-database/refs/heads/main/images/knife4.jpg"}
 ];
 

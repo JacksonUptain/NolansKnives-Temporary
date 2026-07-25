@@ -164,7 +164,7 @@ function NolanStore() {
     }
 
     if (!isAuthenticated) {
-      savePurchaseIntent({ knifeId: product.id, returnTo: "/Store" });
+      savePurchaseIntent({ knifeId: product.id, returnTo: "/store" });
       showToast('Sign in to continue checkout.', 'info');
       navigate("/account", { state: { from: `/checkout/${product.id}` } });
       return;
@@ -195,7 +195,7 @@ function NolanStore() {
               : 'There are no finished knives available to purchase right now. Browse past work or request a custom knife.'}
           </p>
           <div className="store-hero-actions">
-            <button className="store-primary-action" type="button" onClick={hasAvailableProducts ? scrollToCollection : () => navigate('/Gallery')}>
+            <button className="store-primary-action" type="button" onClick={hasAvailableProducts ? scrollToCollection : () => navigate('/gallery')}>
               {hasAvailableProducts ? 'Shop knives' : 'View past work'} <LucideIcon name={hasAvailableProducts ? 'ArrowDown' : 'ArrowRight'} size={16} />
             </button>
             <button className="store-secondary-action" type="button" onClick={() => navigate('/custom-knife-request')}>

@@ -9,6 +9,7 @@ import LucideIcon from '../components/ui/LucideIcon';
 import Skeleton from '../components/ui/Skeleton';
 import { formatKnifeStatus, getPublicKnifeStatus } from './knifeStatus';
 import { showToast } from '../components/Toast';
+import { useSeoOverride } from '../seo/SeoManager';
 import './ProductPage.css';
 
 function normalizeImages(src) {
@@ -128,6 +129,23 @@ function ProductPage() {
   }, [product, publicStatus]);
   const visibleSpecRows = specRows.length ? specRows : fallbackSpecRows;
   const descriptionBlocks = useMemo(() => splitParagraphs(product?.description), [product?.description]);
+  const productSeo = useMemo(() => {
+    const name = String(product?.name || 'Knife Details').trim();
+    const titleName = name.length > 40 ? `${name.slice(0, 39).trim()}…` : name;
+    return {
+      title: `${titleName} | Nolan's Knives`,
+      description: product
+        ? `View ${name}, a finished handmade knife from Nolan's Knives. See photos, specifications, current availability, and purchase details.`
+        : "View photos, specifications, availability, and purchase details for a finished knife from Nolan's Knives in Huntsville, Alabama.",
+      image: images[0],
+      imageAlt: product ? `${name} handmade knife` : "Nolan's Knives in Huntsville, Alabama",
+      breadcrumbName: name,
+      canonicalPath: `/product/${productId}`,
+      schemaType: 'ItemPage',
+      index: Boolean(product && !error && !loading),
+    };
+  }, [error, images, loading, product, productId]);
+  useSeoOverride(productSeo);
 
   const handleBuyNow = () => {
     setBuyError(null);
@@ -211,7 +229,7 @@ function ProductPage() {
         <section className="product-state-card" role="alert">
           <h1>Product Not Available</h1>
           <p>{error || 'This product could not be found.'}</p>
-          <button className="product-primary-button" type="button" onClick={() => navigate('/Store')}>
+          <button className="product-primary-button" type="button" onClick={() => navigate('/store')}>
             Back to store <LucideIcon name="ArrowRight" size={16} />
           </button>
         </section>
@@ -221,7 +239,7 @@ function ProductPage() {
 
   return (
     <main className="product-page">
-      <button className="product-back-link" type="button" onClick={() => navigate('/Store')}>
+      <button className="product-back-link" type="button" onClick={() => navigate('/store')}>
         <LucideIcon name="ArrowLeft" size={16} />
         Store
       </button>

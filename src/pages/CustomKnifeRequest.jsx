@@ -470,7 +470,7 @@ function CustomKnifeRequest() {
 
       <div className="custom-request-wrapper">
         <section className="request-hero">
-          <button type="button" className="request-back-link" onClick={() => navigate('/Store')}>
+          <button type="button" className="request-back-link" onClick={() => navigate('/store')}>
             <LucideIcon name="ArrowLeft" size={16} />
             Store
           </button>
@@ -782,7 +782,7 @@ function CustomKnifeRequest() {
           <button
             type="button"
             className="btn-prev"
-            onClick={() => (currentStep > 1 ? setCurrentStep(currentStep - 1) : navigate('/Store'))}
+            onClick={() => (currentStep > 1 ? setCurrentStep(currentStep - 1) : navigate('/store'))}
             disabled={isSubmitting}
           >
             <LucideIcon name="ArrowLeft" size={16} />

@@ -7,9 +7,9 @@ import LucideIcon from "./ui/LucideIcon";
 import { showToast } from "./Toast";
 
 const navLinks = [
-  { name: "Home", href: "/Home", icon: "home" },
-  { name: "Shop", href: "/Store", icon: "store" },
-  { name: "Gallery", href: "/Gallery", icon: "gallery" },
+  { name: "Home", href: "/", icon: "home" },
+  { name: "Shop", href: "/store", icon: "store" },
+  { name: "Gallery", href: "/gallery", icon: "gallery" },
   { name: "Custom", href: "/custom-knife-request", icon: "request" },
   { name: "About", href: "/about", icon: "UserRound" },
   { name: "Contact", href: "/contact", icon: "Mail" }
@@ -33,7 +33,7 @@ export default function SiteHeader() {
   const location = useLocation();
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
-  const isHomePage = location.pathname === "/" || location.pathname === "/Home";
+  const isHomePage = location.pathname === "/";
 
   const displayName = useMemo(() => {
     if (!profile?.displayName) return "Account";
@@ -92,7 +92,7 @@ export default function SiteHeader() {
     setOpen(false);
     setMobileNavOpen(false);
     showToast("Signed out.", "success");
-    navigate("/Home");
+    navigate("/");
   };
 
   const handleQuitImpersonation = async () => {
@@ -136,7 +136,7 @@ export default function SiteHeader() {
       )}
       <header className={`nk-header ${isHomePage ? "nk-header-home" : ""} ${isHomePage && scrolled ? "scrolled" : ""} ${isImpersonating ? "nk-header-impersonating" : ""}`}>
         <div className="nk-header-inner">
-          <Link to="/Home" className="nk-brand">Nolan&apos;s Knives</Link>
+          <Link to="/" className="nk-brand">Nolan&apos;s Knives</Link>
 
           <button
             type="button"
@@ -153,7 +153,7 @@ export default function SiteHeader() {
               <Link
                 key={link.href}
                 to={link.href}
-                className={`nk-nav-link ${location.pathname === link.href || (link.href === "/Home" && location.pathname === "/") ? "is-active" : ""}`}
+                className={`nk-nav-link ${location.pathname === link.href ? "is-active" : ""}`}
               >
                 <LucideIcon name={link.icon} />
                 <span>{link.name}</span>

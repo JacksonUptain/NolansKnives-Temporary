@@ -22,7 +22,13 @@
   },
   "scripts": {
     "start": "react-scripts start",
+    "prebuild": "npm run seo:generate",
     "build": "react-scripts build",
+    "postbuild": "node scripts/postbuild-seo.mjs",
+    "seo:generate": "node scripts/generate-seo.mjs",
+    "seo:check": "node scripts/check-seo.mjs",
+    "seo:update": "npm run seo:generate && npm run seo:check",
+    "preview": "node scripts/serve-build.mjs",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",

@@ -223,14 +223,14 @@ export default function MyKnives() {
             <h1>Your Knives</h1>
             <p>Follow your purchases and custom requests in one place.</p>
           </div>
-          <button className="btn btn-outline-light" onClick={() => navigate("/Store")}>Browse the Store</button>
+          <button className="btn btn-outline-light" onClick={() => navigate("/store")}>Browse the Store</button>
         </div>
 
         {items.length === 0 ? (
           <div className="empty-state">
             <h2>No purchases or requests yet.</h2>
             <p>Your store purchases and custom requests will appear here.</p>
-            <button className="btn btn-warning" onClick={() => navigate("/Store")}>
+            <button className="btn btn-warning" onClick={() => navigate("/store")}>
               Browse the Store
             </button>
           </div>

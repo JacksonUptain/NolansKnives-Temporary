@@ -158,7 +158,7 @@ export default function Account() {
           ) : (
             <button type="button" onClick={() => setMode("signin")}>Already have an account? Sign in</button>
           )}
-          <Link to="/Store">Return to Store</Link>
+          <Link to="/store">Return to Store</Link>
         </div>
       </div>
     </div>

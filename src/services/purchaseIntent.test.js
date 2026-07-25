@@ -8,8 +8,8 @@ describe("purchase intent", () => {
 
   test("preserves a recent checkout destination through sign in", () => {
     jest.spyOn(Date, "now").mockReturnValue(1000);
-    savePurchaseIntent({ knifeId: "knife-1", returnTo: "/Store" });
-    expect(readPurchaseIntent()).toMatchObject({ knifeId: "knife-1", returnTo: "/Store" });
+    savePurchaseIntent({ knifeId: "knife-1", returnTo: "/store" });
+    expect(readPurchaseIntent()).toMatchObject({ knifeId: "knife-1", returnTo: "/store" });
   });
 
   test("clears stale or invalid checkout destinations", () => {

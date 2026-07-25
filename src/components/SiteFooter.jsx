@@ -15,8 +15,8 @@ export default function SiteFooter() {
         <nav className="nk-footer-links" aria-label="Footer navigation">
           <div>
             <span>Explore</span>
-            <Link to="/Store">Available knives</Link>
-            <Link to="/Gallery">Past work</Link>
+            <Link to="/store">Available knives</Link>
+            <Link to="/gallery">Past work</Link>
             <Link to="/custom-knife-request">Request a custom knife</Link>
           </div>
           <div>

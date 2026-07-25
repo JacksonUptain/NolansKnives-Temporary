@@ -18,7 +18,7 @@ function StackedCards({ items }) {
                     const isExternal = /^https?:\/\//i.test(item.href || '');
                     const buttonProps = isExternal
                         ? { as: 'a', href: item.href, target: '_blank', rel: 'noreferrer' }
-                        : { as: Link, to: item.href || '/Store' };
+                        : { as: Link, to: item.href || '/store' };
 
                     return (
                 <Card

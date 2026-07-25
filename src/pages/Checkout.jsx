@@ -162,7 +162,7 @@ export default function Checkout() {
         <div className="checkout-container">
           <h2>Error</h2>
           <p className="error-message">{error}</p>
-          <button className="btn btn-warning" onClick={() => navigate("/Store")}>
+          <button className="btn btn-warning" onClick={() => navigate("/store")}>
             Return to Store
           </button>
         </div>
@@ -176,7 +176,7 @@ export default function Checkout() {
         <div className="checkout-container">
           <h2>Knife Not Found</h2>
           <p>The knife you're trying to purchase is no longer available.</p>
-          <button className="btn btn-warning" onClick={() => navigate("/Store")}>
+          <button className="btn btn-warning" onClick={() => navigate("/store")}>
             Return to Store
           </button>
         </div>
@@ -190,7 +190,7 @@ export default function Checkout() {
         <div className="checkout-container">
           <h2>No Longer Available</h2>
           <p>This knife has already been sold.</p>
-          <button className="btn btn-warning" onClick={() => navigate("/Store")}>
+          <button className="btn btn-warning" onClick={() => navigate("/store")}>
             Return to Store
           </button>
         </div>
@@ -206,7 +206,7 @@ export default function Checkout() {
         <div className="checkout-container">
           <h2>Purchase Pending</h2>
           <p>This knife is currently reserved or awaiting completion. Please check back soon.</p>
-          <button className="btn btn-warning" onClick={() => navigate("/Store")}>Return to Store</button>
+          <button className="btn btn-warning" onClick={() => navigate("/store")}>Return to Store</button>
         </div>
       </div>
     );
@@ -321,7 +321,7 @@ export default function Checkout() {
                 className="btn btn-outline-light w-100 mt-3"
                 onClick={() => {
                   showToast("Checkout cancelled.", "info");
-                  navigate("/Store");
+                  navigate("/store");
                 }}
                 disabled={paymentLoading}
               >

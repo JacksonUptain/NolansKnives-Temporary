@@ -140,7 +140,7 @@ export default function Gallery() {
             <button className="gallery-primary-action" type="button" onClick={() => navigate("/custom-knife-request")}>
               Request custom <LucideIcon name="ArrowRight" size={16} />
             </button>
-            <button className="gallery-secondary-action" type="button" onClick={() => navigate("/Store")}>
+            <button className="gallery-secondary-action" type="button" onClick={() => navigate("/store")}>
               Available work
             </button>
           </div>

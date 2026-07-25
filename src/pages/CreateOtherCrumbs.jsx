@@ -2,9 +2,9 @@ import Breadcrumb from 'react-bootstrap/Breadcrumb';
 import { Link } from "react-router-dom";
 
 let allPages = [
-  { name: "Home", href: "/Home" },
-  { name: "Gallery", href: "/Gallery" },
-  { name: "Store", href: "/Store" }
+  { name: "Home", href: "/" },
+  { name: "Gallery", href: "/gallery" },
+  { name: "Store", href: "/store" }
 ];
 
 function CreateOtherCrumbs({ currentPage }) {

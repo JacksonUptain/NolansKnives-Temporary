@@ -247,7 +247,7 @@ export default function CustomRequestConfirmation() {
           <button type="button" className="primary" onClick={() => navigate('/my-knives')}>
             View Your Knives
           </button>
-          <button type="button" className="secondary" onClick={() => navigate('/Store')}>
+          <button type="button" className="secondary" onClick={() => navigate('/store')}>
             Browse store
           </button>
         </div>

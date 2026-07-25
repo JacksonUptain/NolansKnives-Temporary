@@ -1,6 +1,7 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Navigate, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./auth/AuthProvider";
+import SeoManager from "./seo/SeoManager";
 import SiteHeader from "./components/SiteHeader";
 import SiteFooter from "./components/SiteFooter";
 import Toast from "./components/Toast";
@@ -48,14 +49,17 @@ function AppRoutes() {
         <Routes>
           {/* Public pages */}
           <Route path="/" element={<Home />} />
-          <Route path="/Home" element={<Home />} />
-          <Route path="/Gallery" element={<Gallery />} />
-          <Route path="/Store" element={<Store />} />
+          <Route path="/gallery" caseSensitive element={<Gallery />} />
+          <Route path="/store" caseSensitive element={<Store />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/product/:productId" element={<ProductPage />} />
           <Route path="/custom-knife-request" element={<CustomKnifeRequest />} />
           <Route path="/custom-knife/confirmation/:requestId" element={<CustomRequestConfirmation />} />
+          <Route path="/home" caseSensitive element={<Navigate to="/" replace />} />
+          <Route path="/Home" caseSensitive element={<Navigate to="/" replace />} />
+          <Route path="/Gallery" caseSensitive element={<Navigate to="/gallery" replace />} />
+          <Route path="/Store" caseSensitive element={<Navigate to="/store" replace />} />
 
           {/* Authentication */}
           <Route path="/account" element={<Account />} />
@@ -153,7 +157,9 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <AppRoutes />
+        <SeoManager>
+          <AppRoutes />
+        </SeoManager>
       </AuthProvider>
     </Router>
   );

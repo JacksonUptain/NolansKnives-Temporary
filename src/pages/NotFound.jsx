@@ -11,7 +11,7 @@ export default function NotFound() {
       <h1>This trail ends here.</h1>
       <p>The page may have moved, but the knives and custom build tools are still close by.</p>
       <div className="public-info-actions">
-        <button className="public-info-primary" type="button" onClick={() => navigate("/Store")}>Browse available knives</button>
+        <button className="public-info-primary" type="button" onClick={() => navigate("/store")}>Browse available knives</button>
         <button className="public-info-secondary" type="button" onClick={() => navigate("/")}>Return home</button>
       </div>
     </main>

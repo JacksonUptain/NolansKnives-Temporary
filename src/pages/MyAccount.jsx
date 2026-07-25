@@ -50,7 +50,7 @@ export default function MyAccount() {
     try {
       await signOutUser();
       showToast("Signed out successfully.", "success");
-      navigate("/Home", { replace: true });
+      navigate("/", { replace: true });
     } catch (err) {
       const msg = "Failed to sign out";
       setError(msg);
@@ -131,7 +131,7 @@ export default function MyAccount() {
                       <span className="action-desc">Review purchases and custom requests</span>
                     </span>
                   </button>
-                  <button className="action-link" onClick={() => navigate("/Store")}>
+                  <button className="action-link" onClick={() => navigate("/store")}>
                     <LucideIcon name="ShoppingCart" size={22} className="action-icon" />
                     <span className="action-text">
                       <strong>Browse Store</strong>

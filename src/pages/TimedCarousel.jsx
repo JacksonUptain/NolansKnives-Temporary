@@ -28,7 +28,7 @@ function TimedCarousel({ items }) {
                           {item.caption?.trim() || "View available knives or submit a custom request for Nolan to review."}
                         </p>
                         <div className="home-hero-actions">
-                          <Link to="/Store" className="home-hero-primary">Shop available knives</Link>
+                          <Link to="/store" className="home-hero-primary">Shop available knives</Link>
                           <Link to="/custom-knife-request" className="home-hero-secondary">Request a custom knife</Link>
                         </div>
                     </CarouselCaption>

@@ -35,7 +35,7 @@ export default function AdminDashboard() {
     title: "",
     text: "",
     hrefText: "Learn More",
-    href: "/Store",
+    href: "/store",
     src: "",
     sortOrder: ""
   });
@@ -202,13 +202,13 @@ export default function AdminDashboard() {
         title: newHomeCard.title.trim(),
         text: newHomeCard.text.trim(),
         hrefText: newHomeCard.hrefText.trim() || "Learn More",
-        href: newHomeCard.href.trim() || "/Store",
+        href: newHomeCard.href.trim() || "/store",
         src: newHomeCard.src.trim(),
         sortOrder: Number(newHomeCard.sortOrder || 0),
         updatedAt: serverTimestamp(),
         createdAt: serverTimestamp()
       });
-      setNewHomeCard({ title: "", text: "", hrefText: "Learn More", href: "/Store", src: "", sortOrder: "" });
+      setNewHomeCard({ title: "", text: "", hrefText: "Learn More", href: "/store", src: "", sortOrder: "" });
       showToast("Home card created successfully.", "success");
     } catch (err) {
       const msg = err?.message || "Failed to create home card.";
@@ -227,7 +227,7 @@ export default function AdminDashboard() {
         title: draft.title ?? homeCard.title ?? "",
         text: draft.text ?? homeCard.text ?? "",
         hrefText: draft.hrefText ?? homeCard.hrefText ?? "Learn More",
-        href: draft.href ?? homeCard.href ?? "/Store",
+        href: draft.href ?? homeCard.href ?? "/store",
         src: draft.src ?? homeCard.src ?? "",
         sortOrder: Number(draft.sortOrder ?? homeCard.sortOrder ?? 0),
         updatedAt: serverTimestamp()

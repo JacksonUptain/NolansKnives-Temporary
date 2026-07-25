@@ -1,0 +1,20 @@
+# Nolan's Knives
+
+> Handmade knives, past builds, and custom knife requests from Nolan's Knives in Huntsville, Alabama.
+
+Nolan's Knives is based in Huntsville, Alabama. The public site shows available knives, past work, the custom request process, and customer contact options.
+
+## Public pages
+
+- [Handmade Knives in Huntsville, AL | Nolan's Knives](https://nolansknives.com/): Explore available handmade knives, past builds, and custom knife requests from Nolan's Knives, a self-taught bladesmith based in Huntsville, Alabama.
+- [Available Handmade Knives | Nolan's Knives](https://nolansknives.com/store): View finished handmade knives currently available from Nolan's Knives, with clear photos, specifications, pricing, and availability for each piece.
+- [Custom Knife Gallery | Nolan's Knives](https://nolansknives.com/gallery): Browse completed knives and past builds from Nolan's Knives in Huntsville, Alabama, including blade profiles, handle materials, finishes, and details.
+- [Request a Custom Knife | Nolan's Knives](https://nolansknives.com/custom-knife-request): Submit a custom knife request to Nolan with your intended use, design preferences, materials, budget, timing, and delivery preference for review.
+- [About Nolan's Knives | Huntsville, Alabama](https://nolansknives.com/about): Learn about Nolan, a self-taught bladesmith in Huntsville, Alabama, and how custom requests, quotes, deposits, build updates, and delivery work.
+- [Contact Nolan's Knives | Huntsville, Alabama](https://nolansknives.com/contact): Contact Nolan's Knives about available knives, custom requests, or an existing order. Customers can also sign in for messages and order updates.
+
+## Important factual notes
+
+- Location: Huntsville, Alabama, United States.
+- Custom projects begin with a request and quote; accepted custom builds use a 15% deposit before work is scheduled.
+- Account, checkout, customer order, and business workspace pages are private workflow pages and are not intended for search indexing.
