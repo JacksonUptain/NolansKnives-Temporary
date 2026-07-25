@@ -144,8 +144,12 @@ function emailEventClass(value) {
   return String(value || 'waiting').replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase();
 }
 
-function getEmailActivityRows(request = {}) {
-  return Object.entries(request.emailActivity || {})
+export function getEmailActivityRows(request) {
+  if (!request || typeof request !== 'object' || Array.isArray(request)) return [];
+  const emailActivity = request.emailActivity;
+  if (!emailActivity || typeof emailActivity !== 'object' || Array.isArray(emailActivity)) return [];
+
+  return Object.entries(emailActivity)
     .filter(([, activity]) => activity && typeof activity === 'object')
     .map(([key, activity]) => {
       const latest = getLatestActivityEvent(activity);
@@ -221,7 +225,13 @@ function CustomRequestDashboard({ view = 'all' }) {
     const unsubscribe = onValue(requestsRef, (snapshot) => {
       const data = snapshot.val();
       const list = data
-        ? Object.entries(data).map(([id, value]) => ({ id, ...value }))
+        ? Object.entries(data)
+            .map(([id, value]) => (
+              value && typeof value === 'object' && !Array.isArray(value)
+                ? { id, ...value }
+                : null
+            ))
+            .filter(Boolean)
         : [];
 
       list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
@@ -241,11 +251,14 @@ function CustomRequestDashboard({ view = 'all' }) {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
     return requests.filter((request) => {
+      const searchableFields = [
+        request.customerName,
+        request.customerEmail,
+        request.id,
+        request.knifeType
+      ].map((value) => String(value || '').toLowerCase());
       const matchesSearch = !normalizedSearch ||
-        request.customerName?.toLowerCase().includes(normalizedSearch) ||
-        request.customerEmail?.toLowerCase().includes(normalizedSearch) ||
-        request.id?.toLowerCase().includes(normalizedSearch) ||
-        request.knifeType?.toLowerCase().includes(normalizedSearch);
+        searchableFields.some((value) => value.includes(normalizedSearch));
       const matchesView = !viewConfig.statuses || viewConfig.statuses.includes(request.status);
       const matchesFilter = filterStatus === 'all' || request.status === filterStatus;
       return matchesSearch && matchesView && matchesFilter;
