@@ -123,6 +123,7 @@ exports.aiAssistantAction = onRequest({ invoker: "public" }, async (req, res) =>
     const result = await revertAction(actionId, token.uid);
     return res.status(200).json(result);
   } catch (error) {
+    console.error("aiAssistantAction failed:", error);
     return sendHttpError(res, error, "Failed to apply action.");
   }
 });
@@ -139,6 +140,7 @@ exports.aiAssistantChat = onRequest({ invoker: "public", timeoutSeconds: 120, me
     const isStaff = await verifyUserRole(token.uid, "business");
     if (!isStaff) return sendHttpError(res, { code: "permission-denied", message: "Business access required." });
   } catch (error) {
+    console.error("aiAssistantChat auth failed:", error);
     return sendHttpError(res, error, "Authentication failed.");
   }
 
@@ -235,6 +237,7 @@ exports.aiAssistantChat = onRequest({ invoker: "public", timeoutSeconds: 120, me
     emit({ t: "done", threadId, usage });
     res.end();
   } catch (error) {
+    console.error("aiAssistantChat failed:", error);
     emit({ t: "error", message: error?.message || "The assistant hit an error." });
     res.end();
   }

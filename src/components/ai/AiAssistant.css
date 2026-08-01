@@ -74,26 +74,95 @@
   letter-spacing: 0.02em;
 }
 
-.nk-ai-status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--nk-text-faint);
-  flex-shrink: 0;
-}
-
-.nk-ai-status-thinking {
-  background: var(--nk-gold);
-  animation: nk-ai-pulse 1.1s ease-in-out infinite;
-}
-
-.nk-ai-status-working {
-  background: var(--nk-gold);
-}
-
 @keyframes nk-ai-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.35; }
+}
+
+/* Ember — the forge-spark mascot. Structural styles are unscoped; every
+   animation is scoped to the status class (nk-mascot-idle/-thinking/-working)
+   set via the AiMascot `status` prop, so switching state can't leave two
+   conflicting animations stacked on the same element. */
+.nk-mascot {
+  color: var(--nk-gold);
+  overflow: visible;
+}
+
+.nk-mascot-body {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+
+.nk-mascot-eyes,
+.nk-mascot-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.nk-mascot-spark {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes nk-mascot-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.5px); }
+}
+
+@keyframes nk-mascot-sway {
+  0%, 100% { transform: rotate(-4deg); }
+  50% { transform: rotate(4deg); }
+}
+
+@keyframes nk-mascot-blink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.15); }
+}
+
+@keyframes nk-mascot-look {
+  0%, 100% { transform: translateX(-0.6px); }
+  50% { transform: translateX(0.6px); }
+}
+
+@keyframes nk-mascot-twinkle {
+  0%, 100% { opacity: 0.45; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+
+@keyframes nk-mascot-shimmer {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.55; }
+}
+
+.nk-mascot-idle .nk-mascot-body { animation: nk-mascot-bob 3s ease-in-out infinite; }
+.nk-mascot-idle .nk-mascot-eyes { animation: nk-mascot-blink 4.5s ease-in-out infinite; }
+.nk-mascot-idle .nk-mascot-spark { animation: nk-mascot-twinkle 2.2s ease-in-out infinite; }
+.nk-mascot-idle .nk-mascot-flicker { animation: nk-mascot-shimmer 3s ease-in-out infinite; }
+
+.nk-mascot-thinking .nk-mascot-body { animation: nk-mascot-sway 1.1s ease-in-out infinite; }
+.nk-mascot-thinking .nk-mascot-eye { animation: nk-mascot-look 1.1s ease-in-out infinite; }
+.nk-mascot-thinking .nk-mascot-spark { animation: nk-mascot-twinkle 1.4s ease-in-out infinite; }
+.nk-mascot-thinking .nk-mascot-flicker { animation: nk-mascot-shimmer 1.6s ease-in-out infinite; }
+
+.nk-mascot-working .nk-mascot-body { animation: nk-mascot-bob 0.6s ease-in-out infinite; }
+.nk-mascot-working .nk-mascot-eyes { animation: nk-mascot-blink 2.4s ease-in-out infinite; }
+.nk-mascot-working .nk-mascot-spark { animation: nk-mascot-twinkle 0.5s ease-in-out infinite; }
+.nk-mascot-working .nk-mascot-flicker { animation: nk-mascot-shimmer 0.8s ease-in-out infinite; }
+
+.nk-ai-fab-mascot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nk-ai-header-mascot {
+  flex-shrink: 0;
+}
+
+.nk-ai-empty-mascot {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2px;
 }
 
 .nk-ai-header-actions {
@@ -424,7 +493,12 @@
   .nk-ai-thinking-bar,
   .nk-ai-status-thinking,
   .nk-ai-typing span,
-  .nk-ai-caret {
+  .nk-ai-caret,
+  .nk-mascot-body,
+  .nk-mascot-eyes,
+  .nk-mascot-eye,
+  .nk-mascot-spark,
+  .nk-mascot-flicker {
     animation: none !important;
     transition: none !important;
   }

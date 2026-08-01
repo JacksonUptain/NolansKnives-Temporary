@@ -6,7 +6,7 @@ const ICON_MAP = {
   gallery: 'Image',
   store: 'ShoppingBag',
   request: 'Plus',
-  knives: 'Knife',
+  knives: 'PocketKnife',
   account: 'User',
   business: 'Building2',
   admin: 'Shield',

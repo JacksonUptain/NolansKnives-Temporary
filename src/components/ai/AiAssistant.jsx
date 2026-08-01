@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { fetchSnapshot, revertAction, streamChat } from "../../services/aiAssistantService";
 import { showToast } from "../Toast";
 import LucideIcon from "../ui/LucideIcon";
+import AiMascot from "./AiMascot";
 import "./AiAssistant.css";
 
 const SUGGESTIONS = [
@@ -213,17 +214,19 @@ export default function AiAssistant() {
         ref={fabRef}
         className={`nk-ai-fab ${open ? "is-open" : ""}`}
         onClick={() => setOpen((v) => !v)}
-        aria-label={open ? "Close Nolan's Business Assistant" : "Open Nolan's Business Assistant"}
+        aria-label={open ? "Close Ember, Nolan's Business Assistant" : "Open Ember, Nolan's Business Assistant"}
       >
-        <LucideIcon name={open ? "X" : "Sparkles"} size={22} />
+        {open ? <LucideIcon name="X" size={22} /> : (
+          <span className="nk-ai-fab-mascot"><AiMascot status="idle" size={30} /></span>
+        )}
       </button>
 
       {open && (
-        <div className="nk-ai-panel" role="dialog" aria-modal="false" aria-label="Nolan's Business Assistant">
+        <div className="nk-ai-panel" role="dialog" aria-modal="false" aria-label="Ember, Nolan's Business Assistant">
           <header className="nk-ai-header">
             <div className="nk-ai-header-title">
-              <span className={`nk-ai-status-dot nk-ai-status-${status}`} />
-              <strong>Nolan&apos;s Assistant</strong>
+              <span className="nk-ai-header-mascot"><AiMascot status={status} size={24} /></span>
+              <strong>Ember</strong>
             </div>
             <div className="nk-ai-header-actions">
               <button type="button" onClick={newChat} className="nk-ai-header-btn" aria-label="Start a new chat">
@@ -239,6 +242,7 @@ export default function AiAssistant() {
           <div className="nk-ai-body" aria-live="polite">
             {messages.length === 0 ? (
               <div className="nk-ai-empty">
+                <div className="nk-ai-empty-mascot"><AiMascot status="idle" size={48} /></div>
                 <p className="nk-ai-greeting">{snapshotLoading ? "Checking the dashboard…" : snapshotGreeting(snapshot)}</p>
                 <div className="nk-ai-suggestions">
                   {SUGGESTIONS.map((s) => (
@@ -277,7 +281,7 @@ export default function AiAssistant() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask Nolan's Assistant…"
+              placeholder="Ask Ember…"
               disabled={status !== "idle"}
             />
             <button type="submit" disabled={status !== "idle" || !input.trim()} aria-label="Send">
