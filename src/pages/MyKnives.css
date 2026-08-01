@@ -269,3 +269,52 @@
   font-size: 0.9rem;
   padding: 0.5rem;
 }
+
+.detail-summary-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 0.85rem;
+}
+
+.liked-products-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.liked-product-card {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+  border: 1px solid #2b2b2b;
+  border-radius: 10px;
+  padding: 0.7rem;
+  background: #111;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.liked-product-card:hover {
+  border-color: rgba(255, 204, 0, 0.5);
+}
+
+.liked-product-card img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.liked-product-card strong {
+  display: block;
+  color: #fff;
+  margin-bottom: 0.2rem;
+}
+
+.liked-product-card span {
+  color: #b0b0b0;
+  font-size: 0.9rem;
+}

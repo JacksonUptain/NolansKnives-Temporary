@@ -6,6 +6,9 @@ import LucideIcon from "../components/ui/LucideIcon";
 import Skeleton from "../components/ui/Skeleton";
 import { formatKnifeStatus, getPublicKnifeStatus } from "./knifeStatus";
 import { getMyPurchases } from "../services/myKnivesService";
+import { getUserLikedProducts } from "../services/likesService";
+import { db } from "./firebase";
+import { ref, get } from "firebase/database";
 import "./MyKnives.css";
 
 function formatOrderId(id) {
@@ -141,6 +144,7 @@ export default function MyKnives() {
   const { user } = useAuth();
   const [purchases, setPurchases] = useState([]);
   const [customRequests, setCustomRequests] = useState([]);
+  const [likedProducts, setLikedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedKey, setSelectedKey] = useState("");
 
@@ -166,12 +170,35 @@ export default function MyKnives() {
           setCustomRequests([]);
           setSelectedKey("");
         }
+      }
+    };
+
+    const loadLikedProducts = async () => {
+      try {
+        const likedIds = await getUserLikedProducts(user.uid);
+        if (!active) return;
+
+        const productEntries = await Promise.all(
+          likedIds.map(async (productId) => {
+            const snapshot = await get(ref(db, `Products/${productId}`));
+            if (!snapshot.exists()) return null;
+            return { id: productId, ...snapshot.val() };
+          })
+        );
+
+        setLikedProducts(productEntries.filter(Boolean));
+      } catch (error) {
+        console.error("Failed to load liked products", error);
+        if (active) {
+          setLikedProducts([]);
+        }
       } finally {
         if (active) setLoading(false);
       }
     };
 
     loadPurchases();
+    loadLikedProducts();
 
     return () => {
       active = false;
@@ -226,10 +253,10 @@ export default function MyKnives() {
           <button className="btn btn-outline-light" onClick={() => navigate("/store")}>Browse the Store</button>
         </div>
 
-        {items.length === 0 ? (
+        {items.length === 0 && likedProducts.length === 0 ? (
           <div className="empty-state">
-            <h2>No purchases or requests yet.</h2>
-            <p>Your store purchases and custom requests will appear here.</p>
+            <h2>No purchases, requests, or liked pieces yet.</h2>
+            <p>Your store purchases, custom requests, and saved favorites will appear here.</p>
             <button className="btn btn-warning" onClick={() => navigate("/store")}>
               Browse the Store
             </button>
@@ -305,6 +332,28 @@ export default function MyKnives() {
             </div>
 
             <div className="my-knives-detail-panel">
+              {likedProducts.length > 0 && (
+                <div className="detail-summary-card">
+                  <div className="detail-summary-card-header">
+                    <h2>Liked pieces</h2>
+                    <button className="btn btn-outline-light btn-sm" onClick={() => navigate('/store')}>
+                      <LucideIcon name="Heart" size={14} /> <span>Browse more</span>
+                    </button>
+                  </div>
+                  <div className="liked-products-grid">
+                    {likedProducts.map((product) => (
+                      <button key={product.id} className="liked-product-card" type="button" onClick={() => navigate(`/product/${product.id}`)}>
+                        <img src={Array.isArray(product.src) ? product.src[0] : product.src} alt={product.name || 'Liked product'} />
+                        <div>
+                          <strong>{product.name || 'Untitled knife'}</strong>
+                          <span>{formatCurrency(product.price)}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {selectedItem?.type === "order" && (
                 <>
                   <div className="detail-summary-card">

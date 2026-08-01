@@ -129,7 +129,7 @@ export default function Gallery() {
   }, [closeDetails, moveDetailImage, selectedProduct]);
 
   return (
-    <main className="gallery-page">
+    <main className="gallery-page page-surface">
       <section className="gallery-hero">
         <div className="gallery-hero-copy">
           <h1>Gallery</h1>

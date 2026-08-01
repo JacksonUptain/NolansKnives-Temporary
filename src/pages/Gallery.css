@@ -145,13 +145,13 @@
 .gallery-feature-backdrop,
 .gallery-card-backdrop {
   object-fit: cover;
-  filter: blur(18px) brightness(0.42) saturate(0.8);
-  transform: scale(1.12);
+  filter: none;
+  transform: scale(1.02);
 }
 
 .gallery-feature-primary,
 .gallery-card-primary {
-  object-fit: contain;
+  object-fit: cover;
 }
 
 .gallery-feature-backdrop {

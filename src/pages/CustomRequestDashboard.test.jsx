@@ -1,5 +1,8 @@
 import { getEmailActivityRows } from './CustomRequestDashboard';
 
+jest.mock('react-router-dom', () => ({
+  useNavigate: jest.fn(() => jest.fn())
+}), { virtual: true });
 jest.mock('./firebase', () => ({ db: {} }));
 jest.mock('firebase/database', () => ({
   onValue: jest.fn(),

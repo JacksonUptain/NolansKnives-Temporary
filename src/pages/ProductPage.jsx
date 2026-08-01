@@ -7,6 +7,7 @@ import { savePurchaseIntent } from '../services/purchaseIntent';
 import ProductGallery from '../components/ProductGallery';
 import LucideIcon from '../components/ui/LucideIcon';
 import Skeleton from '../components/ui/Skeleton';
+import HeartButton from '../components/ui/HeartButton';
 import { formatKnifeStatus, getPublicKnifeStatus } from './knifeStatus';
 import { showToast } from '../components/Toast';
 import { useSeoOverride } from '../seo/SeoManager';
@@ -281,6 +282,7 @@ function ProductPage() {
                 <LucideIcon name="ShoppingCart" size={18} />
                 {isAvailable ? 'Buy now' : formatKnifeStatus(publicStatus)}
               </button>
+              <HeartButton product={product} />
               <button className="product-icon-button" type="button" onClick={handleShare} aria-label="Share product">
                 <LucideIcon name="Share2" size={18} />
               </button>

@@ -26,6 +26,35 @@ html {
   background: var(--nk-black);
 }
 
+.page-surface {
+  animation: nk-page-fade-up 480ms ease both;
+}
+
+.page-loading-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+  min-height: min(60vh, 420px);
+  color: var(--nk-text-muted);
+}
+
+.page-loading-shell strong {
+  color: var(--nk-text-strong);
+}
+
+@keyframes nk-page-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .home-hero-carousel,
 .home-hero-carousel .carousel-inner,
 .home-hero-carousel .carousel-item {
@@ -186,6 +215,21 @@ html {
   background: linear-gradient(145deg, rgba(24, 24, 24, 0.99), rgba(8, 8, 8, 0.99)) !important;
   color: var(--nk-text) !important;
   box-shadow: 0 -10px 42px rgba(0, 0, 0, 0.46), 0 30px 80px rgba(0, 0, 0, 0.5);
+  transform: translateY(12px);
+  opacity: 0;
+  animation: stacked-card-enter 620ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+  animation-delay: calc(var(--stack-index) * 110ms);
+}
+
+@keyframes stacked-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .stacked-card:nth-child(odd) .stacked-card-text {

@@ -6,6 +6,7 @@ import { ref, onValue } from "firebase/database";
 import { db } from './firebase';
 import { getPublicKnifeStatus } from './knifeStatus';
 import LucideIcon from '../components/ui/LucideIcon';
+import HeartButton from '../components/ui/HeartButton';
 
 function normalizeImages(src) {
   const images = Array.isArray(src)
@@ -143,7 +144,7 @@ function NolanStore() {
   };
 
   return (
-    <main className="store-container">
+    <main className="store-container page-surface">
       <section className="store-hero">
         <div className="store-hero-copy">
           <h1>{hasAvailableProducts ? 'Available Work' : 'New Work Coming Soon'}</h1>
@@ -235,6 +236,7 @@ function NolanStore() {
                 <h2>{product.name || "Untitled Knife"}</h2>
 
                 <div className="showcase-actions">
+                  <HeartButton product={product} />
                   <button className="store-primary-action" type="button" onClick={() => navigate(`/product/${product.id}`)}>
                     View details <LucideIcon name="ArrowRight" size={16} />
                   </button>

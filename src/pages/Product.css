@@ -127,13 +127,13 @@
 .store-rotating-media .store-media-backdrop {
   z-index: 0;
   object-fit: cover;
-  filter: blur(18px) brightness(0.42) saturate(0.8);
-  transform: scale(1.12);
+  filter: none;
+  transform: scale(1.02);
 }
 
 .store-rotating-media .store-media-primary {
   z-index: 1;
-  object-fit: contain;
+  object-fit: cover;
 }
 
 .store-rotating-media img.active {
@@ -408,6 +408,48 @@
   justify-content: space-between;
   gap: 14px;
   padding: 14px;
+}
+
+.nk-heart-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 40px;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 999px;
+  background: rgba(7,7,7,0.72);
+  color: #f7f2e9;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 200ms ease, background 200ms ease, color 200ms ease, border-color 200ms ease;
+}
+
+.nk-heart-button:hover {
+  transform: translateY(-1px);
+}
+
+.nk-heart-button.is-liked {
+  color: #ff5f6d;
+  border-color: rgba(255,95,109,0.55);
+  background: rgba(255,95,109,0.15);
+}
+
+.nk-heart-button.is-liked svg {
+  animation: nk-heart-pop 320ms ease;
+}
+
+.nk-heart-button.compact {
+  min-height: 34px;
+  padding: 0.45rem 0.6rem;
+}
+
+@keyframes nk-heart-pop {
+  0% { transform: scale(0.92); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
 }
 
 .store-showcase-copy h2 {

@@ -78,7 +78,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div id="MainContainerDiv">
+    <div id="MainContainerDiv" className="page-surface">
       <AutoScrollToTop />
       <TimedCarousel items={carouselItems} />
       <StackedCards items={cards}/>

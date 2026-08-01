@@ -10,6 +10,7 @@ import Customers from './Customers';
 import Conversations from './Conversations';
 import Workflow from './Workflow';
 import CustomRequestDashboard from '../CustomRequestDashboard';
+import CustomRequestDetail from '../CustomRequestDetail';
 import ProductEditor from '../ProductEditor';
 import LucideIcon from '../../components/ui/LucideIcon';
 
@@ -155,6 +156,7 @@ export default function BusinessDashboardShell() {
           <Route path="fulfillment" element={<Orders view="fulfillment" />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="custom-requests" element={<CustomRequestDashboard />} />
+          <Route path="custom-requests/:requestId" element={<CustomRequestDetail />} />
           <Route path="quotes" element={<CustomRequestDashboard view="quotes" />} />
           <Route path="production" element={<CustomRequestDashboard view="production" />} />
           <Route path="messages" element={<Conversations />} />

@@ -8,6 +8,7 @@ import './ProductEditor.css';
 import LucideIcon from '../components/ui/LucideIcon';
 import { showConfirm } from '../components/ConfirmDialog';
 import { showToast } from '../components/Toast';
+import { buildProductPayload } from './productEditorModel';
 
 function normalizeImages(src) {
   if (Array.isArray(src)) return src.filter(Boolean);
@@ -201,12 +202,11 @@ function ProductEditor() {
     showToast('Image order updated.', 'success');
   };
 
-  const handleSave = async (publish = false) => {
+  const handleSave = async (publish = null) => {
     try {
       setError(null);
       setSaving(true);
 
-      // Validation
       if (!product.name?.trim()) {
         setError('Product name is required');
         showToast('Product name is required.', 'error');
@@ -223,36 +223,25 @@ function ProductEditor() {
         return;
       }
 
-      const productData = {
-        ...product,
-        src: normalizeImages(product.src),
-        price: Number(product.price),
-        stock: Number(product.stock) || 1,
-        published: publish,
-        sold: product.saleStatus === 'sold',
-        soldAt: product.saleStatus === 'sold' ? product.soldAt || new Date().toISOString() : null,
-        updatedAt: new Date().toISOString(),
-        createdAt: product.createdAt || new Date().toISOString()
-      };
+      const shouldPublish = publish ?? Boolean(product.published);
+      const productData = buildProductPayload(product, { publish: shouldPublish, now: new Date().toISOString() });
 
       if (productId) {
-        // Update existing
         await update(ref(db, `Products/${productId}`), productData);
-        setSuccess(`Product "${product.name}" updated successfully${publish ? ' and published!' : ''}`);
-        showToast(publish ? 'Product saved and published.' : 'Product saved.', 'success');
+        setSuccess(`Product "${product.name}" updated successfully${shouldPublish ? ' and published!' : ''}`);
+        showToast(shouldPublish ? 'Product saved and published.' : 'Product saved.', 'success');
       } else {
-        // Create new - use auto ID
         const newRef = push(ref(db, 'Products'));
         const newId = newRef.key;
         productData.id = newId;
         await set(newRef, productData);
-        setSuccess(`Product "${product.name}" created successfully${publish ? ' and published!' : ''}`);
-        showToast(publish ? 'Product created and published.' : 'Product draft created.', 'success');
+        setSuccess(`Product "${product.name}" created successfully${shouldPublish ? ' and published!' : ''}`);
+        showToast(shouldPublish ? 'Product created and published.' : 'Product draft created.', 'success');
         setTimeout(() => navigate(`/business/products/${newId}`), 1500);
       }
 
       setDirty(false);
-      if (publish) {
+      if (shouldPublish) {
         setTimeout(() => navigate('/business/products'), 1500);
       }
     } catch (err) {
@@ -512,10 +501,10 @@ function ProductEditor() {
               <input
                 type="checkbox"
                 id="published-check"
-                checked={product.published}
+                checked={Boolean(product.published)}
                 onChange={(e) => handleFieldChange('published', e.target.checked)}
               />
-              <label htmlFor="published-check">Published (Visible to Customers)</label>
+              <label htmlFor="published-check">Visible to customers</label>
             </div>
           </div>
 
@@ -535,18 +524,10 @@ function ProductEditor() {
 
             <button
               className="btn-primary"
-              onClick={() => handleSave(false)}
-              disabled={saving}
-            >
-              {saving ? 'Saving...' : `${productId ? 'Save Draft' : 'Create Draft'}`}
-            </button>
-
-            <button
-              className="btn-success"
-              onClick={() => handleSave(true)}
+              onClick={() => handleSave(Boolean(product.published))}
               disabled={saving || !product.name}
             >
-              {saving ? 'Publishing...' : 'Save & Publish'}
+              {saving ? 'Saving...' : `${productId ? 'Save changes' : 'Create product'}`}
             </button>
 
             {productId && (
