@@ -13,6 +13,7 @@ import CustomRequestDashboard from '../CustomRequestDashboard';
 import CustomRequestDetail from '../CustomRequestDetail';
 import ProductEditor from '../ProductEditor';
 import LucideIcon from '../../components/ui/LucideIcon';
+import AiAssistant from '../../components/ai/AiAssistant';
 
 export default function BusinessDashboardShell() {
   const navigate = useNavigate();
@@ -165,6 +166,8 @@ export default function BusinessDashboardShell() {
           <Route path="email-campaigns" element={<EmailCampaigns />} />
         </Routes>
       </main>
+
+      <AiAssistant />
     </div>
   );
 }

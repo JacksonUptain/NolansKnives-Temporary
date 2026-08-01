@@ -18,7 +18,13 @@
 .account-card h1 {
   color: #ffcc00;
   font-size: 1.9rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.35rem;
+}
+
+.account-intro {
+  margin: 0 0 1rem;
+  color: #d8c98b;
+  font-size: 0.95rem;
 }
 
 .account-card label {

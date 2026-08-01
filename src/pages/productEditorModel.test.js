@@ -32,6 +32,22 @@ describe('buildProductPayload', () => {
     expect(payload.createdAt).toBe('2024-01-01T00:00:00.000Z');
   });
 
+  it('normalizes featured visibility to a boolean flag', () => {
+    const product = {
+      name: 'Featured Knife',
+      price: '540',
+      src: ['https://example.com/featured.jpg'],
+      stock: 1,
+      saleStatus: 'available',
+      published: true,
+      featured: 'true'
+    };
+
+    const payload = buildProductPayload(product, { publish: true, now: '2024-03-01T00:00:00.000Z' });
+
+    expect(payload.featured).toBe(true);
+  });
+
   it('keeps a draft unpublished when the visibility toggle is off', () => {
     const product = {
       name: 'Draft Knife',

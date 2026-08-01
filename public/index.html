@@ -1,6 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <style>
+      :root {
+        color-scheme: dark;
+        background-color: #000000;
+      }
+      html,
+      body,
+      #root {
+        margin: 0;
+        min-height: 100%;
+        background-color: #000000;
+        color: #f4f4f4;
+      }
+      body {
+        min-height: 100vh;
+      }
+    </style>
     <script>
       const redirect = sessionStorage.redirect;
       delete sessionStorage.redirect;
@@ -59,7 +76,7 @@
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"> </div>
+    <div id="root" style="min-height: 100vh; background-color: #000000;"></div>
    
     <!--
       This HTML file is a template.

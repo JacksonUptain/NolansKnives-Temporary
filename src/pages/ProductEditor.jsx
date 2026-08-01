@@ -29,6 +29,7 @@ function ProductEditor() {
     saleStatus: 'available',
     displayLocation: 'store',
     published: false,
+    featured: false,
     custom_id: '',
     specifications: '',
     stock: 1
@@ -66,6 +67,7 @@ function ProductEditor() {
           src: normalizedSrc,
           saleStatus: data.saleStatus || (data.sold ? 'sold' : 'available'),
           displayLocation: data.displayLocation || 'store',
+          featured: Boolean(data.featured),
           stock: data.stock || 1
         });
         setImageOrder(normalizedSrc);
@@ -505,6 +507,16 @@ function ProductEditor() {
                 onChange={(e) => handleFieldChange('published', e.target.checked)}
               />
               <label htmlFor="published-check">Visible to customers</label>
+            </div>
+
+            <div className="form-check">
+              <input
+                type="checkbox"
+                id="featured-check"
+                checked={Boolean(product.featured)}
+                onChange={(e) => handleFieldChange('featured', e.target.checked)}
+              />
+              <label htmlFor="featured-check">Show in featured spotlight</label>
             </div>
           </div>
 

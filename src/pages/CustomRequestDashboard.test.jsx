@@ -52,4 +52,26 @@ describe('custom request email activity', () => {
     expect(rows[0].metrics).toContainEqual(['Delivered', 1]);
     expect(rows[0].metrics).toContainEqual(['Opens', 2]);
   });
+
+  test('falls back to a top-level email activity summary when the request only has a latest event snapshot', () => {
+    const rows = getEmailActivityRows({
+      emailActivityLatest: {
+        emailPurpose: 'quote',
+        recipient: 'customer@example.com',
+        subject: 'Your quote is ready',
+        event: 'opened',
+        eventAt: 200
+      }
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      key: 'latest',
+      label: 'Quote email',
+      recipient: 'customer@example.com',
+      subject: 'Your quote is ready',
+      lastEvent: 'opened',
+      lastEventLabel: 'Opened'
+    });
+  });
 });

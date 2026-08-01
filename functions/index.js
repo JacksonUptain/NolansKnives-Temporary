@@ -3287,6 +3287,175 @@ exports.captureCustomRequestDepositPayPalOrderHttp = onRequest(async (req, res) 
   }
 });
 
+// Core logic, extracted so both the HTTP wrapper below and the AI
+// assistant's request_final_payment tool (functions/ai/tools.js) can call
+// it directly without one Cloud Function invoking another over HTTP.
+async function requestFinalPaymentCore(uid, data = {}) {
+  const isStaff = await verifyUserRole(uid, "business");
+  if (!isStaff) throw new HttpsError("permission-denied", "Only staff can request final payment.");
+
+  const {
+    requestId,
+    remainingBalance,
+    shippingAmount,
+    taxAmount,
+    adjustmentAmount,
+    note = ""
+  } = data;
+  if (!requestId) throw new HttpsError("invalid-argument", "requestId is required.");
+
+  const requestSnap = await db.ref(`customRequests/${requestId}`).once("value");
+  if (!requestSnap.exists()) throw new HttpsError("not-found", "Custom request not found.");
+
+  const customRequest = requestSnap.val() || {};
+  if (!customRequest.customerEmail) {
+    throw new HttpsError("failed-precondition", "This request does not have a customer email.");
+  }
+  if (hasPaidCustomRequestFinalPayment(customRequest)) {
+    throw new HttpsError("failed-precondition", "This request is already paid in full.");
+  }
+
+  let quote = customRequest.quote || null;
+  if (!quote && customRequest.quoteId) {
+    const quoteSnap = await db.ref(`quotes/${customRequest.quoteId}`).once("value");
+    quote = quoteSnap.exists() ? quoteSnap.val() : null;
+  }
+
+  const requestWithQuote = { ...customRequest, quote };
+  const summary = buildFinalPaymentSummary(requestWithQuote, {
+    remainingBalance,
+    shippingAmount,
+    taxAmount,
+    adjustmentAmount
+  });
+
+  if (!summary.finalPrice || summary.finalPrice <= 0) {
+    throw new HttpsError("failed-precondition", "Send a final quote before requesting final payment.");
+  }
+  if (!summary.totalDue || summary.totalDue <= 0) {
+    throw new HttpsError("invalid-argument", "Final payment amount must be greater than zero.");
+  }
+
+  const cleanNote = String(note || "").trim();
+  const finalPaymentUrl = getCustomRequestFinalPaymentUrl(requestId);
+  const now = admin.database.ServerValue.TIMESTAMP;
+  const finalPaymentRecord = {
+    status: "requested",
+    amount: summary.totalDue,
+    finalPrice: summary.finalPrice,
+    depositPaid: summary.depositPaid,
+    remainingBalance: summary.remainingBalance,
+    shippingAmount: summary.shippingAmount,
+    taxAmount: summary.taxAmount,
+    adjustmentAmount: summary.adjustmentAmount,
+    note: cleanNote,
+    paymentUrl: finalPaymentUrl,
+    requestedAt: now,
+    requestedBy: uid,
+    emailStatus: "pending"
+  };
+
+  const messageId = db.ref("messages").push().key;
+  const profile = await getUserProfile(uid);
+  const messageText = `Final payment requested: $${summary.totalDue.toFixed(2)} due.${cleanNote ? ` ${cleanNote}` : ""}`;
+  const updates = {
+    [`customRequests/${requestId}/status`]: "awaiting_final_payment",
+    [`customRequests/${requestId}/balanceDue`]: summary.totalDue,
+    [`customRequests/${requestId}/finalPaymentAmount`]: summary.totalDue,
+    [`customRequests/${requestId}/finalPaymentStatus`]: "requested",
+    [`customRequests/${requestId}/finalPaymentRequestedAt`]: now,
+    [`customRequests/${requestId}/finalPaymentRequestedBy`]: uid,
+    [`customRequests/${requestId}/finalPaymentUrl`]: finalPaymentUrl,
+    [`customRequests/${requestId}/remainingBalance`]: summary.remainingBalance,
+    [`customRequests/${requestId}/shippingAmount`]: summary.shippingAmount,
+    [`customRequests/${requestId}/taxAmount`]: summary.taxAmount,
+    [`customRequests/${requestId}/adjustmentAmount`]: summary.adjustmentAmount,
+    [`customRequests/${requestId}/finalPaymentNote`]: cleanNote,
+    [`customRequests/${requestId}/payments/final`]: finalPaymentRecord,
+    [`customRequests/${requestId}/updatedAt`]: now,
+    [`customRequests/${requestId}/lastUpdatedAt`]: now,
+    [`customRequests/${requestId}/lastUpdatedBy`]: uid,
+    [`messages/${requestId}/${messageId}`]: {
+      messageId,
+      senderUid: uid,
+      senderRole: profile?.role || "business",
+      text: messageText,
+      createdAt: now,
+      readByCustomer: false,
+      readByStaff: true,
+      isSystemMessage: true
+    },
+    [`conversations/${requestId}/conversationId`]: requestId,
+    [`conversations/${requestId}/customRequestId`]: requestId,
+    [`conversations/${requestId}/customerUid`]: customRequest.uid,
+    [`conversations/${requestId}/conversationType`]: "customRequest",
+    [`conversations/${requestId}/status`]: "open",
+    [`conversations/${requestId}/updatedAt`]: now,
+    [`conversations/${requestId}/lastMessageAt`]: now,
+    [`conversations/${requestId}/unreadByCustomer`]: admin.database.ServerValue.increment(1)
+  };
+
+  if (customRequest.quoteId) {
+    updates[`quotes/${customRequest.quoteId}/status`] = "final_payment_requested";
+    updates[`quotes/${customRequest.quoteId}/remainingBalance`] = summary.remainingBalance;
+    updates[`quotes/${customRequest.quoteId}/finalPaymentAmount`] = summary.totalDue;
+    updates[`quotes/${customRequest.quoteId}/finalPaymentRequestedAt`] = now;
+    updates[`quotes/${customRequest.quoteId}/updatedAt`] = now;
+  }
+
+  await db.ref().update(updates);
+
+  try {
+    const emailResult = await sendRequiredEmail(
+      customRequest.customerEmail,
+      "finalPaymentRequested",
+      customRequest.customerName || "Customer",
+      requestId,
+      summary.finalPrice,
+      summary.depositPaid,
+      summary.remainingBalance,
+      summary.shippingAmount,
+      summary.taxAmount,
+      summary.adjustmentAmount,
+      summary.totalDue,
+      finalPaymentUrl,
+      cleanNote,
+      emailSendOptions({
+        requestId,
+        quoteId: customRequest.quoteId || "",
+        objectType: "custom_request",
+        objectId: requestId,
+        emailPurpose: "final_payment_request",
+        paymentStage: "final",
+        linkType: "final_payment"
+      })
+    );
+    await db.ref(`customRequests/${requestId}/payments/final`).update({
+      emailStatus: "sent",
+      emailMessageId: emailResult.messageId || null,
+      emailSentAt: admin.database.ServerValue.TIMESTAMP
+    });
+  } catch (emailError) {
+    await db.ref(`customRequests/${requestId}/payments/final`).update({
+      emailStatus: "failed",
+      emailError: emailError.message || "Final payment email failed.",
+      emailFailedAt: admin.database.ServerValue.TIMESTAMP
+    });
+    throw new HttpsError("internal", "Final payment request saved, but the email failed to send.");
+  }
+
+  await logAuditAction("custom_final_payment_requested", uid, profile?.role || "business", customRequest.uid, {
+    requestId,
+    amount: summary.totalDue,
+    remainingBalance: summary.remainingBalance,
+    shippingAmount: summary.shippingAmount,
+    taxAmount: summary.taxAmount,
+    adjustmentAmount: summary.adjustmentAmount
+  });
+
+  return { success: true, amount: summary.totalDue, finalPaymentUrl };
+}
+
 exports.requestCustomRequestFinalPaymentHttp = onRequest(async (req, res) => {
   applyCors(req, res);
   if (req.method === "OPTIONS") return res.status(204).send("");
@@ -3294,169 +3463,8 @@ exports.requestCustomRequestFinalPaymentHttp = onRequest(async (req, res) => {
 
   try {
     const uid = await requireUidFromRequest(req);
-    const isStaff = await verifyUserRole(uid, "business");
-    if (!isStaff) throw new HttpsError("permission-denied", "Only staff can request final payment.");
-
-    const {
-      requestId,
-      remainingBalance,
-      shippingAmount,
-      taxAmount,
-      adjustmentAmount,
-      note = ""
-    } = req.body || {};
-    if (!requestId) throw new HttpsError("invalid-argument", "requestId is required.");
-
-    const requestSnap = await db.ref(`customRequests/${requestId}`).once("value");
-    if (!requestSnap.exists()) throw new HttpsError("not-found", "Custom request not found.");
-
-    const customRequest = requestSnap.val() || {};
-    if (!customRequest.customerEmail) {
-      throw new HttpsError("failed-precondition", "This request does not have a customer email.");
-    }
-    if (hasPaidCustomRequestFinalPayment(customRequest)) {
-      throw new HttpsError("failed-precondition", "This request is already paid in full.");
-    }
-
-    let quote = customRequest.quote || null;
-    if (!quote && customRequest.quoteId) {
-      const quoteSnap = await db.ref(`quotes/${customRequest.quoteId}`).once("value");
-      quote = quoteSnap.exists() ? quoteSnap.val() : null;
-    }
-
-    const requestWithQuote = { ...customRequest, quote };
-    const summary = buildFinalPaymentSummary(requestWithQuote, {
-      remainingBalance,
-      shippingAmount,
-      taxAmount,
-      adjustmentAmount
-    });
-
-    if (!summary.finalPrice || summary.finalPrice <= 0) {
-      throw new HttpsError("failed-precondition", "Send a final quote before requesting final payment.");
-    }
-    if (!summary.totalDue || summary.totalDue <= 0) {
-      throw new HttpsError("invalid-argument", "Final payment amount must be greater than zero.");
-    }
-
-    const cleanNote = String(note || "").trim();
-    const finalPaymentUrl = getCustomRequestFinalPaymentUrl(requestId);
-    const now = admin.database.ServerValue.TIMESTAMP;
-    const finalPaymentRecord = {
-      status: "requested",
-      amount: summary.totalDue,
-      finalPrice: summary.finalPrice,
-      depositPaid: summary.depositPaid,
-      remainingBalance: summary.remainingBalance,
-      shippingAmount: summary.shippingAmount,
-      taxAmount: summary.taxAmount,
-      adjustmentAmount: summary.adjustmentAmount,
-      note: cleanNote,
-      paymentUrl: finalPaymentUrl,
-      requestedAt: now,
-      requestedBy: uid,
-      emailStatus: "pending"
-    };
-
-    const messageId = db.ref("messages").push().key;
-    const profile = await getUserProfile(uid);
-    const messageText = `Final payment requested: $${summary.totalDue.toFixed(2)} due.${cleanNote ? ` ${cleanNote}` : ""}`;
-    const updates = {
-      [`customRequests/${requestId}/status`]: "awaiting_final_payment",
-      [`customRequests/${requestId}/balanceDue`]: summary.totalDue,
-      [`customRequests/${requestId}/finalPaymentAmount`]: summary.totalDue,
-      [`customRequests/${requestId}/finalPaymentStatus`]: "requested",
-      [`customRequests/${requestId}/finalPaymentRequestedAt`]: now,
-      [`customRequests/${requestId}/finalPaymentRequestedBy`]: uid,
-      [`customRequests/${requestId}/finalPaymentUrl`]: finalPaymentUrl,
-      [`customRequests/${requestId}/remainingBalance`]: summary.remainingBalance,
-      [`customRequests/${requestId}/shippingAmount`]: summary.shippingAmount,
-      [`customRequests/${requestId}/taxAmount`]: summary.taxAmount,
-      [`customRequests/${requestId}/adjustmentAmount`]: summary.adjustmentAmount,
-      [`customRequests/${requestId}/finalPaymentNote`]: cleanNote,
-      [`customRequests/${requestId}/payments/final`]: finalPaymentRecord,
-      [`customRequests/${requestId}/updatedAt`]: now,
-      [`customRequests/${requestId}/lastUpdatedAt`]: now,
-      [`customRequests/${requestId}/lastUpdatedBy`]: uid,
-      [`messages/${requestId}/${messageId}`]: {
-        messageId,
-        senderUid: uid,
-        senderRole: profile?.role || "business",
-        text: messageText,
-        createdAt: now,
-        readByCustomer: false,
-        readByStaff: true,
-        isSystemMessage: true
-      },
-      [`conversations/${requestId}/conversationId`]: requestId,
-      [`conversations/${requestId}/customRequestId`]: requestId,
-      [`conversations/${requestId}/customerUid`]: customRequest.uid,
-      [`conversations/${requestId}/conversationType`]: "customRequest",
-      [`conversations/${requestId}/status`]: "open",
-      [`conversations/${requestId}/updatedAt`]: now,
-      [`conversations/${requestId}/lastMessageAt`]: now,
-      [`conversations/${requestId}/unreadByCustomer`]: admin.database.ServerValue.increment(1)
-    };
-
-    if (customRequest.quoteId) {
-      updates[`quotes/${customRequest.quoteId}/status`] = "final_payment_requested";
-      updates[`quotes/${customRequest.quoteId}/remainingBalance`] = summary.remainingBalance;
-      updates[`quotes/${customRequest.quoteId}/finalPaymentAmount`] = summary.totalDue;
-      updates[`quotes/${customRequest.quoteId}/finalPaymentRequestedAt`] = now;
-      updates[`quotes/${customRequest.quoteId}/updatedAt`] = now;
-    }
-
-    await db.ref().update(updates);
-
-    try {
-      const emailResult = await sendRequiredEmail(
-        customRequest.customerEmail,
-        "finalPaymentRequested",
-        customRequest.customerName || "Customer",
-        requestId,
-        summary.finalPrice,
-        summary.depositPaid,
-        summary.remainingBalance,
-        summary.shippingAmount,
-        summary.taxAmount,
-        summary.adjustmentAmount,
-        summary.totalDue,
-        finalPaymentUrl,
-        cleanNote,
-        emailSendOptions({
-          requestId,
-          quoteId: customRequest.quoteId || "",
-          objectType: "custom_request",
-          objectId: requestId,
-          emailPurpose: "final_payment_request",
-          paymentStage: "final",
-          linkType: "final_payment"
-        })
-      );
-      await db.ref(`customRequests/${requestId}/payments/final`).update({
-        emailStatus: "sent",
-        emailMessageId: emailResult.messageId || null,
-        emailSentAt: admin.database.ServerValue.TIMESTAMP
-      });
-    } catch (emailError) {
-      await db.ref(`customRequests/${requestId}/payments/final`).update({
-        emailStatus: "failed",
-        emailError: emailError.message || "Final payment email failed.",
-        emailFailedAt: admin.database.ServerValue.TIMESTAMP
-      });
-      throw new HttpsError("internal", "Final payment request saved, but the email failed to send.");
-    }
-
-    await logAuditAction("custom_final_payment_requested", uid, profile?.role || "business", customRequest.uid, {
-      requestId,
-      amount: summary.totalDue,
-      remainingBalance: summary.remainingBalance,
-      shippingAmount: summary.shippingAmount,
-      taxAmount: summary.taxAmount,
-      adjustmentAmount: summary.adjustmentAmount
-    });
-
-    return res.status(200).json({ success: true, amount: summary.totalDue, finalPaymentUrl });
+    const result = await requestFinalPaymentCore(uid, req.body || {});
+    return res.status(200).json(result);
   } catch (error) {
     return sendHttpError(res, error, "Failed to request final payment.");
   }
@@ -3944,11 +3952,10 @@ exports.sendChatMessageHttp = onRequest(async (req, res) => {
   }
 });
 
-exports.sendStaffMessage = onCall({ invoker: "public" }, async (request) => {
-  if (!request.auth) throw new HttpsError("unauthenticated", "User must be signed in.");
-
-  const uid = request.auth.uid;
-  const { orderId, text } = request.data;
+// Core logic, extracted so both wrappers below and the AI assistant's
+// send_customer_message tool (functions/ai/tools.js) can call it directly.
+async function sendStaffMessageCore(uid, data = {}) {
+  const { orderId, text } = data;
 
   if (!orderId || !text) {
     throw new HttpsError("invalid-argument", "orderId and text are required.");
@@ -3992,6 +3999,11 @@ exports.sendStaffMessage = onCall({ invoker: "public" }, async (request) => {
   ]);
 
   return { messageId, success: true };
+}
+
+exports.sendStaffMessage = onCall({ invoker: "public" }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "User must be signed in.");
+  return sendStaffMessageCore(request.auth.uid, request.data);
 });
 
 exports.sendStaffMessageHttp = onRequest(async (req, res) => {
@@ -4001,50 +4013,8 @@ exports.sendStaffMessageHttp = onRequest(async (req, res) => {
 
   try {
     const uid = await requireUidFromRequest(req);
-    const { orderId, text } = req.body || {};
-
-    if (!orderId || !text) {
-      throw new HttpsError("invalid-argument", "orderId and text are required.");
-    }
-
-    if (text.trim().length === 0) {
-      throw new HttpsError("invalid-argument", "Message cannot be empty.");
-    }
-
-    const isStaff = await verifyUserRole(uid, "business");
-    if (!isStaff) {
-      throw new HttpsError("permission-denied", "Only staff can reply in this conversation.");
-    }
-
-    const profile = await getUserProfile(uid);
-    const subject = await getStaffConversationSubject(orderId);
-    await ensureConversation(orderId, subject.record);
-
-    const messageId = db.ref("messages").push().key;
-    const message = {
-      messageId,
-      senderUid: uid,
-      senderRole: profile?.role || "business",
-      text: text.trim(),
-      createdAt: admin.database.ServerValue.TIMESTAMP,
-      readByCustomer: false,
-      readByStaff: true
-    };
-
-    await Promise.all([
-      db.ref(`messages/${orderId}/${messageId}`).set(message),
-      db.ref(`conversations/${orderId}`).update({
-        lastMessageAt: admin.database.ServerValue.TIMESTAMP,
-        lastStaffMessageAt: admin.database.ServerValue.TIMESTAMP,
-        lastMessageSenderRole: message.senderRole,
-        customerUnreadSince: admin.database.ServerValue.TIMESTAMP,
-        customerUnreadReminderSentAt: null,
-        unreadByCustomer: admin.database.ServerValue.increment(1),
-        updatedAt: admin.database.ServerValue.TIMESTAMP
-      })
-    ]);
-
-    return res.status(200).json({ messageId, success: true });
+    const result = await sendStaffMessageCore(uid, req.body || {});
+    return res.status(200).json(result);
   } catch (error) {
     const code = error?.code || "internal";
     const message = error?.message || "Failed to send message.";
@@ -4634,10 +4604,10 @@ async function resolveCampaignTemplateSources(templateId, campaignName) {
   };
 }
 
-exports.sendEmailCampaign = onCall({ invoker: "public", cors: true, timeoutSeconds: 540, memory: "512MiB" }, async (request) => {
-  if (!request.auth) throw new HttpsError("unauthenticated", "User must be signed in.");
-
-  const uid = request.auth.uid;
+// Core logic, extracted so both the onCall wrapper below and the AI
+// assistant's send_email_campaign tool (functions/ai/tools.js) can call it
+// directly without one Cloud Function invoking another over HTTP.
+async function sendEmailCampaignCore(uid, data = {}, authTokenEmail = "") {
   const isStaff = await verifyUserRole(uid, "business");
   if (!isStaff) {
     throw new HttpsError("permission-denied", "Only staff can send email campaigns.");
@@ -4652,7 +4622,7 @@ exports.sendEmailCampaign = onCall({ invoker: "public", cors: true, timeoutSecon
     subject = "",
     html = "",
     mode = "custom"
-  } = request.data || {};
+  } = data;
 
   const { recipients, groups } = await getCampaignRecipients({ recipientUids, groupIds, manualRecipients });
   if (recipients.length === 0) {
@@ -4699,7 +4669,7 @@ exports.sendEmailCampaign = onCall({ invoker: "public", cors: true, timeoutSecon
     manualRecipientCount,
     status: "sending",
     createdBy: uid,
-    createdByEmail: senderProfile?.email || request.auth.token?.email || "",
+    createdByEmail: senderProfile?.email || authTokenEmail || "",
     createdAt: startedAt,
     updatedAt: startedAt
   });
@@ -4786,6 +4756,11 @@ exports.sendEmailCampaign = onCall({ invoker: "public", cors: true, timeoutSecon
     skippedCount: skipped.length,
     failures: failures.slice(0, 10)
   };
+}
+
+exports.sendEmailCampaign = onCall({ invoker: "public", cors: true, timeoutSeconds: 540, memory: "512MiB" }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "User must be signed in.");
+  return sendEmailCampaignCore(request.auth.uid, request.data, request.auth.token?.email);
 });
 
 exports.assignHistoricalPurchase = onCall({ invoker: "public" }, async (request) => {
@@ -5165,11 +5140,11 @@ exports.updateCustomRequestStatus = onCall({ invoker: "public" }, async (request
   return { success: true };
 });
 
-exports.sendCustomKnifeQuote = onCall({ invoker: "public" }, async (request) => {
-  if (!request.auth) throw new HttpsError("unauthenticated", "User must be signed in.");
-
-  const uid = request.auth.uid;
-  const { requestId, finalPrice, remainingBalance, notes, paymentTerms } = request.data;
+// Core logic, extracted so both the onCall wrapper below and the AI
+// assistant's send_quote tool (functions/ai/tools.js) can call it directly
+// without one Cloud Function invoking another over HTTP.
+async function sendCustomKnifeQuoteCore(uid, data = {}) {
+  const { requestId, finalPrice, remainingBalance, notes, paymentTerms } = data;
 
   if (!requestId || !finalPrice) {
     throw new HttpsError("invalid-argument", "requestId and finalPrice are required.");
@@ -5297,6 +5272,11 @@ exports.sendCustomKnifeQuote = onCall({ invoker: "public" }, async (request) => 
   });
 
   return { success: true, quoteId };
+}
+
+exports.sendCustomKnifeQuote = onCall({ invoker: "public" }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "User must be signed in.");
+  return sendCustomKnifeQuoteCore(request.auth.uid, request.data);
 });
 
 // ============================================================================
@@ -5678,5 +5658,34 @@ exports.notifyOrderComplete = onCall({ invoker: "public" }, async (request) => {
     throw new HttpsError("internal", "Failed to send completion email.");
   }
 });
+
+// ============================================================================
+// NOLAN'S BUSINESS ASSISTANT (AI)
+// ============================================================================
+// Placed at the very end so every helper referenced below (db, admin,
+// verifyUserRole, sendCustomKnifeQuoteCore, ...) already exists by the time
+// functions/ai/* is required. See functions/ai/internalsRegistry.js for why
+// this indirection exists instead of a direct circular require.
+const { setInternals } = require("./ai/internalsRegistry");
+setInternals({
+  db,
+  admin,
+  HttpsError,
+  applyCors,
+  requireAuthFromRequest,
+  sendHttpError,
+  verifyUserRole,
+  getUserProfile,
+  logAuditAction,
+  sendCustomKnifeQuoteCore,
+  requestFinalPaymentCore,
+  sendStaffMessageCore,
+  sendEmailCampaignCore
+});
+
+const aiAssistant = require("./ai");
+exports.aiAssistantChat = aiAssistant.aiAssistantChat;
+exports.aiAssistantSnapshot = aiAssistant.aiAssistantSnapshot;
+exports.aiAssistantAction = aiAssistant.aiAssistantAction;
 
 module.exports = exports;

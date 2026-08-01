@@ -145,6 +145,27 @@
     "notificationEvents": {
       ".read": "auth.token.role === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'admin'",
       ".write": false
+    },
+    "aiThreads": {
+      "$uid": {
+        ".read": "auth.uid === $uid || auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business'",
+        ".write": false
+      }
+    },
+    "aiMessages": {
+      "$threadId": {
+        ".read": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business'",
+        ".write": false
+      }
+    },
+    "aiActions": {
+      ".read": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business'",
+      ".write": false,
+      ".indexOn": ["threadId", "createdAt"]
+    },
+    "aiUsage": {
+      ".read": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'business'",
+      ".write": false
     }
   }
 }

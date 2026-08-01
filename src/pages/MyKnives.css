@@ -60,6 +60,17 @@
   align-items: start;
 }
 
+.my-knives-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.my-knives-spotlight {
+  margin-bottom: 1rem;
+  border: 1px solid rgba(255, 204, 0, 0.2);
+}
+
 .purchase-card-button {
   width: 100%;
   padding: 0;

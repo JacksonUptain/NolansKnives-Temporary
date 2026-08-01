@@ -248,9 +248,12 @@ export default function MyKnives() {
         <div className="my-knives-header">
           <div>
             <h1>Your Knives</h1>
-            <p>Follow your purchases and custom requests in one place.</p>
+            <p>Track purchases, custom requests, and follow-up messages from one place.</p>
           </div>
-          <button className="btn btn-outline-light" onClick={() => navigate("/store")}>Browse the Store</button>
+          <div className="my-knives-actions">
+            <button className="btn btn-warning btn-sm" onClick={() => navigate("/custom-knife-request")}>Start a custom request</button>
+            <button className="btn btn-outline-light" onClick={() => navigate("/store")}>Browse the Store</button>
+          </div>
         </div>
 
         {items.length === 0 && likedProducts.length === 0 ? (
@@ -264,6 +267,15 @@ export default function MyKnives() {
         ) : (
           <div className="my-knives-layout">
             <div className="purchases-grid">
+              <div className="detail-summary-card my-knives-spotlight">
+                <h2>What you can do here</h2>
+                <p>Review your orders, see the next step for each custom request, and open messages when Nolan has updates.</p>
+                <div className="detail-summary-grid">
+                  <div><span>Orders</span><strong>{purchases.length}</strong></div>
+                  <div><span>Custom requests</span><strong>{customRequests.length}</strong></div>
+                  <div><span>Saved pieces</span><strong>{likedProducts.length}</strong></div>
+                </div>
+              </div>
               {items.map((item) => {
                 const isSelected = selectedItem?.key === item.key;
                 const isOrder = item.type === "order";
@@ -367,7 +379,7 @@ export default function MyKnives() {
                       <div><span>Expected arrival</span><strong>{selectedItem.order.expectedArrivalDate || "To be confirmed"}</strong></div>
                       <div><span>Tracking</span><strong>{selectedItem.order.trackingUrl ? "Available" : "Not available yet"}</strong></div>
                     </div>
-                    <button className="btn btn-warning" onClick={() => navigate(`/my-knives/${selectedItem.id}`)}>Open Full Detail</button>
+                    <button className="btn btn-warning" onClick={() => navigate(`/my-knives/${selectedItem.id}`)}>Open full detail</button>
                   </div>
                   <div className="detail-chat-card">
                     <h3>Messages</h3>

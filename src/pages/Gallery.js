@@ -89,7 +89,7 @@ export default function Gallery() {
     });
   }, [products, query, filter]);
 
-  const featuredProduct = filteredProducts[0] || products[0] || null;
+  const featuredProduct = filteredProducts.find((product) => Boolean(product.featured)) || null;
   const featuredImages = normalizeImages(featuredProduct?.src);
   const collectionItems = featuredProduct
     ? filteredProducts.filter((product) => product.id !== featuredProduct.id)

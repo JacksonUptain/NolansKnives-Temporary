@@ -8,4 +8,8 @@ import reportWebVitals from "./reportWebVitals";
 const root = createRoot(document.getElementById("root"));
 root.render(<App />);
 
+requestAnimationFrame(() => {
+  document.documentElement.classList.add("app-ready");
+});
+
 reportWebVitals();

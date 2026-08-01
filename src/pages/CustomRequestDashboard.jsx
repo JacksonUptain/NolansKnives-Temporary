@@ -94,15 +94,25 @@ function emailEventLabel(value) {
 export function getEmailActivityRows(request) {
   if (!request || typeof request !== 'object' || Array.isArray(request)) return [];
   const emailActivity = request.emailActivity;
-  if (!emailActivity || typeof emailActivity !== 'object' || Array.isArray(emailActivity)) return [];
+  const hasActivityMap = emailActivity && typeof emailActivity === 'object' && !Array.isArray(emailActivity);
+  const fallbackActivity = request.emailActivityLatest && typeof request.emailActivityLatest === 'object' && !Array.isArray(request.emailActivityLatest)
+    ? { latest: { ...request.emailActivityLatest } }
+    : null;
+  const activityEntries = hasActivityMap
+    ? Object.entries(emailActivity)
+    : fallbackActivity
+      ? Object.entries(fallbackActivity)
+      : [];
 
-  return Object.entries(emailActivity)
+  if (activityEntries.length === 0) return [];
+
+  return activityEntries
     .filter(([, activity]) => activity && typeof activity === 'object')
     .map(([key, activity]) => {
       const latest = getLatestActivityEvent(activity);
       const counts = activity.counts || {};
-      const lastEvent = activity.lastEvent || latest?.eventName || latest?.event || '';
-      const lastEventAt = activity.lastEventAt || latest?.eventAt || latest?.receivedAt || activity.sentAt || 0;
+      const lastEvent = activity.lastEvent || latest?.eventName || latest?.event || activity.event || '';
+      const lastEventAt = activity.lastEventAt || latest?.eventAt || latest?.receivedAt || activity.sentAt || activity.eventAt || 0;
       const failures = Number(counts.permanentFailures || 0) + Number(counts.temporaryFailures || 0);
 
       return {
@@ -115,7 +125,7 @@ export function getEmailActivityRows(request) {
         lastEvent,
         lastEventLabel: lastEvent ? emailEventLabel(lastEvent) : (activity.sentAt ? 'Sent' : 'Waiting'),
         lastEventAt,
-        lastClickedUrl: activity.lastClickedUrl || latest?.url || '',
+        lastClickedUrl: activity.lastClickedUrl || latest?.url || activity.url || '',
         metrics: [
           ['Accepted', counts.accepted || 0],
           ['Delivered', counts.delivered || 0],

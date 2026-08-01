@@ -35,6 +35,26 @@ It correctly bundles React in production mode and optimizes the build for the be
 The build is minified and the filenames include the hashes.\
 Your app is ready to be deployed!
 
+### `npm run deploy:check`
+
+Prepares and verifies a production release without publishing it. It updates and
+checks all generated SEO files, creates the production build, runs the frontend
+tests once (without watch mode), and runs the Firebase Functions tests.
+
+### `npm run deploy`
+
+This is the complete release command. It updates and validates SEO, builds the
+production app, runs the frontend and Firebase Functions tests, commits all
+changed files with a timestamped message, pushes the current branch, deploys
+the Firebase Functions and rules, and publishes the website to GitHub Pages.
+After publishing, it verifies the live homepage, sitemap, and robots file.
+These actions run through the `predeploy`, `deploy`, and `postdeploy` lifecycle
+in that order. If any step fails, the later steps do not run.
+
+On macOS, open the project in VS Code, choose **Terminal > New Terminal**, and
+run `npm run deploy` from the project root. No message or other argument is
+needed. The Firebase CLI must be logged in first with `firebase login`.
+
 See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
 ### `npm run eject`

@@ -30,9 +30,15 @@
     "seo:update": "npm run seo:generate && npm run seo:check",
     "preview": "node scripts/serve-build.mjs",
     "test": "react-scripts test",
+    "test:ci": "npm test -- --watchAll=false",
+    "test:functions": "npm --prefix functions test",
     "eject": "react-scripts eject",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "deploy:check": "npm run seo:update && npm run build && npm run test:ci && npm run test:functions",
+    "predeploy": "npm run deploy:check",
+    "deploy:web": "gh-pages -d build",
+    "deploy:backend": "firebase deploy --only functions,database,storage",
+    "deploy": "bash scripts/release.sh",
+    "postdeploy": "node scripts/postdeploy-check.mjs"
   },
   "eslintConfig": {
     "extends": [

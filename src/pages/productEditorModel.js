@@ -7,6 +7,8 @@ export function buildProductPayload(product = {}, options = {}) {
       ? [product.src.trim()]
       : [];
 
+  const featuredValue = product.featured === true || product.featured === 'true' || product.featured === 1 || product.featured === '1';
+
   return {
     ...product,
     src: normalizedSrc,
@@ -15,6 +17,7 @@ export function buildProductPayload(product = {}, options = {}) {
     published: publish,
     sold: product.saleStatus === 'sold',
     soldAt: product.saleStatus === 'sold' ? product.soldAt || now : null,
+    featured: featuredValue,
     updatedAt: now,
     createdAt: product.createdAt || now
   };

@@ -79,7 +79,7 @@ function NolanStore() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [sortMode, setSortMode] = useState("featured");
-  const [showSold, setShowSold] = useState(false);
+  const [showSold, setShowSold] = useState(true);
 
   useEffect(() => {
     const productsRef = ref(db, 'Products');
@@ -137,7 +137,7 @@ function NolanStore() {
   }, [publicProducts, query, sortMode, showSold]);
 
   const hasAvailableProducts = publicProducts.some((product) => product.publicStatus === 'available');
-  const featuredProduct = filteredProducts[0] || null;
+  const featuredProduct = filteredProducts.find((product) => Boolean(product.featured)) || filteredProducts[0] || null;
 
   const scrollToCollection = () => {
     document.getElementById('store-collection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -166,7 +166,7 @@ function NolanStore() {
         <aside className="store-feature-panel" aria-label="Featured knife">
           {loading ? (
             <Skeleton height="640px" />
-          ) : featuredProduct ? (
+          ) : featuredProduct && featuredProduct.featured ? (
             <>
               <RotatingProductMedia product={featuredProduct} className="featured-media" />
               <div className="store-feature-copy">
@@ -182,8 +182,8 @@ function NolanStore() {
             </>
           ) : (
             <div className="store-state-card hero-empty">
-              <h2>No knives available right now</h2>
-              <p>New finished pieces will appear here when they are ready.</p>
+              <h2>No featured knives right now</h2>
+              <p>Featured pieces will appear here when a product is marked for spotlight.</p>
             </div>
           )}
         </aside>

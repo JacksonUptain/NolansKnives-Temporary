@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ref, onValue, push, remove, serverTimestamp, set } from 'firebase/database';
 import { db } from '../firebase';
 import { getEmailTemplateCatalog, sendEmailCampaign } from '../../services/adminService';
@@ -82,6 +83,9 @@ function parseManualRecipients(value = '') {
 }
 
 export default function EmailCampaigns() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const draftIdParam = searchParams.get('draft');
+  const [hydratedDraftId, setHydratedDraftId] = useState('');
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [campaigns, setCampaigns] = useState([]);
@@ -173,6 +177,40 @@ export default function EmailCampaigns() {
       unsubCampaigns();
     };
   }, []);
+
+  useEffect(() => {
+    if (!draftIdParam || loading || hydratedDraftId === draftIdParam) return;
+    const draft = campaigns.find((campaign) => campaign.campaignId === draftIdParam && campaign.status === 'draft');
+    if (!draft) return;
+    setCampaignName(draft.campaignName || "Nolan's Knives Update");
+    setMode('custom');
+    setCustomSubject(draft.subject || '');
+    setCustomHtml(draft.html || '');
+    const groupIds = draft.groupIds ? Object.keys(draft.groupIds).filter((id) => draft.groupIds[id]) : [];
+    setSelectedGroupIds(groupIds.reduce((acc, id) => ({ ...acc, [id]: true }), {}));
+    setSelectedUids({});
+    setManualRecipientText('');
+    setActiveTab('compose');
+    setFlowStep('preview');
+    setHydratedDraftId(draftIdParam);
+  }, [draftIdParam, campaigns, loading, hydratedDraftId]);
+
+  const draftCampaigns = useMemo(() => campaigns.filter((campaign) => campaign.status === 'draft'), [campaigns]);
+  const sentCampaigns = useMemo(() => campaigns.filter((campaign) => campaign.status !== 'draft'), [campaigns]);
+
+  const openDraft = (campaign) => {
+    setHydratedDraftId('');
+    setSearchParams({ draft: campaign.campaignId });
+  };
+
+  const deleteDraft = async (campaign) => {
+    await remove(ref(db, `emailCampaigns/${campaign.campaignId}`));
+    if (hydratedDraftId === campaign.campaignId) {
+      setHydratedDraftId('');
+      setSearchParams({});
+    }
+    showToast('Draft deleted.', 'success');
+  };
 
   const groupById = useMemo(() => groups.reduce((acc, group) => ({ ...acc, [group.groupId]: group }), {}), [groups]);
   const userById = useMemo(() => users.reduce((acc, user) => ({ ...acc, [user.uid]: user }), {}), [users]);
@@ -325,6 +363,11 @@ export default function EmailCampaigns() {
           setError('');
           const result = await sendEmailCampaign(payload);
           showToast(`Campaign sent to ${result.successCount || 0} recipient${result.successCount === 1 ? '' : 's'}.`, result.failureCount ? 'warning' : 'success');
+          if (hydratedDraftId) {
+            await remove(ref(db, `emailCampaigns/${hydratedDraftId}`));
+            setHydratedDraftId('');
+            setSearchParams({});
+          }
           if (!result.failureCount) clearRecipients();
         } catch (err) {
           const message = err?.message || 'Failed to send campaign.';
@@ -799,9 +842,29 @@ export default function EmailCampaigns() {
 
       {activeTab === 'history' && (
         <section className="campaign-panel">
+          {draftCampaigns.length > 0 && (
+            <>
+              <h2>Drafts</h2>
+              <div className="campaign-group-grid">
+                {draftCampaigns.map((campaign) => (
+                  <article className="campaign-group-card" key={campaign.campaignId}>
+                    <div>
+                      <h3>{campaign.campaignName || campaign.subject || 'Untitled draft'}</h3>
+                      <p>{campaign.subject}</p>
+                      {campaign.createdByAi && <span className="status-badge status-draft">Drafted by AI</span>}
+                    </div>
+                    <div className="campaign-recipient-actions">
+                      <button className="action-btn secondary" onClick={() => openDraft(campaign)}><LucideIcon name="Pencil" size={15} /> Open</button>
+                      <button className="action-btn danger" onClick={() => deleteDraft(campaign)}><LucideIcon name="Trash2" size={15} /> Delete</button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </>
+          )}
           <h2>Campaign History</h2>
           <div className="campaign-history-list">
-            {campaigns.map((campaign) => (
+            {sentCampaigns.map((campaign) => (
               <article className="campaign-history-card" key={campaign.campaignId}>
                 <div>
                   <span className={`status-badge status-${slugStatus(campaign.status)}`}>{campaign.status || 'unknown'}</span>
@@ -821,7 +884,7 @@ export default function EmailCampaigns() {
                 </div>
               </article>
             ))}
-            {campaigns.length === 0 && <div className="empty-state refined"><LucideIcon name="Mail" size={36} /><h2>No campaigns yet.</h2></div>}
+            {sentCampaigns.length === 0 && <div className="empty-state refined"><LucideIcon name="Mail" size={36} /><h2>No campaigns yet.</h2></div>}
           </div>
         </section>
       )}

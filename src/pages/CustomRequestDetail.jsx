@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ref, onValue, update, serverTimestamp } from 'firebase/database';
 import { db } from './firebase';
+import { getEmailActivityRows } from './CustomRequestDashboard';
 import { emailService } from '../services/emailService';
 import { customRequestService } from '../services/customRequestService';
 import { showToast } from '../components/Toast';
@@ -219,6 +220,7 @@ export default function CustomRequestDetail() {
     ['Status', labelize(request?.status)],
     ['Submitted', formatDate(request?.createdAt)]
   ], [request]);
+  const emailActivityRows = useMemo(() => getEmailActivityRows(request), [request]);
 
   if (loading) {
     return <div className="custom-request-dashboard"><div className="loading-shimmer">Loading request...</div></div>;
@@ -339,6 +341,54 @@ export default function CustomRequestDetail() {
           <button className="action-btn" onClick={requestFinalPayment} disabled={saving || !request.customerEmail}>
             {saving ? 'Sending...' : 'Request final payment'}
           </button>
+        </section>
+
+        <section className="detail-section-card email-activity-panel">
+          <div className="email-activity-heading">
+            <h3>Email activity</h3>
+            <p>Mailgun delivery and engagement updates for this request appear here as they arrive.</p>
+          </div>
+          {emailActivityRows.length === 0 ? (
+            <div className="email-activity-empty">
+              <LucideIcon name="Mail" size={18} />
+              <p>No email activity has been captured for this request yet.</p>
+            </div>
+          ) : (
+            <div className="email-activity-list">
+              {emailActivityRows.map((row) => {
+                const eventClassName = row.lastEvent ? `event-${String(row.lastEvent).replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase()}` : 'event-waiting';
+                return (
+                  <article key={row.key} className="email-activity-card">
+                    <div className="email-activity-card-header">
+                      <div>
+                        <strong>{row.label}</strong>
+                        <span>{row.recipient || 'No recipient'}</span>
+                      </div>
+                      <span className={`email-event-pill ${eventClassName}`}>{row.lastEventLabel}</span>
+                    </div>
+                    {row.subject ? <p className="email-activity-subject">{row.subject}</p> : null}
+                    <div className="email-activity-counts">
+                      {row.metrics.map(([label, value]) => (
+                        <div key={label}>
+                          <span>{label}</span>
+                          <strong>{value}</strong>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="email-activity-meta">
+                      <span>{formatDate(row.lastEventAt || row.sentAt)}</span>
+                      {row.templateName ? <span>{row.templateName}</span> : null}
+                    </div>
+                    {row.lastClickedUrl ? (
+                      <a className="email-activity-link" href={row.lastClickedUrl} target="_blank" rel="noreferrer">
+                        <LucideIcon name="ExternalLink" size={14} /> Open last link
+                      </a>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </div>
+          )}
         </section>
       </div>
     </div>

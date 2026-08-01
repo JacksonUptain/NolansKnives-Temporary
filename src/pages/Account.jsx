@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { readPurchaseIntent } from "../services/purchaseIntent";
 import { showToast } from "../components/Toast";
+import { getJourneyDestinationLabel } from "./customerJourneyHelpers";
 import "./account.css";
 
 export default function Account() {
@@ -24,6 +25,8 @@ export default function Account() {
     if (intent?.knifeId) return `/checkout/${intent.knifeId}`;
     return "/my-knives";
   }, [location.state]);
+
+  const destinationLabel = useMemo(() => getJourneyDestinationLabel(returnPath), [returnPath]);
 
   const onChange = (event) => {
     setForm((prev) => ({ ...prev, [event.target.name]: event.target.value }));
@@ -102,6 +105,7 @@ export default function Account() {
     <div className="account-page">
       <div className="account-card">
         <h1>{mode === "signin" ? "Sign In" : "Create Account"}</h1>
+        <p className="account-intro">Continue to {destinationLabel} and keep your order updates in one place.</p>
 
         {!!user && <p className="account-inline">Signed in as {user.email}</p>}
         {!!message && <p className="account-inline account-ok">{message}</p>}

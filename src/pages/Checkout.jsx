@@ -9,6 +9,7 @@ import { getPublicKnifeStatus } from "./knifeStatus";
 import "./Checkout.css";
 import LucideIcon from '../components/ui/LucideIcon';
 import { showToast } from "../components/Toast";
+import { getIncompleteShippingFields } from "./customerJourneyHelpers";
 
 export default function Checkout() {
   const { knifeId } = useParams();
@@ -21,6 +22,7 @@ export default function Checkout() {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [orderCreated, setOrderCreated] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("paypal");
+  const [shippingHelpVisible, setShippingHelpVisible] = useState(false);
   const [shippingInfo, setShippingInfo] = useState({
     fullName: "",
     email: "",
@@ -83,9 +85,10 @@ export default function Checkout() {
 
     const createOrder = async (data, actions) => {
       try {
-        const missingShipping = ['fullName', 'addressLine1', 'city', 'state', 'postalCode'].filter((field) => !shippingInfo[field]?.trim());
+        const missingShipping = getIncompleteShippingFields(shippingInfo);
         if (missingShipping.length > 0) {
-          throw new Error("Complete the shipping information before paying.");
+          setShippingHelpVisible(true);
+          throw new Error(`Please complete: ${missingShipping.join(", ")}.`);
         }
         setPaymentLoading(true);
         const paypalOrderData = await createPayPalOrder({
@@ -258,6 +261,10 @@ export default function Checkout() {
               <p>Confirm where the knife should be shipped. This information is shown before payment.</p>
 
               <div className="checkout-shipping-grid">
+                <p className="checkout-help-copy">We use this information to prepare your order and complete secure payment.</p>
+                {shippingHelpVisible && (
+                  <p className="checkout-help-copy checkout-help-warning">Complete the highlighted shipping fields before you pay.</p>
+                )}
                 <input className="checkout-input" placeholder="Full name" value={shippingInfo.fullName} onChange={(e) => setShippingInfo((p) => ({ ...p, fullName: e.target.value }))} />
                 <input className="checkout-input" placeholder="Email address" value={shippingInfo.email} onChange={(e) => setShippingInfo((p) => ({ ...p, email: e.target.value }))} />
                 <input className="checkout-input checkout-span-2" placeholder="Street address" value={shippingInfo.addressLine1} onChange={(e) => setShippingInfo((p) => ({ ...p, addressLine1: e.target.value }))} />

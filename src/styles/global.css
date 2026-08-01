@@ -9,13 +9,21 @@
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  background-color: var(--nk-black, #000000);
+  color-scheme: dark;
 }
 
 body {
   margin: 0;
+  min-height: 100vh;
   background: var(--nk-bg, #0a0a0a);
   color: var(--nk-text, #f4f4f4);
   line-height: var(--nk-leading-normal, 1.5);
+}
+
+#root {
+  min-height: 100vh;
+  background: var(--nk-bg, #0a0a0a);
 }
 
 img,
@@ -55,6 +63,12 @@ h6 {
 
 .page-transition > * {
   animation: nk-page-fade var(--transition-base, 250ms) ease both;
+}
+
+html:not(.app-ready) .page-transition > * {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
 }
 
 @keyframes nk-page-fade {
