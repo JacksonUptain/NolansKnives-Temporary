@@ -2,8 +2,8 @@
   position: fixed;
   right: 24px;
   bottom: 24px;
-  width: 56px;
-  height: 56px;
+  width: 68px;
+  height: 68px;
   border-radius: var(--nk-radius-pill);
   z-index: 900;
   display: flex;
@@ -36,7 +36,7 @@
 .nk-ai-panel {
   position: fixed;
   right: 24px;
-  bottom: 92px;
+  bottom: 104px;
   width: 400px;
   max-height: min(620px, calc(100vh - 120px));
   display: flex;
@@ -49,6 +49,18 @@
   overflow: hidden;
   transform-origin: bottom right;
   animation: nk-ai-open 220ms cubic-bezier(.2, .8, .25, 1);
+  transition: inset 0.22s ease, width 0.22s ease, height 0.22s ease, max-height 0.22s ease, border-radius 0.22s ease;
+}
+
+.nk-ai-panel.is-fullscreen {
+  inset: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  border-radius: 0;
+  border: none;
 }
 
 @keyframes nk-ai-open {
@@ -79,39 +91,78 @@
   50% { opacity: 0.35; }
 }
 
-/* Ember — the forge-spark mascot. Structural styles are unscoped; every
+/* Ember — the living-flame mascot. Structural styles are unscoped; every
    animation is scoped to the status class (nk-mascot-idle/-thinking/-working)
    set via the AiMascot `status` prop, so switching state can't leave two
-   conflicting animations stacked on the same element. */
+   conflicting animations stacked on the same element. The outer and inner
+   flame layers flicker out of phase from each other (different durations,
+   irregular multi-stop keyframes) so it reads as one live flame instead of
+   a shape pulsing uniformly. */
 .nk-mascot {
   color: var(--nk-gold);
   overflow: visible;
 }
 
-.nk-mascot-body {
+/* Petting: a separate wrapper around outer+inner+eyes so the mouse-driven
+   tilt (set as an inline style in AiMascot.jsx) composes with — rather than
+   fights — the idle/thinking/working flicker keyframes still running on the
+   nested .nk-mascot-outer/.nk-mascot-inner groups. */
+.nk-mascot-pet-wrapper {
   transform-box: fill-box;
-  transform-origin: 50% 100%;
+  transform-origin: 50% 95%;
+  transition: transform 0.12s ease-out;
+}
+
+.nk-mascot-interactive {
+  cursor: default;
+}
+
+.nk-mascot-outer,
+.nk-mascot-inner {
+  transform-box: fill-box;
+  transform-origin: 50% 95%;
 }
 
 .nk-mascot-eyes,
-.nk-mascot-eye {
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
+.nk-mascot-eye,
 .nk-mascot-spark {
   transform-box: fill-box;
   transform-origin: center;
 }
 
-@keyframes nk-mascot-bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-1.5px); }
+@keyframes nk-mascot-flicker-outer {
+  0%, 100% { transform: scale(1, 1) skewX(0deg); }
+  22% { transform: scale(0.97, 1.03) skewX(-1.5deg); }
+  48% { transform: scale(1.02, 0.98) skewX(1deg); }
+  71% { transform: scale(0.98, 1.02) skewX(-0.5deg); }
 }
 
-@keyframes nk-mascot-sway {
-  0%, 100% { transform: rotate(-4deg); }
-  50% { transform: rotate(4deg); }
+@keyframes nk-mascot-flicker-inner {
+  0%, 100% { transform: scale(1, 1); opacity: 0.95; }
+  30% { transform: scale(1.05, 0.94) translateY(0.3px); opacity: 0.75; }
+  60% { transform: scale(0.95, 1.04); opacity: 1; }
+  85% { transform: scale(1.02, 0.98); opacity: 0.85; }
+}
+
+@keyframes nk-mascot-lean {
+  0%, 100% { transform: rotate(-6deg) scaleX(0.98); }
+  50% { transform: rotate(7deg) scaleX(1.02); }
+}
+
+@keyframes nk-mascot-roar {
+  0%, 100% { transform: scale(1, 1); }
+  35% { transform: scale(0.93, 1.12); }
+  65% { transform: scale(1.06, 0.95); }
+}
+
+@keyframes nk-mascot-glow-idle {
+  0%, 100% { filter: drop-shadow(0 0 1.5px rgba(255, 204, 0, 0.35)); }
+  50% { filter: drop-shadow(0 0 3px rgba(255, 204, 0, 0.55)); }
+}
+
+@keyframes nk-mascot-glow-working {
+  0%, 100% { filter: drop-shadow(0 0 3px rgba(255, 204, 0, 0.6)); }
+  50% { filter: drop-shadow(0 0 6px rgba(255, 204, 0, 0.9)); }
 }
 
 @keyframes nk-mascot-blink {
@@ -119,35 +170,32 @@
   95% { transform: scaleY(0.15); }
 }
 
-@keyframes nk-mascot-look {
-  0%, 100% { transform: translateX(-0.6px); }
-  50% { transform: translateX(0.6px); }
+@keyframes nk-mascot-rise {
+  0% { transform: translateY(0) scale(0.6); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translateY(-9px) scale(0.9); opacity: 0; }
 }
 
-@keyframes nk-mascot-twinkle {
-  0%, 100% { opacity: 0.45; transform: scale(0.85); }
-  50% { opacity: 1; transform: scale(1.08); }
-}
-
-@keyframes nk-mascot-shimmer {
-  0%, 100% { opacity: 0.2; }
-  50% { opacity: 0.55; }
-}
-
-.nk-mascot-idle .nk-mascot-body { animation: nk-mascot-bob 3s ease-in-out infinite; }
+.nk-mascot-idle .nk-mascot-outer { animation: nk-mascot-flicker-outer 2.6s ease-in-out infinite, nk-mascot-glow-idle 2.6s ease-in-out infinite; }
+.nk-mascot-idle .nk-mascot-inner { animation: nk-mascot-flicker-inner 1.9s ease-in-out infinite; }
 .nk-mascot-idle .nk-mascot-eyes { animation: nk-mascot-blink 4.5s ease-in-out infinite; }
-.nk-mascot-idle .nk-mascot-spark { animation: nk-mascot-twinkle 2.2s ease-in-out infinite; }
-.nk-mascot-idle .nk-mascot-flicker { animation: nk-mascot-shimmer 3s ease-in-out infinite; }
+.nk-mascot-idle .nk-mascot-spark-1 { animation: nk-mascot-rise 3.2s ease-in infinite; }
+.nk-mascot-idle .nk-mascot-spark-2 { animation: nk-mascot-rise 3.6s ease-in infinite 1.1s; }
+.nk-mascot-idle .nk-mascot-spark-3 { animation: nk-mascot-rise 2.8s ease-in infinite 2s; }
 
-.nk-mascot-thinking .nk-mascot-body { animation: nk-mascot-sway 1.1s ease-in-out infinite; }
-.nk-mascot-thinking .nk-mascot-eye { animation: nk-mascot-look 1.1s ease-in-out infinite; }
-.nk-mascot-thinking .nk-mascot-spark { animation: nk-mascot-twinkle 1.4s ease-in-out infinite; }
-.nk-mascot-thinking .nk-mascot-flicker { animation: nk-mascot-shimmer 1.6s ease-in-out infinite; }
+.nk-mascot-thinking .nk-mascot-outer { animation: nk-mascot-lean 1.4s ease-in-out infinite, nk-mascot-glow-idle 1.4s ease-in-out infinite; }
+.nk-mascot-thinking .nk-mascot-inner { animation: nk-mascot-flicker-inner 1.1s ease-in-out infinite; }
+.nk-mascot-thinking .nk-mascot-eyes { animation: nk-mascot-blink 2.6s ease-in-out infinite; }
+.nk-mascot-thinking .nk-mascot-spark-1 { animation: nk-mascot-rise 1.8s ease-in infinite; }
+.nk-mascot-thinking .nk-mascot-spark-2 { animation: nk-mascot-rise 2s ease-in infinite 0.6s; }
+.nk-mascot-thinking .nk-mascot-spark-3 { animation: nk-mascot-rise 1.6s ease-in infinite 1.1s; }
 
-.nk-mascot-working .nk-mascot-body { animation: nk-mascot-bob 0.6s ease-in-out infinite; }
-.nk-mascot-working .nk-mascot-eyes { animation: nk-mascot-blink 2.4s ease-in-out infinite; }
-.nk-mascot-working .nk-mascot-spark { animation: nk-mascot-twinkle 0.5s ease-in-out infinite; }
-.nk-mascot-working .nk-mascot-flicker { animation: nk-mascot-shimmer 0.8s ease-in-out infinite; }
+.nk-mascot-working .nk-mascot-outer { animation: nk-mascot-roar 0.5s ease-in-out infinite, nk-mascot-glow-working 0.5s ease-in-out infinite; }
+.nk-mascot-working .nk-mascot-inner { animation: nk-mascot-flicker-inner 0.4s ease-in-out infinite; }
+.nk-mascot-working .nk-mascot-eyes { animation: nk-mascot-blink 1.6s ease-in-out infinite; }
+.nk-mascot-working .nk-mascot-spark-1 { animation: nk-mascot-rise 0.9s ease-in infinite; }
+.nk-mascot-working .nk-mascot-spark-2 { animation: nk-mascot-rise 1s ease-in infinite 0.25s; }
+.nk-mascot-working .nk-mascot-spark-3 { animation: nk-mascot-rise 0.8s ease-in infinite 0.5s; }
 
 .nk-ai-fab-mascot {
   display: flex;
@@ -483,6 +531,11 @@
     border-radius: 0;
     border: none;
   }
+
+  /* Already always fullscreen on mobile, so the toggle would be a dead control. */
+  .nk-ai-fullscreen-toggle {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -494,12 +547,17 @@
   .nk-ai-status-thinking,
   .nk-ai-typing span,
   .nk-ai-caret,
-  .nk-mascot-body,
+  .nk-mascot-pet-wrapper,
+  .nk-mascot-outer,
+  .nk-mascot-inner,
   .nk-mascot-eyes,
   .nk-mascot-eye,
   .nk-mascot-spark,
-  .nk-mascot-flicker {
+  .nk-mascot-spark-1,
+  .nk-mascot-spark-2,
+  .nk-mascot-spark-3 {
     animation: none !important;
+    filter: none !important;
     transition: none !important;
   }
 }

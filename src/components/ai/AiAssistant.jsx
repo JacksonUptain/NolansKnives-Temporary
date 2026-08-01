@@ -61,6 +61,7 @@ function ToolChip({ tool, onRevert }) {
 export default function AiAssistant() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const [snapshot, setSnapshot] = useState(null);
   const [snapshotLoading, setSnapshotLoading] = useState(false);
   const [threadId, setThreadId] = useState(null);
@@ -100,6 +101,7 @@ export default function AiAssistant() {
 
   function closePanel() {
     setOpen(false);
+    setFullscreen(false);
     window.requestAnimationFrame(() => fabRef.current?.focus());
   }
 
@@ -214,23 +216,31 @@ export default function AiAssistant() {
         ref={fabRef}
         className={`nk-ai-fab ${open ? "is-open" : ""}`}
         onClick={() => setOpen((v) => !v)}
-        aria-label={open ? "Close Ember, Nolan's Business Assistant" : "Open Ember, Nolan's Business Assistant"}
+        aria-label={open ? "Close Ember AI, Nolan's Business Assistant" : "Open Ember AI, Nolan's Business Assistant"}
       >
         {open ? <LucideIcon name="X" size={22} /> : (
-          <span className="nk-ai-fab-mascot"><AiMascot status="idle" size={30} /></span>
+          <span className="nk-ai-fab-mascot"><AiMascot status="idle" size={44} /></span>
         )}
       </button>
 
       {open && (
-        <div className="nk-ai-panel" role="dialog" aria-modal="false" aria-label="Ember, Nolan's Business Assistant">
+        <div className={`nk-ai-panel ${fullscreen ? "is-fullscreen" : ""}`} role="dialog" aria-modal="false" aria-label="Ember AI, Nolan's Business Assistant">
           <header className="nk-ai-header">
             <div className="nk-ai-header-title">
-              <span className="nk-ai-header-mascot"><AiMascot status={status} size={24} /></span>
-              <strong>Ember</strong>
+              <span className="nk-ai-header-mascot"><AiMascot status={status} size={32} interactive /></span>
+              <strong>Ember AI</strong>
             </div>
             <div className="nk-ai-header-actions">
               <button type="button" onClick={newChat} className="nk-ai-header-btn" aria-label="Start a new chat">
                 <LucideIcon name="Plus" size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setFullscreen((v) => !v)}
+                className="nk-ai-header-btn nk-ai-fullscreen-toggle"
+                aria-label={fullscreen ? "Shrink to corner" : "Expand to fullscreen"}
+              >
+                <LucideIcon name={fullscreen ? "Minimize2" : "Maximize2"} size={16} />
               </button>
               <button type="button" onClick={closePanel} className="nk-ai-header-btn" aria-label="Close">
                 <LucideIcon name="X" size={16} />
@@ -242,7 +252,7 @@ export default function AiAssistant() {
           <div className="nk-ai-body" aria-live="polite">
             {messages.length === 0 ? (
               <div className="nk-ai-empty">
-                <div className="nk-ai-empty-mascot"><AiMascot status="idle" size={48} /></div>
+                <div className="nk-ai-empty-mascot"><AiMascot status="idle" size={84} interactive /></div>
                 <p className="nk-ai-greeting">{snapshotLoading ? "Checking the dashboard…" : snapshotGreeting(snapshot)}</p>
                 <div className="nk-ai-suggestions">
                   {SUGGESTIONS.map((s) => (
@@ -281,7 +291,7 @@ export default function AiAssistant() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask Ember…"
+              placeholder="Ask Ember AI…"
               disabled={status !== "idle"}
             />
             <button type="submit" disabled={status !== "idle" || !input.trim()} aria-label="Send">
