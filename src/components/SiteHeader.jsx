@@ -211,7 +211,7 @@ export default function SiteHeader() {
           </nav>
 
           <div className="nk-account-wrap" ref={dropdownRef}>
-            {!isAuthenticated && <Link to="/account" className="nk-account-btn">Sign In</Link>}
+            {!isAuthenticated && <Link to="/account" className="nk-account-btn nk-account-btn-guest">Sign In</Link>}
 
             {isAuthenticated && (
               <>

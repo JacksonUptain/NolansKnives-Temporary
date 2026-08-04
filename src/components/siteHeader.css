@@ -214,6 +214,10 @@
   cursor: pointer;
 }
 
+.nk-account-btn-guest {
+  padding: 0.5rem 0.85rem;
+}
+
 .nk-account-btn:hover,
 .nk-account-btn:focus-visible {
   background: rgba(255, 204, 0, 0.08);

@@ -336,6 +336,11 @@ export default function HomeEditor() {
         <>
           <form className="editor-create-panel" onSubmit={createCard}>
             <h2>Create Home Card</h2>
+            {primaryImage(newCard.src) && (
+              <div className="editor-preview editor-preview-new">
+                <img src={primaryImage(newCard.src)} alt="New card preview" />
+              </div>
+            )}
             <input className="input-field" placeholder="Title" value={newCard.title} onChange={(e) => setNewCard((prev) => ({ ...prev, title: e.target.value }))} required />
             <textarea className="input-field" placeholder="Body copy" value={newCard.text} onChange={(e) => setNewCard((prev) => ({ ...prev, text: e.target.value }))} />
             <input className="input-field" placeholder="Button text" value={newCard.hrefText} onChange={(e) => setNewCard((prev) => ({ ...prev, hrefText: e.target.value }))} />
@@ -372,8 +377,8 @@ export default function HomeEditor() {
                     <div className="editor-actions">
                       <label className="editor-check"><input type="checkbox" checked={draftValue(cardDrafts, card, 'isVisible') !== false} onChange={(e) => setDraft('card', card.id, 'isVisible', e.target.checked)} /> Visible</label>
                       <label className="action-btn secondary file-action">
-                        <LucideIcon name="Upload" size={15} /> Upload
-                        <input type="file" accept="image/*" onChange={(e) => uploadImage(e, 'card', card.id)} />
+                        <LucideIcon name="Upload" size={15} /> {uploadingKey === `card-${card.id}` ? 'Uploading...' : 'Upload'}
+                        <input type="file" accept="image/*" onChange={(e) => uploadImage(e, 'card', card.id)} disabled={uploadingKey === `card-${card.id}`} />
                       </label>
                       <button className="action-btn secondary" onClick={() => moveItem('card', cards, index, -1)} disabled={index === 0}><LucideIcon name="ArrowUp" size={15} /></button>
                       <button className="action-btn secondary" onClick={() => moveItem('card', cards, index, 1)} disabled={index === cards.length - 1}><LucideIcon name="ArrowDown" size={15} /></button>
@@ -393,6 +398,11 @@ export default function HomeEditor() {
         <>
           <form className="editor-create-panel" onSubmit={createSlide}>
             <h2>Create Carousel Slide</h2>
+            {newSlide.src && (
+              <div className="editor-preview editor-preview-new wide">
+                <img src={newSlide.src} alt="New slide preview" />
+              </div>
+            )}
             <input className="input-field" placeholder="Slide title" value={newSlide.name} onChange={(e) => setNewSlide((prev) => ({ ...prev, name: e.target.value }))} required />
             <input className="input-field" placeholder="Caption" value={newSlide.caption} onChange={(e) => setNewSlide((prev) => ({ ...prev, caption: e.target.value }))} />
             <input className="input-field" placeholder="Image URL" value={newSlide.src} onChange={(e) => setNewSlide((prev) => ({ ...prev, src: e.target.value }))} required />
@@ -427,8 +437,8 @@ export default function HomeEditor() {
                   <div className="editor-actions">
                     <label className="editor-check"><input type="checkbox" checked={draftValue(slideDrafts, slide, 'isVisible') !== false} onChange={(e) => setDraft('slide', slide.id, 'isVisible', e.target.checked)} /> Visible</label>
                     <label className="action-btn secondary file-action">
-                      <LucideIcon name="Upload" size={15} /> Upload
-                      <input type="file" accept="image/*" onChange={(e) => uploadImage(e, 'slide', slide.id)} />
+                      <LucideIcon name="Upload" size={15} /> {uploadingKey === `slide-${slide.id}` ? 'Uploading...' : 'Upload'}
+                      <input type="file" accept="image/*" onChange={(e) => uploadImage(e, 'slide', slide.id)} disabled={uploadingKey === `slide-${slide.id}`} />
                     </label>
                     <button className="action-btn secondary" onClick={() => moveItem('slide', slides, index, -1)} disabled={index === 0}><LucideIcon name="ArrowUp" size={15} /></button>
                     <button className="action-btn secondary" onClick={() => moveItem('slide', slides, index, 1)} disabled={index === slides.length - 1}><LucideIcon name="ArrowDown" size={15} /></button>

@@ -565,6 +565,10 @@
   min-height: 150px;
 }
 
+.editor-preview-new {
+  grid-column: 1 / -1;
+}
+
 .editor-preview img {
   width: 100%;
   height: clamp(160px, 20vw, 260px);

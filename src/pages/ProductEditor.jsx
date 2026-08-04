@@ -121,7 +121,8 @@ function ProductEditor() {
       for (const file of files) {
         try {
           const timestamp = Date.now();
-          const fileName = `${timestamp}-${file.name}`;
+          const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
+          const fileName = `${timestamp}-${safeName}`;
           const fileRef = storageRef(storage, `products/${productId || 'draft'}/${fileName}`);
 
           const snapshot = await uploadBytes(fileRef, file);
