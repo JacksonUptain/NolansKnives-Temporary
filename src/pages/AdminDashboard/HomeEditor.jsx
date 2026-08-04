@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ref, onValue, push, remove, serverTimestamp, set, update } from 'firebase/database';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../firebase';
+import { auth, db, storage } from '../firebase';
 import { showToast } from '../../components/Toast';
 import { showConfirm } from '../../components/ConfirmDialog';
 import LucideIcon from '../../components/ui/LucideIcon';
@@ -124,6 +124,14 @@ export default function HomeEditor() {
     setError('');
 
     try {
+      // Custom claims (the role Storage rules check) only take effect on a fresh
+      // ID token. If this account was just granted admin/business access during
+      // the current session, the cached token won't have it yet — force a refresh
+      // so a just-granted role doesn't 403 on the very next upload.
+      if (auth.currentUser) {
+        await auth.currentUser.getIdToken(true);
+      }
+
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
       const fileRef = storageRef(storage, `home/${type}/${Date.now()}-${safeName}`);
       const snapshot = await uploadBytes(fileRef, file);
@@ -138,7 +146,9 @@ export default function HomeEditor() {
 
       showToast('Image uploaded.', 'success');
     } catch (err) {
-      const message = err?.message || 'Image upload failed.';
+      const message = err?.code === 'storage/unauthorized'
+        ? 'Storage permission denied. Your account may not have admin/business access — sign out and back in, then try again.'
+        : (err?.message || 'Image upload failed.');
       setError(message);
       showToast(message, 'error');
     } finally {

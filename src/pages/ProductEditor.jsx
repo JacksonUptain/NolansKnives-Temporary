@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { db } from './firebase';
+import { auth, db } from './firebase';
 import { ref, get, set, remove, update, push } from 'firebase/database';
 import { storage } from './firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
@@ -117,6 +117,13 @@ function ProductEditor() {
     setUploadingImage(`Uploading ${files.length} image(s)...`);
 
     try {
+      // Force a fresh ID token before uploading — Storage rules check claims
+      // (email_verified/role) baked into the token, which can be stale if this
+      // account was just verified or granted access earlier in the session.
+      if (auth.currentUser) {
+        await auth.currentUser.getIdToken(true);
+      }
+
       const newImageUrls = [];
       for (const file of files) {
         try {
