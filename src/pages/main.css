@@ -295,6 +295,15 @@ html {
   box-shadow: var(--nk-shadow-lg);
 }
 
+/* Logos/thumbnails aren't landscape photography — shrink them to fit in full
+   instead of cropping, on a matching backdrop instead of leaving hard edges. */
+.stacked-card-image.stacked-card-image-contain {
+  object-fit: contain;
+  background: var(--nk-bg-deep);
+  padding: clamp(0.75rem, 4vw, 1.75rem);
+  box-sizing: border-box;
+}
+
 @keyframes home-image-settle {
   from { opacity: 0.9; }
   to { opacity: 1; }
@@ -326,6 +335,7 @@ html {
     position: static !important;
     grid-template-columns: 1fr;
     min-height: auto;
+    align-content: center;
     padding: 3rem 0;
     border-width: 1px 0 0 !important;
     border-radius: 0 !important;

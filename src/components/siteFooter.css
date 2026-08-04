@@ -19,7 +19,7 @@
 
 .nk-footer-links span {
   margin: 0;
-  color: var(--nk-gold-muted);
+  color: var(--nk-text-strong);
   font-size: var(--nk-text-xs);
   font-weight: var(--nk-weight-heavy);
   letter-spacing: 0.09em;
