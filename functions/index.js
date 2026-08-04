@@ -4321,6 +4321,35 @@ exports.setUserRoleHttp = onRequest({ invoker: "public" }, async (req, res) => {
   }
 });
 
+// Auth custom claims (what Storage security rules trust) can drift out of
+// sync with the database role — e.g. a role set directly in the database
+// (common for bootstrapping the first admin) never touches custom claims.
+// Database rules tolerate this via a fallback check; Storage rules cannot,
+// since Storage has no access to Realtime Database. Let any signed-in user
+// resync their own claim to whatever role is already on their database
+// profile — safe, since that field is admin/Cloud-Function-only to write.
+exports.syncMyRoleClaims = onCall({ invoker: "public", cors: true }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "User must be signed in.");
+
+  const uid = request.auth.uid;
+  const profile = await getUserProfile(uid);
+  const dbRole = profile?.role || "customer";
+
+  const userRecord = await auth.getUser(uid);
+  const currentClaimRole = userRecord.customClaims?.role;
+
+  if (currentClaimRole === dbRole) {
+    return { role: dbRole, changed: false };
+  }
+
+  await auth.setCustomUserClaims(uid, {
+    ...(userRecord.customClaims || {}),
+    role: dbRole
+  });
+
+  return { role: dbRole, changed: true };
+});
+
 exports.setUserBlocked = onCall({ invoker: "public" }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "User must be signed in.");
 

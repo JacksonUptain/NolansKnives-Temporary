@@ -8,6 +8,10 @@ export async function setUserRole(uid, role) {
   return callHttpFunction("setUserRoleHttp", { uid, role });
 }
 
+export async function syncMyRoleClaims() {
+  return (await call("syncMyRoleClaims")({})).data;
+}
+
 export async function setUserBlocked(uid, blocked) {
   return (await call("setUserBlocked")({ uid, blocked })).data;
 }

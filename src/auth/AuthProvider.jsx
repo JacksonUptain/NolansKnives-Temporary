@@ -17,6 +17,7 @@ import {
 import { get, ref, serverTimestamp, update } from "firebase/database";
 import { auth, db } from "../pages/firebase";
 import { createImpersonationSession } from "../services/impersonationService";
+import { syncMyRoleClaims } from "../services/adminService";
 import { ROLES, STATUS, isActiveStatus } from "./roleHelpers";
 
 const AuthContext = createContext(null);
@@ -108,20 +109,37 @@ export function AuthProvider({ children }) {
       }
 
       try {
-        const token = await firebaseUser.getIdTokenResult(true);
-        const claimRole = token?.claims?.role;
-        setClaimsRole(claimRole || null);
+        let token = await firebaseUser.getIdTokenResult(true);
+        let claimRole = token?.claims?.role || null;
 
         const userSnap = await get(ref(db, `users/${firebaseUser.uid}`));
-        const userProfile = userSnap.exists() ? userSnap.val() : null;
+        let userProfile = userSnap.exists() ? userSnap.val() : null;
 
         if (!userProfile) {
           await upsertUserProfile(firebaseUser);
           const refreshedSnap = await get(ref(db, `users/${firebaseUser.uid}`));
-          setProfile(refreshedSnap.exists() ? refreshedSnap.val() : null);
-        } else {
-          setProfile(userProfile);
+          userProfile = refreshedSnap.exists() ? refreshedSnap.val() : null;
         }
+
+        setProfile(userProfile);
+
+        // Custom claims (what Storage rules trust) can drift from the database
+        // role — e.g. a role set directly in the database, which Database rules
+        // tolerate via a fallback check but Storage rules cannot. Heal it here
+        // so a mismatched account isn't silently blocked from uploads.
+        if (userProfile?.role && userProfile.role !== claimRole) {
+          try {
+            const result = await syncMyRoleClaims();
+            if (result?.changed) {
+              token = await firebaseUser.getIdTokenResult(true);
+              claimRole = token?.claims?.role || null;
+            }
+          } catch (syncError) {
+            console.error("Failed to sync role claims", syncError);
+          }
+        }
+
+        setClaimsRole(claimRole);
       } catch (error) {
         console.error("Failed to initialize auth state", error);
       } finally {
