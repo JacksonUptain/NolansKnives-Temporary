@@ -431,25 +431,46 @@
   transform: translateY(-1px);
 }
 
-.nk-heart-button.is-liked {
-  color: #ff5f6d;
-  border-color: rgba(255,95,109,0.55);
-  background: rgba(255,95,109,0.15);
-}
-
-.nk-heart-button.is-liked svg {
-  animation: nk-heart-pop 320ms ease;
-}
-
 .nk-heart-button.compact {
   min-height: 34px;
   padding: 0.45rem 0.6rem;
 }
 
+.nk-heart-icon {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+.nk-heart-icon svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.nk-heart-outline {
+  color: inherit;
+}
+
+.nk-heart-fill {
+  color: #ff5f6d;
+  opacity: 0;
+  transform: scale(0.4);
+  transform-origin: center;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.nk-heart-button.is-liked .nk-heart-fill {
+  opacity: 1;
+  transform: scale(1);
+  animation: nk-heart-pop 380ms cubic-bezier(0.17, 0.89, 0.32, 1.49);
+}
+
 @keyframes nk-heart-pop {
-  0% { transform: scale(0.92); }
-  50% { transform: scale(1.15); }
-  100% { transform: scale(1); }
+  0% { transform: scale(0); opacity: 0; }
+  55% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 .store-showcase-copy h2 {

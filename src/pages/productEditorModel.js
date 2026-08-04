@@ -8,6 +8,7 @@ export function buildProductPayload(product = {}, options = {}) {
       : [];
 
   const featuredValue = product.featured === true || product.featured === 'true' || product.featured === 1 || product.featured === '1';
+  const likesVisibleValue = product.likesVisible !== false && product.likesVisible !== 'false';
 
   return {
     ...product,
@@ -18,6 +19,7 @@ export function buildProductPayload(product = {}, options = {}) {
     sold: product.saleStatus === 'sold',
     soldAt: product.saleStatus === 'sold' ? product.soldAt || now : null,
     featured: featuredValue,
+    likesVisible: likesVisibleValue,
     updatedAt: now,
     createdAt: product.createdAt || now
   };

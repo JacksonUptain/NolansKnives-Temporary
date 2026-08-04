@@ -30,6 +30,7 @@ function ProductEditor() {
     displayLocation: 'store',
     published: false,
     featured: false,
+    likesVisible: true,
     custom_id: '',
     specifications: '',
     stock: 1
@@ -68,6 +69,7 @@ function ProductEditor() {
           saleStatus: data.saleStatus || (data.sold ? 'sold' : 'available'),
           displayLocation: data.displayLocation || 'store',
           featured: Boolean(data.featured),
+          likesVisible: data.likesVisible !== false,
           stock: data.stock || 1
         });
         setImageOrder(normalizedSrc);
@@ -517,6 +519,16 @@ function ProductEditor() {
                 onChange={(e) => handleFieldChange('featured', e.target.checked)}
               />
               <label htmlFor="featured-check">Show in featured spotlight</label>
+            </div>
+
+            <div className="form-check">
+              <input
+                type="checkbox"
+                id="likes-visible-check"
+                checked={product.likesVisible !== false}
+                onChange={(e) => handleFieldChange('likesVisible', e.target.checked)}
+              />
+              <label htmlFor="likes-visible-check">Show like button and like count</label>
             </div>
           </div>
 

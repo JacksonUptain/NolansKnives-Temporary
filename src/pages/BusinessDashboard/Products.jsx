@@ -123,6 +123,14 @@ export default function Products() {
     );
   };
 
+  const handleLikesVisibilityChange = (product, likesVisible) => {
+    updateProductPatch(
+      product.productId,
+      { likesVisible },
+      `"${product.name || 'Knife'}" like button ${likesVisible ? 'shown' : 'hidden'}.`
+    );
+  };
+
   const handleDeleteProduct = async (product) => {
     await showConfirm(
       'Delete Knife',
@@ -256,6 +264,17 @@ export default function Products() {
                         <option value="store">Store</option>
                         <option value="gallery">Gallery</option>
                         <option value="both">Both</option>
+                        <option value="hidden">Hidden</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Likes</span>
+                      <select
+                        value={product.likesVisible === false ? 'hidden' : 'visible'}
+                        onChange={(event) => handleLikesVisibilityChange(product, event.target.value === 'visible')}
+                        disabled={isSaving}
+                      >
+                        <option value="visible">Visible</option>
                         <option value="hidden">Hidden</option>
                       </select>
                     </label>

@@ -180,11 +180,6 @@
   background: #171717;
 }
 
-.product-cta-row .nk-heart-button.is-liked {
-  border-color: rgba(255,95,109,0.55);
-  background: rgba(255,95,109,0.15);
-}
-
 .product-primary-button,
 .product-secondary-button,
 .product-icon-button {

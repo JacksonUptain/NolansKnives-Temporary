@@ -1,5 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import LucideIcon from "../components/ui/LucideIcon";
+import HeartButton from "../components/ui/HeartButton";
+import { formatKnifeStatus } from "./knifeStatus";
 
 function normalizeImages(src) {
   if (Array.isArray(src)) return src.filter(Boolean);
@@ -7,7 +9,7 @@ function normalizeImages(src) {
   return [];
 }
 
-export default function GalleryCard({ product, featured = false, onView }) {
+export default function GalleryCard({ product, size = "sm", dateLabel = "", isSold = false, onView }) {
   const images = useMemo(() => normalizeImages(product?.src), [product?.src]);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -23,9 +25,22 @@ export default function GalleryCard({ product, featured = false, onView }) {
     return () => window.clearInterval(timer);
   }, [images.length]);
 
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onView?.();
+    }
+  };
+
   return (
-    <article className={`gallery-card ${featured ? "gallery-card-featured" : ""}`}>
-      <div className="gallery-card-media">
+    <article
+      className={`mosaic-tile mosaic-size-${size} ${isSold ? "mosaic-sold" : ""}`}
+      role="button"
+      tabIndex={0}
+      onClick={onView}
+      onKeyDown={handleKeyDown}
+    >
+      <div className="mosaic-media">
         {images.length > 0 ? (
           images.map((image, index) => (
             <Fragment key={`${image}-${index}`}>
@@ -33,12 +48,12 @@ export default function GalleryCard({ product, featured = false, onView }) {
                 src={image}
                 alt=""
                 aria-hidden="true"
-                className={`gallery-card-backdrop ${index === activeIndex ? "active" : ""}`}
+                className={`mosaic-backdrop ${index === activeIndex ? "active" : ""}`}
               />
               <img
                 src={image}
                 alt={`${product.name || "Nolan knife"} angle ${index + 1}`}
-                className={`gallery-card-primary ${index === activeIndex ? "active" : ""}`}
+                className={`mosaic-primary ${index === activeIndex ? "active" : ""}`}
               />
             </Fragment>
           ))
@@ -49,7 +64,7 @@ export default function GalleryCard({ product, featured = false, onView }) {
         )}
 
         {images.length > 1 && (
-          <div className="gallery-card-dots" aria-hidden="true">
+          <div className="mosaic-dots" aria-hidden="true">
             {images.map((image, index) => (
               <span key={`${image}-dot`} className={index === activeIndex ? "active" : ""} />
             ))}
@@ -57,15 +72,33 @@ export default function GalleryCard({ product, featured = false, onView }) {
         )}
       </div>
 
-      <div className="gallery-card-copy">
+      <div className="mosaic-scrim" aria-hidden="true" />
+
+      <div className="mosaic-copy">
+        {product.publicStatus && (
+          <span className={`mosaic-status-pill status-${product.publicStatus}`}>
+            {formatKnifeStatus(product.publicStatus)}
+          </span>
+        )}
+
         <h2>{product.name || "Finished Piece"}</h2>
 
-        <div className="gallery-card-actions">
-          {onView && (
-            <button type="button" className="gallery-text-action" onClick={onView}>
-              View details <LucideIcon name="ArrowRight" size={15} />
-            </button>
+        <div className="mosaic-footer">
+          {dateLabel && (
+            <span className="mosaic-date">
+              <LucideIcon name="Calendar" size={13} />
+              {isSold ? `Sold ${dateLabel}` : `Added ${dateLabel}`}
+            </span>
           )}
+
+          <div className="mosaic-actions">
+            <HeartButton product={product} compact />
+            {onView && (
+              <button type="button" className="mosaic-view-action" onClick={(event) => { event.stopPropagation(); onView(); }}>
+                View <LucideIcon name="ArrowRight" size={14} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </article>

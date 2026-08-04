@@ -48,6 +48,21 @@ describe('buildProductPayload', () => {
     expect(payload.featured).toBe(true);
   });
 
+  it('defaults like visibility to true and normalizes explicit false', () => {
+    const shownProduct = {
+      name: 'Shown Knife',
+      price: '300',
+      src: ['https://example.com/shown.jpg'],
+      stock: 1,
+      saleStatus: 'available',
+      published: true
+    };
+    const hiddenProduct = { ...shownProduct, name: 'Hidden Knife', likesVisible: false };
+
+    expect(buildProductPayload(shownProduct, { publish: true, now: '2024-03-01T00:00:00.000Z' }).likesVisible).toBe(true);
+    expect(buildProductPayload(hiddenProduct, { publish: true, now: '2024-03-01T00:00:00.000Z' }).likesVisible).toBe(false);
+  });
+
   it('keeps a draft unpublished when the visibility toggle is off', () => {
     const product = {
       name: 'Draft Knife',

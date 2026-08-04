@@ -6,6 +6,7 @@ import { db } from "./firebase";
 import { formatKnifeStatus, getPublicKnifeStatus } from "./knifeStatus";
 import Skeleton from "../components/ui/Skeleton";
 import LucideIcon from "../components/ui/LucideIcon";
+import HeartButton from "../components/ui/HeartButton";
 import "./Gallery.css";
 
 function normalizeImages(src) {
@@ -33,6 +34,10 @@ function getSoldDate(product = {}) {
   return product.soldAt || product.soldDate || product.dateSold || product.saleDate || "";
 }
 
+function getPrimaryDate(product = {}) {
+  return getSoldDate(product) || product.createdAt || product.updatedAt || "";
+}
+
 function isGalleryVisible(product = {}) {
   const location = product.displayLocation || "gallery";
   return product.published !== false && (location === "gallery" || location === "both");
@@ -40,10 +45,32 @@ function isGalleryVisible(product = {}) {
 
 function sortGalleryItems(items) {
   return [...items].sort((a, b) => {
-    const aTime = new Date(a.updatedAt || a.createdAt || 0).getTime();
-    const bTime = new Date(b.updatedAt || b.createdAt || 0).getTime();
+    const aTime = new Date(getPrimaryDate(a) || 0).getTime();
+    const bTime = new Date(getPrimaryDate(b) || 0).getTime();
     return bTime - aTime;
   });
+}
+
+function hashToUnit(value) {
+  let hash = 5381;
+  const str = String(value || "");
+  for (let i = 0; i < str.length; i += 1) {
+    hash = (hash * 33 + str.charCodeAt(i)) >>> 0;
+  }
+  return hash % 100;
+}
+
+function getTileSize(product, imageCount) {
+  const isRichDescription = String(product.description || "").trim().length > 180;
+  const hasMultipleImages = imageCount > 2;
+  const boost = (isRichDescription ? 1 : 0) + (hasMultipleImages ? 1 : 0);
+  const roll = Math.max(0, hashToUnit(product.id) - boost * 18);
+
+  if (roll < 6) return "xl";
+  if (roll < 18) return "lg";
+  if (roll < 40) return "tall";
+  if (roll < 68) return "md";
+  return "sm";
 }
 
 export default function Gallery() {
@@ -89,11 +116,17 @@ export default function Gallery() {
     });
   }, [products, query, filter]);
 
-  const featuredProduct = filteredProducts.find((product) => Boolean(product.featured)) || null;
-  const featuredImages = normalizeImages(featuredProduct?.src);
-  const collectionItems = featuredProduct
-    ? filteredProducts.filter((product) => product.id !== featuredProduct.id)
-    : filteredProducts;
+  const mosaicItems = useMemo(() => {
+    return filteredProducts.map((product) => {
+      const images = normalizeImages(product.src);
+      return {
+        product,
+        size: getTileSize(product, images.length),
+        primaryDate: getPrimaryDate(product)
+      };
+    });
+  }, [filteredProducts]);
+
   const selectedImages = normalizeImages(selectedProduct?.src);
 
   const openDetails = (product) => {
@@ -145,38 +178,6 @@ export default function Gallery() {
             </button>
           </div>
         </div>
-
-        <aside className="gallery-feature" aria-label="Featured gallery piece">
-          {loading ? (
-            <Skeleton height="520px" />
-          ) : featuredProduct ? (
-            <>
-              <div className="gallery-feature-media">
-                {featuredImages[0] ? (
-                  <>
-                    <img className="gallery-feature-backdrop" src={featuredImages[0]} alt="" aria-hidden="true" />
-                    <img className="gallery-feature-primary" src={featuredImages[0]} alt={featuredProduct.name || "Nolan knife"} />
-                  </>
-                ) : (
-                  <div className="gallery-media-placeholder">
-                    <LucideIcon name="Image" size={32} />
-                  </div>
-                )}
-              </div>
-              <div className="gallery-feature-copy">
-                <h2>{featuredProduct.name || "Finished Piece"}</h2>
-                <button className="gallery-text-action" type="button" onClick={() => openDetails(featuredProduct)}>
-                  View details <LucideIcon name="ArrowRight" size={15} />
-                </button>
-              </div>
-            </>
-          ) : (
-            <div className="gallery-empty-panel">
-              <LucideIcon name="Image" size={34} />
-              <h2>Gallery pieces will appear here soon.</h2>
-            </div>
-          )}
-        </aside>
       </section>
 
       <section className="gallery-toolbar" aria-label="Find gallery pieces">
@@ -199,9 +200,10 @@ export default function Gallery() {
 
       {loading ? (
         <section className="gallery-loading-grid">
-          <Skeleton height="460px" />
-          <Skeleton height="460px" />
-          <Skeleton height="460px" />
+          <Skeleton height="260px" />
+          <Skeleton height="260px" />
+          <Skeleton height="260px" />
+          <Skeleton height="260px" />
         </section>
       ) : filteredProducts.length === 0 ? (
         <section className="gallery-empty-state">
@@ -213,14 +215,17 @@ export default function Gallery() {
         <section className="gallery-section" aria-label="Gallery pieces">
           <div className="gallery-section-heading">
             <h2>Past work</h2>
+            <span className="gallery-section-hint">Newest to oldest, by date created or sold</span>
           </div>
 
-          <div className="gallery-showcase-grid">
-            {(collectionItems.length ? collectionItems : filteredProducts).map((product, index) => (
+          <div className="gallery-mosaic">
+            {mosaicItems.map(({ product, size, primaryDate }) => (
               <GalleryCard
                 key={product.id}
                 product={product}
-                featured={index === 0 && collectionItems.length <= 2}
+                size={size}
+                dateLabel={primaryDate ? formatDate(primaryDate) : ""}
+                isSold={product.publicStatus === "sold"}
                 onView={() => openDetails(product)}
               />
             ))}
@@ -292,6 +297,7 @@ export default function Gallery() {
               </div>
 
               <div className="gallery-detail-actions">
+                <HeartButton product={selectedProduct} />
                 {selectedProduct.displayLocation === "both" && (
                   <button type="button" className="gallery-secondary-action" onClick={() => navigate(`/product/${selectedProduct.id}`)}>
                     Store page <LucideIcon name="ArrowRight" size={15} />

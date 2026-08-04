@@ -44,6 +44,15 @@
         }
       }
     },
+    "productLikes": {
+      ".read": true,
+      "$productId": {
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid",
+          ".validate": "newData.val() === true"
+        }
+      }
+    },
     "Home": {
       ".read": true,
       ".write": "auth.token.role === 'admin' || auth.token.role === 'business' || root.child('users').child(auth.uid).child('role').val() === 'business' || root.child('users').child(auth.uid).child('role').val() === 'admin'"
